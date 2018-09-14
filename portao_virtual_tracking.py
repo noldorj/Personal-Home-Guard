@@ -41,8 +41,8 @@ cols = None
 colors = np.random.uniform(0, 255, size=(len(classes), 3))
 
 # Read the graph.
-pb = 'frozen_inference_graph_v1_coco_2017_11_17.pb'
-pbtxt = 'ssd_mobilenet_v1_coco_2017_11_17.pbtxt'
+pb = 'dlModels/frozen_inference_graph_v1_coco_2017_11_17.pb'
+pbtxt = 'dlModels/ssd_mobilenet_v1_coco_2017_11_17.pbtxt'
 
 cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
 
@@ -201,8 +201,8 @@ def createDirectory():
     month_dir = '/' + date['month'] + '-' + date['year']
     month_dir
     today_dir = '/' + date['day']
-#    current_dir = os.getcwd() + '/video_alarmes'
-    current_dir = '/Users/ijferrei/video_alarmes'
+    current_dir = os.getcwd() + '/video_alarmes'
+#    current_dir = '/Users/ijferrei/video_alarmes'
     status = False
 
     #checar se pasta do mes existe, ou cria-la

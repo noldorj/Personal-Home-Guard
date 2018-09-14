@@ -10,7 +10,7 @@ from smtplib import SMTPException
 def saveImageBox(frame, classe):
 
 
-    idFoto = len(os.listdir('dataset/training_set/' + classe))
+    idFoto = len(os.listdir(os.getcwd() + 'dataset/training_set/' + classe))
 
 
     try:
