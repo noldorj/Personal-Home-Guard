@@ -1,3 +1,4 @@
+#
 import os
 import cv2 as cv
 from email.mime.text import MIMEText
@@ -9,8 +10,9 @@ from smtplib import SMTPException
 
 def saveImageBox(frame, classe):
 
-
-    idFoto = len(os.listdir(os.getcwd() + 'dataset/training_set/' + classe))
+    print('classe: ' + classe)
+    idFoto = len(os.listdir(os.getcwd() + '/dataset/training_set/' + classe)) + 1
+    print('numero fotos: ' + str(idFoto))
 
 
     try:

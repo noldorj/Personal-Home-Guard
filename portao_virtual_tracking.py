@@ -1,3 +1,4 @@
+#
 import cv2 as cv
 import numpy as np
 from datetime import date
@@ -243,7 +244,10 @@ cv.setMouseCallback('frame', shape_selection)
 
 objDetectado = False
 
-fourcc = cv.VideoWriter_fourcc(*'X264')
+#fourcc = cv.VideoWriter_fourcc(*'X264')
+#for linux x264 need to recompile opencv mannually
+fourcc = cv.VideoWriter_fourcc(*'XVID')
+
 
 hora = getDate()['hour'].replace(':','-')
 
@@ -262,7 +266,7 @@ gravando = False
 newVideo = True
 objects = None
 FPS = 30.0 #frames per second
-enviarAlerta = False
+enviarAlerta = True
 novo_alerta = True
 
 #primeiro objeto é enviado
