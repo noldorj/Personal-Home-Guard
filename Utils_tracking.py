@@ -1,11 +1,20 @@
 #
 import os
 import cv2 as cv
+import time
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 import smtplib
 from smtplib import SMTPException
+
+def getDate():
+    data = time.asctime().split(" ")
+    #para dias com um digito
+    if data.count("") > 0:
+        data.remove("")
+    data = {'day':data[2], 'month':data[1],'hour':data[3], 'year':data[4]  }
+    return data
 
 
 def saveImageBox(frame, classe):
@@ -24,7 +33,7 @@ def saveImageBox(frame, classe):
 
 
 #envia alerta do portao virtual com imagem anexada ao email
-def sendMailAlert(sender, recipients, frame):
+def sendMailAlert(sender, recipients, frame, tipoObjetoDetectado):
 
     status = False
 
@@ -55,11 +64,11 @@ def sendMailAlert(sender, recipients, frame):
 
 
     msg = MIMEMultipart()
-    msg['Subject'] = 'Alarme PV - Foto'
+    msg['Subject'] = 'PV - ' + '"' + tipoObjetoDetectado + '"' + ' detectado'
     msg['From'] = sender
     msg['To'] = recipients
-
-    text = MIMEText("Alarme - Objecto detectado")
+    data = getDate()
+    text = MIMEText('"' + tipoObjetoDetectado + '"' + ' detectado em ' + data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year'] )
     msg.attach(text)
 
     img_file = MIMEImage(img_file)
@@ -71,7 +80,7 @@ def sendMailAlert(sender, recipients, frame):
         smtpObj.ehlo()
         smtpObj.starttls()
         smtpObj.ehlo()
-        smtpObj.login(sender,'budega656')
+        smtpObj.login(sender,'caraio3098')
         smtpObj.send_message(msg)
         smtpObj.quit()
 

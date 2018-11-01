@@ -125,7 +125,7 @@ def objectDetection(img):
         for detection in cvOut[0,0,:,:]:
 
             score = float(detection[2])
-            if score > 0.30:
+            if score > 0.40:
 
                 left = int(detection[3] * cols)
                 top = int(detection[4] * rows)
@@ -139,10 +139,10 @@ def objectDetection(img):
                 box = (left, top, right, bottom, label, idx, classe)
 
                 if classes[idx] is 'pessoa' or \
-                    classes[idx] is 'carro' or \
                     classes[idx] is 'gato' or \
-                    classes[idx] is 'moto' or \
                     classes[idx] is 'cachorro':
+#                    classes[idx] is 'carro' or \
+#                    classes[idx] is 'moto' or \
 
 #                    print('Objeto: ' + classes[idx])
 
@@ -257,8 +257,7 @@ current_data_dir.pop('hour')
 
 
 #
-out_video = None
-cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, 20.0, (1280,720))
+
 
 timer_without_object = 0
 start_time = 0
@@ -272,11 +271,17 @@ novo_alerta = True
 #primeiro objeto é enviado
 listObjectMailAlerted = []
 
+out_video = None
+cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
+
 
 while True:
 
     conectado, frame = ipCam.read()
     conectado, frame_no_label = ipCam.read()
+    conectado, frame_no_label_email = ipCam.read()
+
+
 
     if (conectado and frame is not None):
 
@@ -380,17 +385,17 @@ while True:
 
 
                             #desenhando o box e label
-                            cv.rectangle(frame, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
-                            top = int (box[1])
-                            y = top - 15 if top - 15 > 15 else top + 15
-                            cv.putText(frame, str(box[4]), (int(box[0]), int(y)),cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
+#                            cv.rectangle(frame, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
+#                            top = int (box[1])
+#                            y = top - 15 if top - 15 > 15 else top + 15
+#                            cv.putText(frame, str(box[4]), (int(box[0]), int(y)),cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
 
 
                             #desenhando o ID no centro do objeto
-                            text = "ID {}".format(objectID)
-                            cv.putText(frame, text, (centroid[0] - 10, centroid[1] - 10),
-                                cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                            cv.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+#                            text = "ID {}".format(objectID)
+#                            cv.putText(frame, text, (centroid[0] - 10, centroid[1] - 10),
+#                                cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+#                            cv.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
                             if listObjectMailAlerted.count(objectID) == 0:
 
@@ -401,7 +406,7 @@ while True:
                                     #salvando foto para treinamento
                                     #crop no box
     #                               left, top, right, bottom
-                                    frame_no_label = frame_no_label[int(box[1]):int(box[1]) + int(box[3]) , int(box[0]):int(box[2])]
+                                    frame_no_label = frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
     #                               cv.imshow("cropped", frame_no_label)
     #                               cv.waitKey(0)
                                     saveImageBox(frame_no_label, str(box[6]))
@@ -409,7 +414,7 @@ while True:
 
         #                           cv.imwrite(dir_video_trigger + '/foto_alerta.jpg',frame)'
 
-                                    if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame)):
+                                    if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame_no_label_email, str(box[6]))):
 
                                         print('Alerta enviado ID[' + str(objectID) + ']')
                                         print('...')
@@ -461,6 +466,8 @@ while True:
         listObjects.clear()
         listObjectsTracking.clear()
         objects.update()
+
+        cv.waitKey(5q0)
 
 
         if cv.waitKey(1) & 0xFF == ord('q'):
