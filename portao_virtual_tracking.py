@@ -10,6 +10,7 @@ import numpy as np
 import os
 from Utils_tracking import sendMailAlert
 from Utils_tracking import saveImageBox
+import utilsCore as utils
 
 #import tensorflow as tf
 
@@ -46,7 +47,6 @@ pb = 'dlModels/frozen_inference_graph_v1_coco_2017_11_17.pb'
 pbtxt = 'dlModels/ssd_mobilenet_v1_coco_2017_11_17.pbtxt'
 
 cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
-
 # initialize our centroid tracker and frame dimensions
 ct = CentroidTracker()
 (H, W) = (None, None)
@@ -67,7 +67,6 @@ class objectDetected():
     linkVideo = "link para video"
     tipo = 'tipo'
     hora = 'hora'
-    dia = 'dia'
     mes = 'mes'
     ano = 'ano'
 
@@ -234,8 +233,8 @@ status_dir_criado, dir_video_trigger = createDirectory()
 
 # funcao que grava momento em que a pessoa foi identificada
 
-source = "rtsp://admin:WWYZRL@192.168.0.197/live/mpeg4:554"
-#source = 'webcam'
+#source = "rtsp://admin:WWYZRL@192.168.0.197/live/mpeg4:554"
+source = 'webcam'
 ipCam = camSource(source)
 
 
@@ -258,7 +257,7 @@ current_data_dir.pop('hour')
 
 #
 
-
+statusConfig = utils.StatusConfig()
 timer_without_object = 0
 start_time = 0
 gravando = False
@@ -267,6 +266,7 @@ objects = None
 FPS = 30.0 #frames per second
 enviarAlerta = True
 novo_alerta = True
+isSoundAlert = True #todo pegar status de arquivo de configuracao
 
 #primeiro objeto é enviado
 listObjectMailAlerted = []
@@ -399,6 +399,9 @@ while True:
 
                             if listObjectMailAlerted.count(objectID) == 0:
 
+                                if isSoundAlert:
+                                    utils.playSound()
+
                                 if enviarAlerta:
 
                                     print('Enviando alerta por email')
@@ -467,7 +470,7 @@ while True:
         listObjectsTracking.clear()
         objects.update()
 
-        cv.waitKey(5q0)
+        cv.waitKey(50)
 
 
         if cv.waitKey(1) & 0xFF == ord('q'):
