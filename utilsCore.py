@@ -1,5 +1,6 @@
 import json
 import os
+import pyglet
 
 class StatusConfig:
 
@@ -45,21 +46,14 @@ class StatusConfig:
         json.dump(data, open(file,'w'), indent=4)
 
 
-status = StatusConfig()
-status.saveConfigFile()
-status.readConfigFile()
+def playSound():
+    campainha = pyglet.resource.media('campainha.wav')
+    campainha.play()
+    print('Campainha tocada: ' + os.getcwd())
 
-
-status.isRecording = 'true'
-status.isRecording
-status.data["isRecording"] = 'true'
-status.data.get('isRecording')
 
 
 # Add the basic infomation about the cam security system like
 # which object or person was detectec, if the email alert is active,
 # if the virtual gate is activate, if the record videos is actitive etc.
-
-def footerCam(frame, statusConfig):
-
-
+#def footerCam(frame, statusConfig):
