@@ -170,15 +170,17 @@ crop = False
 portaoVirtualSelecionado = False
 showGate = False
 regiaoPortao = None
+sel_rect_endpoint = []
 
 def shape_selection(event, x, y, flags, param):
     # grab references to the global variables
-    global ref_point, crop, portaoVirtualSelecionado
+    global ref_point, crop, portaoVirtualSelecionado, sel_rect_endpoint
 
     # if the left mouse button was clicked, record the starting
     # (x, y) coordinates and indicate that cropping is being performed
     if event == cv.EVENT_LBUTTONDOWN and not portaoVirtualSelecionado:
         ref_point = [(x, y)]
+        crop = True
 #        print('X: ', ref_point[0][0])
 #        print('Y: ', ref_point[0][1])
 
@@ -187,12 +189,26 @@ def shape_selection(event, x, y, flags, param):
         # record the ending (x, y) coordinates and indicate that
         # the cropping operation is finished
         ref_point.append((x, y))
+        crop = False
         # draw a rectangle around the region of interest
-        cv.rectangle(frame, ref_point[0], ref_point[1], (0, 255, 0), 2)
+#        cv.rectangle(frame, ref_point[0], ref_point[1], (0, 255, 0), 2)
+#        print('W: ', ref_point[1][0])
+#        print('H: ', ref_point[1][1])qqq
+#        cv.imshow("frame", frame)
+        portaoVirtualSelecionado = True
+
+
+    elif event == cv.EVENT_MOUSEMOVE and not portaoVirtualSelecionado:
+        # record the ending (x, y) coordinates and indicate that
+        # the cropping operation is finished
+        sel_rect_endpoint = [(x, y)]
+
+        # draw a rectangle around the region of interest
+#        cv.rectangle(frame, ref_point[0], sel_rect_endpoint[0], (100, 255, 0), 2)
 #        print('W: ', ref_point[1][0])
 #        print('H: ', ref_point[1][1])
 #        cv.imshow("frame", frame)
-        portaoVirtualSelecionado = True
+#        portaoVirtualSelecionado = True
 
 
 def createDirectory():
@@ -319,6 +335,10 @@ while True:
 
         if portaoVirtualSelecionado:
            cv.rectangle(frame, ref_point[0], ref_point[1], (0, 255, 0), 2)
+
+        if crop and sel_rect_endpoint:
+            cv.rectangle(frame, ref_point[0], sel_rect_endpoint[0], (0, 255, 0), 2)
+
 
         #passando o Frame selecionado do portao para deteccao
         listObjects = objectDetection(frame)
