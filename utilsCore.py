@@ -1,6 +1,6 @@
 import json
 import os
-import pyglet
+import pygame
 
 class StatusConfig:
 
@@ -47,10 +47,12 @@ class StatusConfig:
 
 
 def playSound():
-    campainha = pyglet.resource.media('campainha.wav')
-    campainha.play()
+   # campainha = pyglet.media.load('campainha.wav')
+   # campainha.play()
     print('Campainha tocada: ' + os.getcwd())
-
+    pygame.init()
+    pygame.mixer.music.load('campainha.mp3')
+    pygame.mixer.music.play(0)
 
 
 # Add the basic infomation about the cam security system like
