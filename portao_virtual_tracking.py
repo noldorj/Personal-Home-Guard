@@ -85,13 +85,7 @@ class objectDetected():
 
 
 
-def getDate():
-    data = time.asctime().split(" ")
-    #para dias com um digito
-    if data.count("") > 0:
-        data.remove("")
-    data = {'day':data[2], 'month':data[1],'hour':data[3], 'year':data[4]  }
-    return data
+
 
 
 def camSource(source = 'webcam'):
@@ -211,39 +205,10 @@ def shape_selection(event, x, y, flags, param):
 #        portaoVirtualSelecionado = True
 
 
-def createDirectory():
-
-    date = getDate()
-    month_dir = '/' + date['month'] + '-' + date['year']
-    month_dir
-    today_dir = '/' + date['day']
-    current_dir = os.getcwd() + '/video_alarmes'
-#    current_dir = '/Users/ijferrei/video_alarmes'
-    status = False
-
-    #checar se pasta do mes existe, ou cria-la
-    try:
-        os.makedirs(current_dir + month_dir + today_dir)
-
-    except OSError as ex:
-
-        if ex.errno == 17:
-            print('Diretorio ' + current_dir + month_dir + today_dir + ' existente.')
-            status = True
-        else:
-            print('Erro ao criar o diretorio: ' + current_dir + month_dir + today_dir)
-            print(ex.__str__())
-
-    else:
-        print("Diretorio " + current_dir + month_dir + today_dir + " criado com sucesso")
-        status = True
-
-    dir_temp = current_dir + month_dir + today_dir
-
-    return status, dir_temp
 
 
-status_dir_criado, dir_video_trigger = createDirectory()
+
+status_dir_criado, dir_video_trigger = utils.createDirectory()
 
 
 
@@ -254,20 +219,20 @@ source = 'webcam'
 ipCam = camSource(source)
 
 
+
 cv.namedWindow('frame')
 cv.setMouseCallback('frame', shape_selection)
 
 objDetectado = False
 
-#fourcc = cv.VideoWriter_fourcc(*'X264')
-#for linux x264 need to recompile opencv mannually
-fourcc = cv.VideoWriter_fourcc(*'XVID')
 
 
-hora = getDate()['hour'].replace(':','-')
+
+
+hora = utils.getDate()['hour'].replace(':','-')
 
 #TO-DO: tem que pegar do arquivo de texto
-current_data_dir = getDate()
+current_data_dir = utils.getDate()
 current_data_dir.pop('hour')
 
 
@@ -279,7 +244,8 @@ start_time = 0
 gravando = False
 newVideo = True
 objects = None
-FPS = 30.0 #frames per second
+#FPS = ipCam.get(cv.CAP_PROP_FPS) #30.0 #frames per second
+FPS = 8  #de acordo com o manual da mibo ic5 intelbras
 enviarAlerta = True
 novo_alerta = True
 isSoundAlert = True #todo pegar status de arquivo de configuracao
@@ -288,6 +254,11 @@ isSoundAlert = True #todo pegar status de arquivo de configuracao
 listObjectMailAlerted = []
 
 out_video = None
+
+#fourcc = cv.VideoWriter_fourcc(*'X264')
+#for linux x264 need to recompile opencv mannually
+fourcc = cv.VideoWriter_fourcc(*'XVID')
+#fourcc = cv.VideoWriter_fourcc('M','J','P','G')
 cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
 
 
@@ -305,12 +276,12 @@ while True:
 
         objects = ct.update(listObjectsTracking)
 
-        currentData = getDate()
+        currentData = utils.getDate()
         currentData.pop('hour')
 
         if current_data_dir != currentData:
-            status_dir_criado, dir_video_trigger = createDirectory()
-            current_data_dir = getDate()
+            status_dir_criado, dir_video_trigger = utils.createDirectory()
+            current_data_dir = utils.getDate()
             current_data_dir.pop('hour')
 
 
@@ -405,17 +376,17 @@ while True:
 
 
                             #desenhando o box e label
-#                            cv.rectangle(frame, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
-#                            top = int (box[1])
-#                            y = top - 15 if top - 15 > 15 else top + 15
-#                            cv.putText(frame, str(box[4]), (int(box[0]), int(y)),cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
+                            cv.rectangle(frame, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
+                            top = int (box[1])
+                            y = top - 15 if top - 15 > 15 else top + 15
+                            cv.putText(frame, str(box[4]), (int(box[0]), int(y)),cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
 
 
                             #desenhando o ID no centro do objeto
-#                            text = "ID {}".format(objectID)
-#                            cv.putText(frame, text, (centroid[0] - 10, centroid[1] - 10),
-#                                cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-#                            cv.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+                            text = "ID {}".format(objectID)
+                            cv.putText(frame, text, (centroid[0] - 10, centroid[1] - 10),
+                                cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                            cv.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
                             if listObjectMailAlerted.count(objectID) == 0:
 
@@ -454,13 +425,14 @@ while True:
                                   if out_video is not None:
                                       out_video.release()
 
-                                  hora = getDate()['hour'].replace(':','-')
+                                  hora = utils.getDate()['hour'].replace(':','-')
                                   out_video = cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
-                                  out_video.write(frame)
+                                  out_video.write(frame_no_label)
                                   newVideo = False
+#                                  cv.waitKey(100)
         #
                             else:
-                                out_video.write(frame)
+                                out_video.write(frame_no_label)
 
         #    # update our centroid tracker using the computed set of bounding
         #    # box rectangles
@@ -490,7 +462,7 @@ while True:
         listObjectsTracking.clear()
         objects.update()
 
-        cv.waitKey(50)
+
 
 
         if cv.waitKey(1) & 0xFF == ord('q'):
