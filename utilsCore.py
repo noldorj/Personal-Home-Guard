@@ -1,6 +1,48 @@
 import json
 import os
 import pygame
+import time
+
+def getDate():
+    data = time.asctime().split(" ")
+    #para dias com um digito
+    if data.count("") > 0:
+        data.remove("")
+    data = {'day':data[2], 'month':data[1],'hour':data[3], 'year':data[4]  }
+    return data
+
+def createDirectory():
+
+    date = getDate()
+    month_dir = '/' + date['month'] + '-' + date['year']
+    month_dir
+    today_dir = '/' + date['day']
+    current_dir = os.getcwd() + '/video_alarmes'
+#    current_dir = '/Users/ijferrei/video_alarmes'
+    status = False
+#    current_dir = '/Users/ijferrei/video_alarmes'
+    status = False
+
+    #checar se pasta do mes existe, ou cria-la
+    try:
+        os.makedirs(current_dir + month_dir + today_dir)
+
+    except OSError as ex:
+
+        if ex.errno == 17:
+            print('Diretorio ' + current_dir + month_dir + today_dir + ' existente.')
+            status = True
+        else:
+            print('Erro ao criar o diretorio: ' + current_dir + month_dir + today_dir)
+            print(ex.__str__())
+
+    else:
+        print("Diretorio " + current_dir + month_dir + today_dir + " criado com sucesso")
+        status = True
+
+    dir_temp = current_dir + month_dir + today_dir
+
+    return status, dir_temp
 
 class StatusConfig:
 
