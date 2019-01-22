@@ -62,30 +62,51 @@ class StatusConfig:
             "dirVideos"      : "../videos_alarmes"
     }
 
+    def setConfig(self, isRecording, isEmailAlert, isGateSelected, isSoundAlert,
+                  dnnModel, emailConfig, dirVideos):
+        self.data["isRecording"]              = isRecording
+        self.data["isEmailAlert"]             = isEmailAlert
+        self.data["isGateSelected"]           = isGateSelected
+        self.data["isSoundAlert"]             = isSoundAlert
+        self.data["dnnModel"]                 = dnnModel
+        self.data["dirVideos"]                = dirVideos
+        self.data["emailConfig"]["user"]      = emailConfig["user"]
+        self.data["emailConfig"]["password"]  = emailConfig["password"]
+        self.data["emailConfig"]["subject"]   = emailConfig["subject"]
+        self.data["emailConfig"]["to"]        = emailConfig["to"]
+
+
 #    def __init__(self,isRecording, isEmailAlert, isGateSelected, isSoundAlert,
 #                 dnnModel, emailConfig, dirVideos):
 
-#    def __init__(self):
+    def __init__(self):
+        self.readConfigFile()
+        #print('Lendo arquivo de configuracao:')
+        #self.printConfig()
 
     def readConfigFile(self, file = 'config.json'):
 
-        print('Lendo arquivo de configuração: ' + os.getcwd() + '/' + file)
+        #print('Lendo arquivo de configuração: ' + os.getcwd() + '/' + file)
         data = json.load(open(file,'r'))
+        #self.printConfig()
 
+
+
+    def printConfig(self):
         print('--- Config status  ---')
-        print('isRecording: ' + data.get('isRecording'))
-        print('isEmailAlert: ' + data.get('isEmailAlert'))
-        print('isGateSelected: ' + data.get('isGateSelected'))
-        print('isSoundAlert: ' + data.get('isSoundAlert'))
-        print('dnnModel: ' + data.get('dnnModel'))
-        print('emailConfig / user : ' + data.get('emailConfig').get('user'))
-        print('dirVideos: ' + data.get('dirVideos'))
+        print('isRecording: ' + self.data.get('isRecording'))
+        print('isEmailAlert: ' + self.data.get('isEmailAlert'))
+        print('isGateSelected: ' + self.data.get('isGateSelected'))
+        print('isSoundAlert: ' + self.data.get('isSoundAlert'))
+        print('dnnModel: ' + self.data.get('dnnModel'))
+        print('emailConfig / user : ' + self.data.get('emailConfig').get('user'))
+        print('dirVideos: ' + self.data.get('dirVideos'))
 
 
     def saveConfigFile(self, file = 'config.json'):
 
-        print('Salvando arquivo de configuração: ' + os.getcwd() + '/' + file)
-        json.dump(data, open(file,'w'), indent=4)
+        # print('Salvando arquivo de configuração: ' + os.getcwd() + '/' + file)
+        json.dump(self.data, open(file,'w'), indent=4)
 
 
 def playSound():
@@ -96,6 +117,12 @@ def playSound():
     pygame.mixer.music.load('campainha.mp3')
     pygame.mixer.music.play(0)
 
+status = StatusConfig()
+emailConfig = {"password":"senha2", "user":"alterado2", "subject":"subject2", "to":"igorddf@gmail.com2"}
+
+status.setConfig('alterado2', 'alterado2', 'alterado2', 'alterado2', 'alterado2',emailConfig, 'dir/alterado3')
+
+status.data
 
 # Add the basic infomation about the cam security system like
 # which object or person was detectec, if the email alert is active,
