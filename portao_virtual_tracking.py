@@ -220,8 +220,8 @@ status_dir_criado, dir_video_trigger = utils.createDirectory()
 
 # funcao que grava momento em que a pessoa foi identificada
 
-source = "rtsp://admin:WWYZRL@192.168.0.197/live/mpeg4:554"
-#source = 'webcam'
+#source = "rtsp://admin:WWYZRL@192.168.0.197/live/mpeg4:554"
+source = 'webcam'
 ipCam = camSource(source)
 
 
@@ -266,7 +266,36 @@ cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
 isOpenVino = True
 
 if isOpenVino:
-    pOpenVino.getListBoxDetected(ipCam, device='CPU')
+
+    ret, frame = ipCam.read()
+    ret, next_frame = ipCam.read()
+    nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino('CPU')
+    cur_request_id = 0
+    next_request_id = 1
+    render_time = 0
+
+    while ipCam.isOpened():
+
+        print('out1 cur_request_id {}'.format(cur_request_id))
+        print('out1 next_request_id {}'.format(next_request_id))
+        print('....')
+
+        frame, next_frame, cur_request_id, next_request_id = pOpenVino.getListBoxDetected(ipCam, 'CPU', frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, render_time)
+        cur_request_id, next_request_id = next_request_id, cur_request_id
+        render_start = time.time()
+        cv.imshow("Detection Results", frame)
+        render_end = time.time()
+        render_time = render_end - render_start
+
+        #cur_request_id, next_request_id = next_request_id, cur_request_id
+        frame = next_frame
+        print('out2 cur_request_id {}'.format(cur_request_id))
+        print('out2 next_request_id {}'.format(next_request_id))
+        print('... ... ...') 
+
+        key = cv.waitKey(1)
+        if key == 27:
+            break
 
 else:
 
