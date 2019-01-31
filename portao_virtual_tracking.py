@@ -44,6 +44,12 @@ listObjectsTracking = []
 #linhas e colunas do video (resolucao)
 rows = None
 cols = None
+next_frame = None
+nchw = []
+exec_net = None
+out_blob = None
+input_blob = None
+cur_request_id, next_request_id, render_time = 0, 0, 0
 
 #colors = np.random.uniform(0, 255, size=(len(classes), 3))
 
@@ -159,6 +165,42 @@ def objectDetection(img):
 
     return listRectanglesDetected
 
+def objectDetectionOpenVino(ipCam):
+
+    ret, frame = ipCam.read()
+    ret, next_frame = ipCam.read()
+    nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino('CPU')
+    print('nchw from init: {}, {}, {}, {}'.format(nchw[0], nchw[1], nchw[2], nchw[3]))
+    cur_request_id = 0
+    next_request_id = 1
+    render_time = 0
+
+    while ipCam.isOpened():
+
+
+        frame, next_frame, cur_request_id, next_request_id, box = pOpenVino.getListBoxDetected(ipCam, 'CPU', frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, render_time)
+        cur_request_id, next_request_id = next_request_id, cur_request_id
+
+        render_start = time.time()
+        cv.imshow("Detection Results", frame)
+        render_end = time.time()
+        render_time = render_end - render_start
+
+        #cur_request_id, next_request_id = next_request_id, cur_request_id
+        frame = next_frame
+
+        key = cv.waitKey(1)
+        if key == 27:
+            break
+    
+    boxTracking = (left, top, right, bottom)
+
+    listObjectsTracking.append(boxTracking)
+
+    listRectanglesDetected.append(box)
+
+    return listRectanglesDetected
+
 
 drawing = False     # true if mouse is pressed
 mode = True         # if True, draw rectangle.
@@ -220,8 +262,8 @@ status_dir_criado, dir_video_trigger = utils.createDirectory()
 
 # funcao que grava momento em que a pessoa foi identificada
 
-#source = "rtsp://admin:WWYZRL@192.168.0.197/live/mpeg4:554"
-source = 'webcam'
+source = "rtsp://admin:WWYZRL@192.168.0.197/live/mpeg4:554"
+#source = 'webcam'
 ipCam = camSource(source)
 
 
@@ -248,7 +290,7 @@ newVideo = True
 objects = None
 #FPS = ipCam.get(cv.CAP_PROP_FPS) #30.0 #frames per second
 FPS = 8  #de acordo com o manual da mibo ic5 intelbras
-enviarAlerta = False 
+enviarAlerta = True 
 novo_alerta = True
 isSoundAlert = False #todo pegar status de arquivo de configuracao
 
@@ -263,7 +305,7 @@ fourcc = cv.VideoWriter_fourcc(*'XVID')
 #fourcc = cv.VideoWriter_fourcc('M','J','P','G')
 cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
 
-isOpenVino = True
+isOpenVino = False 
 
 if isOpenVino:
 
@@ -273,25 +315,21 @@ if isOpenVino:
     cur_request_id = 0
     next_request_id = 1
     render_time = 0
+    print('nchw from init: {}, {}, {}, {}'.format(nchw[0], nchw[1], nchw[2], nchw[3]))
 
     while ipCam.isOpened():
 
-        print('out1 cur_request_id {}'.format(cur_request_id))
-        print('out1 next_request_id {}'.format(next_request_id))
-        print('....')
 
-        frame, next_frame, cur_request_id, next_request_id = pOpenVino.getListBoxDetected(ipCam, 'CPU', frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, render_time)
+        frame, next_frame, cur_request_id, next_request_id, listObjects, listObjectsTracking = pOpenVino.getListBoxDetected(ipCam, 'CPU', frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, render_time)
         cur_request_id, next_request_id = next_request_id, cur_request_id
+
         render_start = time.time()
-        cv.imshow("Detection Results", frame)
+        #cv.imshow("Detection Results", frame)
         render_end = time.time()
         render_time = render_end - render_start
 
         #cur_request_id, next_request_id = next_request_id, cur_request_id
         frame = next_frame
-        print('out2 cur_request_id {}'.format(cur_request_id))
-        print('out2 next_request_id {}'.format(next_request_id))
-        print('... ... ...') 
 
         key = cv.waitKey(1)
         if key == 27:
@@ -299,16 +337,25 @@ if isOpenVino:
 
 else:
 
+### ---------------  OpenVino block  ----------------- ###
+    #if isOpenVino:
+
+    ret, frame = ipCam.read()
+    ret, next_frame = ipCam.read()
+    nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino('CPU')
+    cur_request_id = 0
+    next_request_id = 1
+    render_time = 0
+### ---------------  OpenVino block ----------------- ###
+
     while True:
 
         conectado, frame = ipCam.read()
         conectado, frame_no_label = ipCam.read()
         conectado, frame_no_label_email = ipCam.read()
-
-
+        conectado, frame_screen = ipCam.read()
 
         if (conectado and frame is not None):
-
 
 
             objects = ct.update(rects = listObjectsTracking)
@@ -325,7 +372,7 @@ else:
     #        if frame is not None and conectado:
 
             #to select the Region of Interest
-            if cv.waitKey(1) & 0xFF == ord('a'):
+            if cv.waitKey(1) & 0xFF == 61:  #'a'
                 enviarAlerta = not enviarAlerta
                 if (enviarAlerta):
                     print('Alerta por email ativado')
@@ -333,7 +380,7 @@ else:
                     print('Alerta por email desativado')
 
             #to select the Region of Interest
-            if cv.waitKey(1) & 0xFF == ord('s'):
+            if cv.waitKey(1) & 0xFF == 115: # 's'
 
                 if portaoVirtualSelecionado:
                     print('Portao já selecionado')
@@ -342,18 +389,28 @@ else:
 
 
             if portaoVirtualSelecionado:
-               cv.rectangle(frame, ref_point[0], ref_point[1], (0, 255, 0), 2)
+               cv.rectangle(frame_screen, ref_point[0], ref_point[1], (0, 255, 0), 2)
 
             if crop and sel_rect_endpoint:
-                cv.rectangle(frame, ref_point[0], sel_rect_endpoint[0], (0, 255, 0), 2)
+                cv.rectangle(frame_screen, ref_point[0], sel_rect_endpoint[0], (0, 255, 0), 2)
 
 
             #passando o Frame selecionado do portao para deteccao
             if portaoVirtualSelecionado:
-                #listObjects = pOpenVino.getListBoxDetected(frame, device='CPU', listObjectsTracking=listObjectsTracking, listRectanglesDetected=listRectanglesDetected )
-                listObjects = objectDetection(frame)
 
-    #        print('# Objetos: ' + str(len(listObjects)))
+                #listObjects = objectDetection(frame)
+                ### ---------------  OpenVino block ----------------- ###
+                frame, next_frame, cur_request_id, next_request_id, listObjects, listObjectsTracking  = pOpenVino.getListBoxDetected(ipCam, 'CPU', frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id)
+
+                cur_request_id, next_request_id = next_request_id, cur_request_id
+                #render_start = time.time()
+                #cv.imshow("Detection Results", frame)
+                #render_end = time.time()
+                #render_time = render_end - render_start
+                #render_time_message = "OpenCV rendering time: {:.3f} ms".format(render_time * 1000)
+                frame = next_frame
+
+            #print('# Objetos: ' + str(len(listObjects)))
 
             if len(listObjects) == 0 and portaoVirtualSelecionado: 
     #            print('Sem objetos...')
@@ -396,9 +453,13 @@ else:
                 for box in listObjects:
 
                     if portaoVirtualSelecionado:
-    #                    print('Checando portao virtual')
+                        #print('Checando portao virtual')
+
+                        #box = left, top, right, bottom, label, idx, classe
+                        #print('box inside pv: {}'.format(box))
 
                         objectsTracking = ct.update(listObjectsTracking)
+                        #print('objectTracking size: {}'.format(len(objectsTracking)))
 
                         for (objectID, centroid) in objectsTracking.items():
 
@@ -406,33 +467,33 @@ else:
     #                        print('ref_point[0][1]: ', ref_point[0][1], 'ref_point[1][1]: ', ref_point[1][1], 'centroid[0]: ', centroid[1])
 
                             #desenhando o box e label
-                            cv.rectangle(frame, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
+                            cv.rectangle(frame_screen, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
                             top = int (box[1])
                             y = top - 15 if top - 15 > 15 else top + 15
-                            cv.putText(frame, str(box[4]), (int(box[0]), int(y)),cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
+                            cv.putText(frame_screen, str(box[4]), (int(box[0]), int(y)),cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
                             text = "ID {}".format(objectID)
-                            cv.putText(frame, text, (centroid[0] - 10, centroid[1] - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                            cv.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+                            cv.putText(frame_screen, text, (centroid[0] - 10, centroid[1] - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                            cv.circle(frame_screen, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
                             #se o objeto estiver contido no portaoVirtual
                             if centroid[0] >= ref_point[0][0] and centroid[0] <= ref_point[1][0] \
                             and centroid[1] >= ref_point[0][1] and centroid[1] <= ref_point[1][1]:
 
-                                #print("Objeto dentro do portao virtual")
+                                print("Objeto dentro do portao virtual")
     #                            print('Desenhando objetos')
 
                                 #desenhando o box e label
-                                cv.rectangle(frame, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
-                                top = int (box[1])
-                                y = top - 15 if top - 15 > 15 else top + 15
-                                cv.putText(frame, str(box[4]), (int(box[0]), int(y)),cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
+                                #cv.rectangle(frame_screen, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
+                                #top = int (box[1])
+                                #y = top - 15 if top - 15 > 15 else top + 15
+                                #cv.putText(frame_screen, str(box[4]), (int(box[0]), int(y)),cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
 
 
                                 #desenhando o ID no centro do objeto
-                                text = "ID {}".format(objectID)
-                                cv.putText(frame, text, (centroid[0] - 10, centroid[1] - 10),
-                                    cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                                cv.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+                                #text = "ID {}".format(objectID)
+                                #cv.putText(frame_screen, text, (centroid[0] - 10, centroid[1] - 10),
+                                #    cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                                #cv.circle(frame_screen, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
                                 if listObjectMailAlerted.count(objectID) == 0:
 
@@ -480,7 +541,7 @@ else:
                                 else:
                                     out_video.write(frame_no_label)
 
-            cv.imshow('frame', frame)
+            cv.imshow('frame', frame_screen)
 
             listObjects.clear()
             listObjectsTracking.clear()

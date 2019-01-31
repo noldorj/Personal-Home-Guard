@@ -28,6 +28,10 @@ from  openvino.inference_engine import IENetwork, IEPlugin
 log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 labels_map = ["background", "pessoa", "carro", "bicileta"]
 
+#lista de boxes detectados
+listRectanglesDetected = []
+listObjectsTracking = []
+
 
 def initOpenVino(device):
 
@@ -98,11 +102,12 @@ def initOpenVino(device):
     log.info("To stop the demo execution press Esc button")
     is_async_mode = True
     log.info("Init Openvino done")
+    #print('nchw from pOpenVino.init: {}, {}, {}, {}'.format(nchw[0], nchw[1], nchw[2], nchw[3]))
 
     return nchw, exec_net, input_blob, out_blob
 
 
-def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, render_time):
+def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id):
 
  # Read and pre-process input image
     #if args.input == 'cam':
@@ -115,7 +120,9 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
     #        labels_map = [x.strip() for x in f]
     #else:
     #    labels_map = None
-    
+
+    xmin, xmax, ymin, ymax, det_label, class_id, label  = 0, 0, 0, 0, ' ', 0, ' '
+
     n, c, h, w = nchw[0], nchw[1], nchw[2], nchw[3]
 
     cap = ipCam
@@ -151,7 +158,6 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
         #print('size res[0]0] : ' + str(len(res[0][0])))
         #print('size res : ' + str(res.size))
         for obj in res[0][0]:
-            #print('Threshold: {}'.format(obj[2]))
             # Draw only objects when probability more than specified threshold
             if obj[2] > prob_threshold:
                 xmin = int(obj[3] * initial_w)
@@ -159,48 +165,42 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
                 xmax = int(obj[5] * initial_w)
                 ymax = int(obj[6] * initial_h)
                 class_id = int(obj[1])
+                det_label = labels_map[class_id] if labels_map else str(class_id)
+                label = det_label + ' ' + str(round(obj[2] * 100, 1)) + ' %'
+                #print('obj[2] {}'.format(obj[2]))
+                #print('Threshold: {}'.format(obj[2]))
                 #print(' ')
                 #print('class_id : ' + str(class_id))
                 # Draw box and label\class_id
                 #color = (min(class_id * 12.5, 255), min(class_id * 7, 255), min(class_id * 5, 255))
-                color = (0,0,255)
-                cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), color, 2)
-                det_label = labels_map[class_id] if labels_map else str(class_id)
-                cv2.putText(frame, det_label + ' ' + str(round(obj[2] * 100, 1)) + ' %', (xmin, ymin - 7),
-                            cv2.FONT_HERSHEY_COMPLEX, 0.6, color, 1)
+                #color = (0,0,255)
+                #cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), color, 2)
+                #cv2.putText(frame, det_label + ' ' + str(round(obj[2] * 100, 1)) + ' %', (xmin, ymin - 7), cv2.FONT_HERSHEY_COMPLEX, 0.6, color, 1)
+
 
         # Draw performance stats
-        inf_time_message = "Inference time: N\A for async mode" 
-        render_time_message = "OpenCV rendering time: {:.3f} ms".format(render_time * 1000)
-        async_mode_message = "Async mode is on. Processing request {}".format(cur_request_id)
+        #inf_time_message = "Inference time: N\A for async mode" 
+        #render_time_message = "OpenCV rendering time: {:.3f} ms".format(render_time * 1000)
+        #async_mode_message = "Async mode is on. Processing request {}".format(cur_request_id)
 
         #cv2.putText(frame, inf_time_message, (15, 15), cv2.FONT_HERSHEY_COMPLEX, 0.5, (200, 10, 10), 1)
-        cv2.putText(frame, render_time_message, (15, 30), cv2.FONT_HERSHEY_COMPLEX, 0.5, (10, 10, 200), 1)
+        #cv2.putText(frame, render_time_message, (15, 30), cv2.FONT_HERSHEY_COMPLEX, 0.5, (10, 10, 200), 1)
         #cv2.putText(frame, async_mode_message, (10, int(initial_h - 20)), cv2.FONT_HERSHEY_COMPLEX, 0.5, (10, 10, 200), 1)
 
+        #print('label: {}'.format(label))
 
-    return frame, next_frame, cur_request_id, next_request_id
-    #
-    #render_start = time.time()
-    #cv2.imshow("Detection Results", frame)
-#    render_end = time.time()
-#    render_time = render_end - render_start
-#
-#    if is_async_mode:
-#        cur_request_id, next_request_id = next_request_id, cur_request_id
-#        frame = next_frame
-#
-#    key = cv2.waitKey(1)
-#    if key == 27:
-#        break
-#    if (9 == key):
-#        is_async_mode = not is_async_mode
-#        log.info("Switched to {} mode".format("async" if is_async_mode else "sync"))
-#
-    #cv2.destroyAllWindows()
-    #del exec_net
-    #del plugin
+        box = (xmin, ymin, xmax, ymax, label, class_id, det_label)
+        #print('box from plugin: {}'.format(box))
 
 
-#if __name__ == '__main__':
-#    sys.exit(main() or 0)
+        if det_label is 'pessoa' or \
+                    det_label is 'gato' or \
+                    det_label is 'carro' or \
+                    det_label is 'cachorro':
+
+            boxTracking = (xmin, ymin, xmax, ymax)
+            listObjectsTracking.append(boxTracking)
+            listRectanglesDetected.append(box)
+
+
+    return frame, next_frame, cur_request_id, next_request_id, listRectanglesDetected, listObjectsTracking
