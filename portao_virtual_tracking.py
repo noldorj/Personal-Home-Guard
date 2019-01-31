@@ -31,7 +31,21 @@ classes = ["background", "pessoa", "bicileta", "carro", "moto", "airplane", "bus
 
 statusConfig = utils.StatusConfig()
 
+# dnnMOdel for TensorFlow Object Detection API
+pb = statusConfig.data["dnnModelPb"] 
+pbtxt = statusConfig.data["dnnModelPbTxt"] 
 
+#Criando diretorio para salvar videos de alarmes
+status_dir_criado, dir_video_trigger = utils.createDirectory(statusConfig.data["dirVideos"])
+
+#origem do stream do video
+#source = "rtsp://admin:WWYZRL@192.168.0.197/live/mpeg4:554"
+#source = 'webcam'
+source = statusConfig.data["camSource"]
+print('source: {}'.format(source))
+ipCam = utils.camSource(source)
+
+prob_threshold = float(statusConfig.data["prob_threshold"])
 
 #list de objetos identificados pela CNN
 listObjects = []
@@ -53,54 +67,19 @@ cur_request_id, next_request_id, render_time = 0, 0, 0
 
 #colors = np.random.uniform(0, 255, size=(len(classes), 3))
 
-# Read the graph.
-pb = 'dlModels/frozen_inference_graph_v1_coco_2017_11_17.pb'
-pbtxt = 'dlModels/ssd_mobilenet_v1_coco_2017_11_17.pbtxt'
 
-cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
+#cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
 # initialize our centroid tracker and frame dimensions
 ct = CentroidTracker()
 (H, W) = (None, None)
 
 #diretorio dos videos dos alarmes
-dir_video_trigger = './'
-
+#dir_video_trigger = './'
 
 
 listObjectDetected = list()
 
 idObjeto = 0
-
-class objectDetected():
-
-    linkFoto = "link para foto"
-    linkVideo = "link para video"
-    tipo = 'tipo'
-    hora = 'hora'
-    mes = 'mes'
-    ano = 'ano'
-
-    def __init__(self, idObjeto, tipo, hora, dia, mes, ano):
-
-        #atributos
-        self.idObjeto = idObjeto
-        self.tipo = tipo   #pessoa, cachorro, carro, etc.
-        self.hora = hora
-        self.dia = dia
-        self.mes = mes
-        self.ano = ano
-
-    def getTipo():
-        return self.tipo
-
-
-def camSource(source = 'webcam'):
-    if source == 'webcam':
-        print('imagem da WebCam')
-        return cv.VideoCapture(0)
-    else:
-        print('imagem de camera rstp')
-        return cv.VideoCapture(source)
 
 
 def objectDetection(img):
@@ -165,48 +144,12 @@ def objectDetection(img):
 
     return listRectanglesDetected
 
-def objectDetectionOpenVino(ipCam):
-
-    ret, frame = ipCam.read()
-    ret, next_frame = ipCam.read()
-    nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino('CPU')
-    print('nchw from init: {}, {}, {}, {}'.format(nchw[0], nchw[1], nchw[2], nchw[3]))
-    cur_request_id = 0
-    next_request_id = 1
-    render_time = 0
-
-    while ipCam.isOpened():
-
-
-        frame, next_frame, cur_request_id, next_request_id, box = pOpenVino.getListBoxDetected(ipCam, 'CPU', frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, render_time)
-        cur_request_id, next_request_id = next_request_id, cur_request_id
-
-        render_start = time.time()
-        cv.imshow("Detection Results", frame)
-        render_end = time.time()
-        render_time = render_end - render_start
-
-        #cur_request_id, next_request_id = next_request_id, cur_request_id
-        frame = next_frame
-
-        key = cv.waitKey(1)
-        if key == 27:
-            break
-    
-    boxTracking = (left, top, right, bottom)
-
-    listObjectsTracking.append(boxTracking)
-
-    listRectanglesDetected.append(box)
-
-    return listRectanglesDetected
 
 
 drawing = False     # true if mouse is pressed
 mode = True         # if True, draw rectangle.
 ix, iy = -1, -1
 
-# now let's initialize the list of reference point
 ref_point = []
 crop = False
 portaoVirtualSelecionado = False
@@ -245,28 +188,6 @@ def shape_selection(event, x, y, flags, param):
         # the cropping operation is finished
         sel_rect_endpoint = [(x, y)]
 
-        # draw a rectangle around the region of interest
-#        cv.rectangle(frame, ref_point[0], sel_rect_endpoint[0], (100, 255, 0), 2)
-#        print('W: ', ref_point[1][0])
-#        print('H: ', ref_point[1][1])
-#        cv.imshow("frame", frame)
-#        portaoVirtualSelecionado = True
-
-
-
-
-
-status_dir_criado, dir_video_trigger = utils.createDirectory()
-
-
-
-# funcao que grava momento em que a pessoa foi identificada
-
-source = "rtsp://admin:WWYZRL@192.168.0.197/live/mpeg4:554"
-#source = 'webcam'
-ipCam = camSource(source)
-
-
 cv.namedWindow('frame')
 cv.setMouseCallback('frame', shape_selection)
 
@@ -282,6 +203,7 @@ current_data_dir.pop('hour')
 
 #
 
+#todo pegar status de arquivo de configuracao
 statusConfig = utils.StatusConfig()
 timer_without_object = 0
 start_time = 0
@@ -290,9 +212,9 @@ newVideo = True
 objects = None
 #FPS = ipCam.get(cv.CAP_PROP_FPS) #30.0 #frames per second
 FPS = 8  #de acordo com o manual da mibo ic5 intelbras
-enviarAlerta = True 
+enviarAlerta = False 
 novo_alerta = True
-isSoundAlert = False #todo pegar status de arquivo de configuracao
+isSoundAlert = False 
 
 #primeiro objeto é enviado
 listObjectMailAlerted = []
@@ -305,262 +227,227 @@ fourcc = cv.VideoWriter_fourcc(*'XVID')
 #fourcc = cv.VideoWriter_fourcc('M','J','P','G')
 cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
 
-isOpenVino = False 
+isOpenVino = statusConfig.data["isOpenVino"] 
+device = statusConfig.data["openVinoDevice"]
 
+
+### ---------------  OpenVino Init ----------------- ###
 if isOpenVino:
 
     ret, frame = ipCam.read()
     ret, next_frame = ipCam.read()
-    nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino('CPU')
+    nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device)
     cur_request_id = 0
     next_request_id = 1
     render_time = 0
-    print('nchw from init: {}, {}, {}, {}'.format(nchw[0], nchw[1], nchw[2], nchw[3]))
-
-    while ipCam.isOpened():
-
-
-        frame, next_frame, cur_request_id, next_request_id, listObjects, listObjectsTracking = pOpenVino.getListBoxDetected(ipCam, 'CPU', frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, render_time)
-        cur_request_id, next_request_id = next_request_id, cur_request_id
-
-        render_start = time.time()
-        #cv.imshow("Detection Results", frame)
-        render_end = time.time()
-        render_time = render_end - render_start
-
-        #cur_request_id, next_request_id = next_request_id, cur_request_id
-        frame = next_frame
-
-        key = cv.waitKey(1)
-        if key == 27:
-            break
-
+### ---------------  OpenVino Init ----------------- ###
 else:
+    cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
 
-### ---------------  OpenVino block  ----------------- ###
-    #if isOpenVino:
+while True:
 
-    ret, frame = ipCam.read()
-    ret, next_frame = ipCam.read()
-    nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino('CPU')
-    cur_request_id = 0
-    next_request_id = 1
-    render_time = 0
-### ---------------  OpenVino block ----------------- ###
+    conectado, frame = ipCam.read()
+    conectado, frame_no_label = ipCam.read()
+    conectado, frame_no_label_email = ipCam.read()
+    conectado, frame_screen = ipCam.read()
 
-    while True:
-
-        conectado, frame = ipCam.read()
-        conectado, frame_no_label = ipCam.read()
-        conectado, frame_no_label_email = ipCam.read()
-        conectado, frame_screen = ipCam.read()
-
-        if (conectado and frame is not None):
+    if (conectado and frame is not None):
 
 
-            objects = ct.update(rects = listObjectsTracking)
+        objects = ct.update(rects = listObjectsTracking)
 
-            currentData = utils.getDate()
-            currentData.pop('hour')
+        currentData = utils.getDate()
+        currentData.pop('hour')
 
-            if current_data_dir != currentData:
-                status_dir_criado, dir_video_trigger = utils.createDirectory()
-                current_data_dir = utils.getDate()
-                current_data_dir.pop('hour')
+        if current_data_dir != currentData:
+            status_dir_criado, dir_video_trigger = utils.createDirectory()
+            current_data_dir = utils.getDate()
+            current_data_dir.pop('hour')
 
+#        if frame is not None and conectado:
 
-    #        if frame is not None and conectado:
+        if portaoVirtualSelecionado:
+           cv.rectangle(frame_screen, ref_point[0], ref_point[1], (0, 255, 0), 2)
 
-            #to select the Region of Interest
-            if cv.waitKey(1) & 0xFF == 61:  #'a'
-                enviarAlerta = not enviarAlerta
-                if (enviarAlerta):
-                    print('Alerta por email ativado')
-                else:
-                    print('Alerta por email desativado')
-
-            #to select the Region of Interest
-            if cv.waitKey(1) & 0xFF == 115: # 's'
-
-                if portaoVirtualSelecionado:
-                    print('Portao já selecionado')
-                    print('Selecione novo portao')
-                    portaoVirtualSelecionado = False
+        if crop and sel_rect_endpoint:
+            cv.rectangle(frame_screen, ref_point[0], sel_rect_endpoint[0], (0, 255, 0), 2)
 
 
-            if portaoVirtualSelecionado:
-               cv.rectangle(frame_screen, ref_point[0], ref_point[1], (0, 255, 0), 2)
+        #passando o Frame selecionado do portao para deteccao somente se o portao virtual estiver selecionado
+        if portaoVirtualSelecionado:
 
-            if crop and sel_rect_endpoint:
-                cv.rectangle(frame_screen, ref_point[0], sel_rect_endpoint[0], (0, 255, 0), 2)
-
-
-            #passando o Frame selecionado do portao para deteccao
-            if portaoVirtualSelecionado:
-
-                #listObjects = objectDetection(frame)
-                ### ---------------  OpenVino block ----------------- ###
-                frame, next_frame, cur_request_id, next_request_id, listObjects, listObjectsTracking  = pOpenVino.getListBoxDetected(ipCam, 'CPU', frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id)
+            if isOpenVino:
+            ### ---------------  OpenVino Get Objects ----------------- ###
+                frame, next_frame, cur_request_id, next_request_id, listObjects, listObjectsTracking  = pOpenVino.getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, prob_threshold)
 
                 cur_request_id, next_request_id = next_request_id, cur_request_id
-                #render_start = time.time()
-                #cv.imshow("Detection Results", frame)
-                #render_end = time.time()
-                #render_time = render_end - render_start
-                #render_time_message = "OpenCV rendering time: {:.3f} ms".format(render_time * 1000)
                 frame = next_frame
-
-            #print('# Objetos: ' + str(len(listObjects)))
-
-            if len(listObjects) == 0 and portaoVirtualSelecionado: 
-    #            print('Sem objetos...')
-                #start_time = time.time()
-    #            print('start_time ' + str(start_time))
-    #            print('timer_without_object: ' + str(timer_without_object))
-                gravando = False
-                newVideo = True
-                novo_alerta = False
-
-                listObjects.clear()
-                listObjectsTracking.clear()
-                objects = ct.update(listObjectsTracking)
-
-
-                if out_video is not None:
-    #                print('Video release')
-                    out_video.release()
-
-    #            if (timer_without_object - start_time) >= 5:
-    #                print('Gravando false')
-    #                gravando = False
-    #                start_time = 0
-    #                timer_without_object = 0
-    #                newVideo = True
-
-    #            else:
-    #                print('Gravando enquanto objeto some')
-    ##                out_video = cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, 20.0, (1280,720))
-    #                out_video.write(frame)
-    #                gravando = True
-
-            #se tem objetos detectados pela CNN
             else:
+                #chamada para a CNN do OpenCV - TensorFlow Object Detection API 
+                listObjects = objectDetection(frame)
 
-                #enquanto tiver objetos, grava
-                gravando = True
-                novo_alerta = True
+        #print('# Objetos: ' + str(len(listObjects)))
 
-                for box in listObjects:
-
-                    if portaoVirtualSelecionado:
-                        #print('Checando portao virtual')
-
-                        #box = left, top, right, bottom, label, idx, classe
-                        #print('box inside pv: {}'.format(box))
-
-                        objectsTracking = ct.update(listObjectsTracking)
-                        #print('objectTracking size: {}'.format(len(objectsTracking)))
-
-                        for (objectID, centroid) in objectsTracking.items():
-
-    #                        print('ref_point[0][0]: ', ref_point[0][0], 'ref_point[1][0]: ', ref_point[1][0], 'centroid[0]: ', centroid[0])
-    #                        print('ref_point[0][1]: ', ref_point[0][1], 'ref_point[1][1]: ', ref_point[1][1], 'centroid[0]: ', centroid[1])
-
-                            #desenhando o box e label
-                            cv.rectangle(frame_screen, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
-                            top = int (box[1])
-                            y = top - 15 if top - 15 > 15 else top + 15
-                            cv.putText(frame_screen, str(box[4]), (int(box[0]), int(y)),cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
-                            text = "ID {}".format(objectID)
-                            cv.putText(frame_screen, text, (centroid[0] - 10, centroid[1] - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                            cv.circle(frame_screen, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
-
-                            #se o objeto estiver contido no portaoVirtual
-                            if centroid[0] >= ref_point[0][0] and centroid[0] <= ref_point[1][0] \
-                            and centroid[1] >= ref_point[0][1] and centroid[1] <= ref_point[1][1]:
-
-                                print("Objeto dentro do portao virtual")
-    #                            print('Desenhando objetos')
-
-                                #desenhando o box e label
-                                #cv.rectangle(frame_screen, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
-                                #top = int (box[1])
-                                #y = top - 15 if top - 15 > 15 else top + 15
-                                #cv.putText(frame_screen, str(box[4]), (int(box[0]), int(y)),cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
-
-
-                                #desenhando o ID no centro do objeto
-                                #text = "ID {}".format(objectID)
-                                #cv.putText(frame_screen, text, (centroid[0] - 10, centroid[1] - 10),
-                                #    cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                                #cv.circle(frame_screen, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
-
-                                if listObjectMailAlerted.count(objectID) == 0:
-
-                                    if isSoundAlert:
-                                        utils.playSound()
-
-                                    if enviarAlerta:
-
-                                        print('Enviando alerta por email')
-
-                                        #salvando foto para treinamento
-                                        #crop no box
-        #                               left, top, right, bottom
-                                        frame_no_label = frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
-        #                               cv.imshow("cropped", frame_no_label)
-        #                               cv.waitKey(0)
-                                        saveImageBox(frame_no_label, str(box[6]))
-        #                               crop_img = img[y:y+h, x:x+w]
-
-#                           cv.imwrite(dir_video_trigger + '/foto_alerta.jpg',frame)'
-
-                                        if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame_no_label_email, str(box[6]))):
-
-                                            print('Alerta enviado ID[' + str(objectID) + ']')
-                                            print('...')
-
-                                             #para evitar o envio de varios emails do mesmo reconhecimento
-                                             #novo_alerta = False
-
-                                        listObjectMailAlerted.append(objectID)
-
-                                if gravando and newVideo:
-                                      #grava video novo se tiver um objeto novo na cena
-            #                                      if newVideo:
-                                          #print('Gravando novo video')
-                                      if out_video is not None:
-                                          out_video.release()
-
-                                      hora = utils.getDate()['hour'].replace(':','-')
-                                      out_video = cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
-                                      out_video.write(frame_no_label)
-                                      newVideo = False
-    #                                  cv.waitKey(100)
-            #
-                                else:
-                                    out_video.write(frame_no_label)
-
-            cv.imshow('frame', frame_screen)
+        if len(listObjects) == 0 and portaoVirtualSelecionado: 
+            #print('Sem objetos...')
+            #start_time = time.time()
+           #print('start_time ' + str(start_time))
+           #print('timer_without_object: ' + str(timer_without_object))
+            gravando = False
+            newVideo = True
+            novo_alerta = False
 
             listObjects.clear()
             listObjectsTracking.clear()
-            objects.update()
+            objects = ct.update(listObjectsTracking)
 
-            if cv.waitKey(1) & 0xFF == ord('q'):
-                break
 
+            if out_video is not None:
+                #print('Video release')
+                out_video.release()
+
+           # if (timer_without_object - start_time) >= 5:
+           #     print('Gravando false')
+           #     gravando = False
+           #     start_time = 0
+           #     timer_without_object = 0
+           #     newVideo = True
+
+           # else:
+           #     print('Gravando enquanto objeto some')
+           #     out_video = cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, 20.0, (1280,720))
+           #     out_video.write(frame)
+           #     gravando = True
+
+        #se tem objetos detectados pela CNN
         else:
-    #        print('frame lost - while')
-            if not conectado:
-    #            print('Reconecting ...')
-                ipCam = camSource(source)
 
-    if out_video is not None:
-        out_video.release()
+            #enquanto tiver objetos, grava
+            gravando = True
+            novo_alerta = True
 
-    ipCam.release()
-    cv.destroyAllWindows()
+            for box in listObjects:
+
+                if portaoVirtualSelecionado:
+                    #print('Checando portao virtual')
+
+                    #box = left, top, right, bottom, label, idx, classe
+                    #print('box inside pv: {}'.format(box))
+
+                    objectsTracking = ct.update(listObjectsTracking)
+                    #print('objectTracking size: {}'.format(len(objectsTracking)))
+
+                    for (objectID, centroid) in objectsTracking.items():
+
+                       #print('ref_point[0][0]: ', ref_point[0][0], 'ref_point[1][0]: ', ref_point[1][0], 'centroid[0]: ', centroid[0])
+                       # print('ref_point[0][1]: ', ref_point[0][1], 'ref_point[1][1]: ', ref_point[1][1], 'centroid[0]: ', centroid[1])
+
+                        #desenhando o box e label
+                        cv.rectangle(frame_screen, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
+                        top = int (box[1])
+                        y = top - 15 if top - 15 > 15 else top + 15
+                        cv.putText(frame_screen, str(box[4]), (int(box[0]), int(y)),cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
+                        text = "ID {}".format(objectID)
+                        cv.putText(frame_screen, text, (centroid[0] - 10, centroid[1] - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                        cv.circle(frame_screen, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+
+                        #se o objeto estiver contido no portaoVirtual
+                        if centroid[0] >= ref_point[0][0] and centroid[0] <= ref_point[1][0] \
+                        and centroid[1] >= ref_point[0][1] and centroid[1] <= ref_point[1][1]:
+
+                            #print("Objeto dentro do portao virtual")
+                           # print('Desenhando objetos')
+
+                            #desenhando o box e label
+                            #cv.rectangle(frame_screen, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
+                            #top = int (box[1])
+                            #y = top - 15 if top - 15 > 15 else top + 15
+                            #cv.putText(frame_screen, str(box[4]), (int(box[0]), int(y)),cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
+
+
+                            #desenhando o ID no centro do objeto
+                            #text = "ID {}".format(objectID)
+                            #cv.putText(frame_screen, text, (centroid[0] - 10, centroid[1] - 10),
+                            #    cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                            #cv.circle(frame_screen, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+
+                            if listObjectMailAlerted.count(objectID) == 0:
+
+                                if isSoundAlert:
+                                    utils.playSound()
+
+                                if enviarAlerta:
+
+                                    print('Enviando alerta por email')
+
+                                    #salvando foto para treinamento
+                                    #crop no box
+                                   #left, top, right, bottom
+                                    frame_no_label = frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
+                                    saveImageBox(frame_no_label, str(box[6]))
+
+                       #cv.imwrite(dir_video_trigger + '/foto_alerta.jpg',frame)'
+
+                                    if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame_no_label_email, str(box[6]))):
+
+                                        print('Alerta enviado ID[' + str(objectID) + ']')
+                                        print('...')
+
+                                         #para evitar o envio de varios emails do mesmo reconhecimento
+                                         #novo_alerta = False
+
+                                    listObjectMailAlerted.append(objectID)
+
+                            if gravando and newVideo:
+                                  #grava video novo se tiver um objeto novo na cena
+                                  if out_video is not None:
+                                      out_video.release()
+
+                                  hora = utils.getDate()['hour'].replace(':','-')
+                                  out_video = cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
+                                  out_video.write(frame_no_label)
+                                  newVideo = False
+#                                  cv.waitKey(100)
+
+                            else:
+                                out_video.write(frame_no_label)
+
+        cv.imshow('frame', frame_screen)
+
+        listObjects.clear()
+        listObjectsTracking.clear()
+        objects.update()
+
+        if cv.waitKey(1) & 0xFF == ord('q'):
+            break
+
+        #to select the Region of Interest
+        if cv.waitKey(1) & 0xFF == ord('a'):
+            enviarAlerta = not enviarAlerta
+            if (enviarAlerta):
+                print('Alerta por email ativado')
+            else:
+                print('Alerta por email desativado')
+
+        #to select the Region of Interest
+        if cv.waitKey(1) & 0xFF == ord('s'):
+
+            #if portaoVirtualSelecionado:
+            portaoVirtualSelecionado = False
+                #print('Portao já selecionado')
+                #print('Selecione novo portao')
+
+    else:
+#        print('frame lost - while')
+        if not conectado:
+#            print('Reconecting ...')
+            ipCam = camSource(source)
+
+if out_video is not None:
+    out_video.release()
+
+ipCam.release()
+cv.destroyAllWindows()
 
 
 

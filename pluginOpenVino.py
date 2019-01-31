@@ -26,6 +26,7 @@ from  openvino.inference_engine import IENetwork, IEPlugin
 
 #def main():
 log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+#labels_map = ["background", "pessoa", "carro", "bicileta"]
 labels_map = ["background", "pessoa", "carro", "bicileta"]
 
 #lista de boxes detectados
@@ -46,24 +47,24 @@ def initOpenVino(device):
         #model_bin = os.getcwd() + '/dlModels/openvino/pedestrian-and-vehicle-detector-adas-0001/FP16/pedestrian-and-vehicle-detector-adas-0001.bin'
 
         model_xml = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP16/pedestrian-detection-adas-0002.xml'
-
         model_bin = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP16/pedestrian-detection-adas-0002.bin'
 
     else:
         log.info('loading CPU plugins...')
         #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP32/pedestrian-detection-adas-0002.xml'
-
         #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP32/pedestrian-detection-adas-0002.bin'
 
-        model_bin = 'computer_vision_sdk/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP32/person-vehicle-bike-detection-crossroad-0078.bin'
+        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-and-vehicle-detector-adas-0001/FP32/pedestrian-and-vehicle-detector-adas-0001.bin'
+        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-and-vehicle-detector-adas-0001/FP32/pedestrian-and-vehicle-detector-adas-0001.xml'
 
-        model_xml = 'computer_vision_sdk/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP32/person-vehicle-bike-detection-crossroad-0078.xml'
+        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0002/FP32/person-detection-retail-0002.bin'
+        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0002/FP32/person-detection-retail-0002.xml'
 
+        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP32/person-vehicle-bike-detection-crossroad-0078.bin'
+        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP32/person-vehicle-bike-detection-crossroad-0078.xml'
 
-    #model_bin = os.path.splitext(model_xml)[0] + ".bin"
-
-    #labels = 'voc_labels.txt' #TODO parametro para labels
-    #labels_map = ["background", "pessoa", "carro", "bicileta"]
+        model_bin = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0013/FP32/person-detection-retail-0013.bin'
+        model_xml = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0013/FP32/person-detection-retail-0013.xml'
 
 
     # Plugin initialization for specified device and load extensions library if specified
@@ -76,7 +77,7 @@ def initOpenVino(device):
 
     # Read IR
     log.info("Reading IR...")
-    net = IENetwork.from_ir(model=model_xml, weights=model_bin)
+    net = IENetwork(model=model_xml, weights=model_bin)
 
     if plugin.device == "CPU":
         supported_layers = plugin.get_supported_layers(net)
@@ -95,6 +96,7 @@ def initOpenVino(device):
     exec_net = plugin.load(network=net, num_requests=2)
     n, c, h, w = net.inputs[input_blob].shape
     nchw = [n,c,h,w]
+    #print('nchw: {}'.format(nchw))
     del net
 
     log.info("Starting inference in async mode...")
@@ -107,7 +109,7 @@ def initOpenVino(device):
     return nchw, exec_net, input_blob, out_blob
 
 
-def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id):
+def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, prob_threshold):
 
  # Read and pre-process input image
     #if args.input == 'cam':
@@ -153,7 +155,7 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
 
         # Parse detection results of the current request
         res = exec_net.requests[cur_request_id].outputs[out_blob]
-        prob_threshold = 0.35
+        #prob_threshold = 0.80
         #print('shape of res : ' + str(res.shape))
         #print('size res[0]0] : ' + str(len(res[0][0])))
         #print('size res : ' + str(res.size))
