@@ -105,9 +105,9 @@ class StatusConfig:
 #    def __init__(self,isRecording, isEmailAlert, isGateSelected, isSoundAlert,
 #                 dnnModel, emailConfig, dirVideos):
 
-    def __init__(self):
+    def __init__(self, configFile):
         #configuracoes setadas pelo arquivo sobrescrevem as configuracoes padroes
-        self.readConfigFile()
+        self.readConfigFile(configFile)
 
     def readConfigFile(self, file = 'config.json'):
 
