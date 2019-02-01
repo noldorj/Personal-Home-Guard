@@ -143,6 +143,10 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
     #while cap.isOpened():
 
     ret, next_frame = cap.read()
+    while(ret is False):
+        log.error('Error capturing next_frame - capturing again...')
+        ret, next_frame = cap.read()
+
     #if not ret:
     #    break
 
@@ -152,23 +156,16 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
     # Main sync point:
     # in the truly Async mode we start the NEXT infer request, while waiting for the CURRENT to complete
     # in the regular mode we start the CURRENT request and immediately wait for it's completion
-    inf_start = time.time()
-    try:
-        in_frame = cv2.resize(next_frame, (w, h))
-    except cv2.error as e:
-        log.error("Error when resizing in_frame - passing original image size:")
-        log.error("next_frame size: {}".format(len(next_frame)))
-        log.error("in_frame size: {}".format(len(in_frame)))
-        log.error(e.__str__())
-        in_frame = next_frame
+    #inf_start = time.time()
 
+    in_frame = cv2.resize(next_frame, (w, h))
     in_frame = in_frame.transpose((2, 0, 1))  # Change data layout from HWC to CHW
     in_frame = in_frame.reshape((n, c, h, w))
     exec_net.start_async(request_id=next_request_id, inputs={input_blob: in_frame})
 
     if exec_net.requests[cur_request_id].wait(-1) == 0:
-        inf_end = time.time()
-        det_time = inf_end - inf_start
+        #inf_end = time.time()
+        #det_time = inf_end - inf_start
 
         # Parse detection results of the current request
         res = exec_net.requests[cur_request_id].outputs[out_blob]
