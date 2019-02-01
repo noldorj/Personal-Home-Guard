@@ -29,7 +29,7 @@ classes = ["background", "pessoa", "bicileta", "carro", "moto", "airplane", "bus
 
 #tie, suitecase (= carro)
 
-statusConfig = utils.StatusConfig()
+statusConfig = utils.StatusConfig('config.json.gpu')
 
 # dnnMOdel for TensorFlow Object Detection API
 pb = statusConfig.data["dnnModelPb"] 
@@ -204,7 +204,7 @@ current_data_dir.pop('hour')
 #
 
 #todo pegar status de arquivo de configuracao
-statusConfig = utils.StatusConfig()
+#statusConfig = utils.StatusConfig()
 
 timer_without_object = 0
 start_time = 0
