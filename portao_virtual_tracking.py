@@ -205,16 +205,17 @@ current_data_dir.pop('hour')
 
 #todo pegar status de arquivo de configuracao
 statusConfig = utils.StatusConfig()
+
 timer_without_object = 0
 start_time = 0
-gravando = False
+gravando = statusConfig.data["isRecording"] == 'True'
 newVideo = True
 objects = None
 #FPS = ipCam.get(cv.CAP_PROP_FPS) #30.0 #frames per second
 FPS = 8  #de acordo com o manual da mibo ic5 intelbras
-enviarAlerta = False 
+enviarAlerta = statusConfig.data["isEmailAlert"] == 'True'
 novo_alerta = True
-isSoundAlert = False 
+isSoundAlert = statusConfig.data["isSoundAlert"] == 'True'
 
 #primeiro objeto é enviado
 listObjectMailAlerted = []
@@ -227,7 +228,8 @@ fourcc = cv.VideoWriter_fourcc(*'XVID')
 #fourcc = cv.VideoWriter_fourcc('M','J','P','G')
 cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
 
-isOpenVino = statusConfig.data["isOpenVino"] 
+isOpenVino = statusConfig.data["isOpenVino"] == 'True'
+print('isOpenVino: {}'.format(isOpenVino))
 device = statusConfig.data["openVinoDevice"]
 
 
@@ -236,7 +238,7 @@ if isOpenVino:
 
     ret, frame = ipCam.read()
     ret, next_frame = ipCam.read()
-    nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device)
+    nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, statusConfig.data["openVinoModelXml"], statusConfig.data["openVinoModelBin"])
     cur_request_id = 0
     next_request_id = 1
     render_time = 0
@@ -441,7 +443,7 @@ while True:
 #        print('frame lost - while')
         if not conectado:
 #            print('Reconecting ...')
-            ipCam = camSource(source)
+            ipCam = utils.camSource(source)
 
 if out_video is not None:
     out_video.release()
