@@ -27,14 +27,14 @@ from  openvino.inference_engine import IENetwork, IEPlugin
 #def main():
 log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 #labels_map = ["background", "pessoa", "carro", "bicileta"]
-labels_map = ["background", "pessoa", "carro", "bicileta"]
+labels_map = ["background", "carro", "pessoa", "bicileta"]
 
 #lista de boxes detectados
 listRectanglesDetected = []
 listObjectsTracking = []
 
 
-def initOpenVino(device):
+def initOpenVino(device, model_xml, model_bin):
 
     cpu_extension = 'computer_vision_sdk/deployment_tools/inference_engine/lib/ubuntu_16.04/intel64/libcpu_extension_avx2.so'
 
@@ -46,8 +46,8 @@ def initOpenVino(device):
         #model_xml = os.getcwd() + '/dlModels/openvino/pedestrian-and-vehicle-detector-adas-0001/FP16/pedestrian-and-vehicle-detector-adas-0001.xml'
         #model_bin = os.getcwd() + '/dlModels/openvino/pedestrian-and-vehicle-detector-adas-0001/FP16/pedestrian-and-vehicle-detector-adas-0001.bin'
 
-        model_xml = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP16/pedestrian-detection-adas-0002.xml'
-        model_bin = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP16/pedestrian-detection-adas-0002.bin'
+        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP16/pedestrian-detection-adas-0002.xml'
+        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP16/pedestrian-detection-adas-0002.bin'
 
     else:
         log.info('loading CPU plugins...')
@@ -63,8 +63,8 @@ def initOpenVino(device):
         #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP32/person-vehicle-bike-detection-crossroad-0078.bin'
         #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP32/person-vehicle-bike-detection-crossroad-0078.xml'
 
-        model_bin = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0013/FP32/person-detection-retail-0013.bin'
-        model_xml = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0013/FP32/person-detection-retail-0013.xml'
+        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0013/FP32/person-detection-retail-0013.bin'
+        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0013/FP32/person-detection-retail-0013.xml'
 
 
     # Plugin initialization for specified device and load extensions library if specified
@@ -144,7 +144,12 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
     # in the truly Async mode we start the NEXT infer request, while waiting for the CURRENT to complete
     # in the regular mode we start the CURRENT request and immediately wait for it's completion
     inf_start = time.time()
-    in_frame = cv2.resize(next_frame, (w, h))
+    try:
+        in_frame = cv2.resize(next_frame, (w, h))
+    except cv2.error as e:
+        log.error("Error when resizing in_frame - passing original image size:")
+        log.error(e.__str__())
+
     in_frame = in_frame.transpose((2, 0, 1))  # Change data layout from HWC to CHW
     in_frame = in_frame.reshape((n, c, h, w))
     exec_net.start_async(request_id=next_request_id, inputs={input_blob: in_frame})
