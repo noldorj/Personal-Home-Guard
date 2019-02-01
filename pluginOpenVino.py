@@ -43,14 +43,18 @@ def initOpenVino(device, model_xml, model_bin):
 
     if device == 'MYRIAD':
         log.info('loading MYRIAD plugins...')
+        log.info('Model XML: {}'.format(model_xml))
+        log.info('Model Bin: {}'.format(model_bin))
         #model_xml = os.getcwd() + '/dlModels/openvino/pedestrian-and-vehicle-detector-adas-0001/FP16/pedestrian-and-vehicle-detector-adas-0001.xml'
         #model_bin = os.getcwd() + '/dlModels/openvino/pedestrian-and-vehicle-detector-adas-0001/FP16/pedestrian-and-vehicle-detector-adas-0001.bin'
 
         #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP16/pedestrian-detection-adas-0002.xml'
         #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP16/pedestrian-detection-adas-0002.bin'
 
-    else:
+    elif device == 'CPU':
         log.info('loading CPU plugins...')
+        log.info('Model XML: {}'.format(model_xml))
+        log.info('Model Bin: {}'.format(model_bin))
         #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP32/pedestrian-detection-adas-0002.xml'
         #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP32/pedestrian-detection-adas-0002.bin'
 
@@ -65,6 +69,11 @@ def initOpenVino(device, model_xml, model_bin):
 
         #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0013/FP32/person-detection-retail-0013.bin'
         #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0013/FP32/person-detection-retail-0013.xml'
+
+    elif device == 'GPU':
+        log.info('loading GPU plugins...')
+        log.info('Model XML: {}'.format(model_xml))
+        log.info('Model Bin: {}'.format(model_bin))
 
 
     # Plugin initialization for specified device and load extensions library if specified
