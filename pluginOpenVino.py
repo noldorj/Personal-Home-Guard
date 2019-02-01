@@ -157,7 +157,10 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
         in_frame = cv2.resize(next_frame, (w, h))
     except cv2.error as e:
         log.error("Error when resizing in_frame - passing original image size:")
+        log.error("next_frame size: {}".format(len(next_frame)))
+        log.error("in_frame size: {}".format(len(in_frame)))
         log.error(e.__str__())
+        in_frame = next_frame
 
     in_frame = in_frame.transpose((2, 0, 1))  # Change data layout from HWC to CHW
     in_frame = in_frame.reshape((n, c, h, w))
