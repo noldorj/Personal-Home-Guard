@@ -29,7 +29,7 @@ classes = ["background", "pessoa", "bicileta", "carro", "moto", "airplane", "bus
 
 #tie, suitecase (= carro)
 
-statusConfig = utils.StatusConfig('config.json.gpu')
+statusConfig = utils.StatusConfig('config.json.gpu.webcam')
 
 # dnnMOdel for TensorFlow Object Detection API
 pb = statusConfig.data["dnnModelPb"] 
@@ -39,7 +39,7 @@ pbtxt = statusConfig.data["dnnModelPbTxt"]
 status_dir_criado, dir_video_trigger = utils.createDirectory(statusConfig.data["dirVideos"])
 
 #origem do stream do video
-#source = "rtsp://admin:WWYZRL@192.168.0.197/live/mpeg4:554"
+#source = "rtsp://admin:WWYZRL@192.168.5.101/live/mpeg4:554"
 #source = 'webcam'
 source = statusConfig.data["camSource"]
 print('source: {}'.format(source))
@@ -181,16 +181,16 @@ def polygonSelection(event, x, y, flags, param):
     if event == cv.EVENT_LBUTTONDOWN and not portaoVirtualSelecionado and flags == cv.EVENT_FLAG_CTRLKEY+1:
 
         ref_point_polygon.append((x, y))
-        print(' ')
-        print('cv.EVENT_FLAG_CTRLKEY on')
-        print('size of ref_point_polygon: {}'.format(len(ref_point_polygon)))
+        #print(' ')
+        #print('cv.EVENT_FLAG_CTRLKEY on')
+        #print('size of ref_point_polygon: {}'.format(len(ref_point_polygon)))
         cropPolygon = True
 
     #elif not portaoVirtualSelecionado and event == cv.EVENT_LBUTTONUP and flags == cv.EVENT_FLAG_SHIFTKEY+1 and cropPolygon:
     elif not portaoVirtualSelecionado and flags == 0 and cropPolygon:
 
         #ref_point_polygon.append((x, y))
-        print(' ')
+        #print(' ')
         print('cv.EVENT_FLAG_ALTKEY off')
         #print('size of ref_point_polygon: {}'.format(len(ref_point_polygon)))
         cropPolygon = False
@@ -274,6 +274,46 @@ cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
 isOpenVino = statusConfig.data["isOpenVino"] == 'True'
 print('isOpenVino: {}'.format(isOpenVino))
 device = statusConfig.data["openVinoDevice"]
+
+posConfigPv = 255
+#statusButtonEmail = None
+def initInterface():
+
+    #cv.createButton('Configurar Regioes', callbackButtonRegioes, None,cv.QT_PUSH_BUTTON)
+    cv.createButton('Novo Portao', callbackAtivarPortao, None, cv.QT_PUSH_BUTTON)
+    cv.createButton('Campainha', callbackCampainha, None, cv.QT_CHECKBOX, 1 if isSoundAlert else 0)
+    #print('initInterface  -  enviarAlerta: {}'.format(enviarAlerta))
+    cv.createButton('Enviar Email', callbackEnviarEmail, None, cv.QT_CHECKBOX, 1 if enviarAlerta else 0)
+
+#def callbackTrackBar(self, ret):
+#    print('callbackTrackBar')
+
+def callbackButtonRegioes(self, ret):
+    print('Button regioes')
+
+def callbackAtivarPortao(ret, ret2):
+    global portaoVirtualSelecionado
+    #if portaoVirtualSelecionado:
+    #    log.info('Portao já selecionado')
+
+    portaoVirtualSelecionado = False
+    #print('portaoVirtualSelecionado: {}'.format(portaoVirtualSelecionado))
+    sel_rect_endpoint.clear()
+    ref_point_polygon.clear()
+    log.info('Selecione novo portao')
+
+def callbackEnviarEmail(ret, ret2):
+    global enviarAlerta 
+    enviarAlerta = True if ret else False 
+    print('enviarAlerta: {}'.format(enviarAlerta))
+    #print('ret: {}'.format(ret))
+
+def callbackCampainha(ret, ret2):
+    global isSoundAlert
+    isSoundAlert = True if ret else False 
+    print('isSoundAlert: {}'.format(isSoundAlert))
+
+initInterface()
 
 
 ### ---------------  OpenVino Init ----------------- ###

@@ -80,6 +80,19 @@ class StatusConfig:
             "dirVideos"      : "/home/igor/videos_alarmes"
     }
 
+    region = {
+        "nameRegion"        : "garagem",
+        "isEmailAlert"      : "True",
+        "isSoundAlert"      : "True",
+        "time"              : {'start':'8:00', 'end':'21:00'},
+        "days"              : {'mon':'True', 'tues':'true','wed':'true', 'thurs':'true', 'fri':'true','sat':'true','sun':'true'},
+        "objectType"        : {'person':'true', 'car':'true', 'bike':'true', 'dog':'true'},
+        "prob_threshold"    : 0.70,
+        "pointsPolygon"     : []
+    }
+
+    regions = list()
+
     def setConfig(self, isRecording, isEmailAlert, isGateSelected, isSoundAlert, isOpenVino,
                       dnnModel, openVinoModel, emailConfig, dirVideos, camSource, openVinoDevice, prob_threshold):
         self.data["isRecording"]              = isRecording
