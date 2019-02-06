@@ -143,80 +143,86 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
     #while cap.isOpened():
 
     ret, next_frame = cap.read()
-    while(ret is False):
-        log.error('Error capturing next_frame - capturing again...')
-        ret, next_frame = cap.read()
+    if next_frame is None or ret is False:
+        log.error("Error capturing next_frame")
 
-    #if not ret:
-    #    break
+    else:
 
+        #while(ret is False):
+        #    log.error('Error capturing next_frame - capturing again...')
+        #ret, next_frame = cap.read()
 
-    initial_w = cap.get(3)
-    initial_h = cap.get(4)
-    # Main sync point:
-    # in the truly Async mode we start the NEXT infer request, while waiting for the CURRENT to complete
-    # in the regular mode we start the CURRENT request and immediately wait for it's completion
-    #inf_start = time.time()
-
-    in_frame = cv2.resize(next_frame, (w, h))
-    in_frame = in_frame.transpose((2, 0, 1))  # Change data layout from HWC to CHW
-    in_frame = in_frame.reshape((n, c, h, w))
-    exec_net.start_async(request_id=next_request_id, inputs={input_blob: in_frame})
-
-    if exec_net.requests[cur_request_id].wait(-1) == 0:
-        #inf_end = time.time()
-        #det_time = inf_end - inf_start
-
-        # Parse detection results of the current request
-        res = exec_net.requests[cur_request_id].outputs[out_blob]
-        #prob_threshold = 0.80
-        #print('shape of res : ' + str(res.shape))
-        #print('size res[0]0] : ' + str(len(res[0][0])))
-        #print('size res : ' + str(res.size))
-        for obj in res[0][0]:
-            # Draw only objects when probability more than specified threshold
-            if obj[2] > prob_threshold:
-                xmin = int(obj[3] * initial_w)
-                ymin = int(obj[4] * initial_h)
-                xmax = int(obj[5] * initial_w)
-                ymax = int(obj[6] * initial_h)
-                class_id = int(obj[1])
-                det_label = labels_map[class_id] if labels_map else str(class_id)
-                label = det_label + ' ' + str(round(obj[2] * 100, 1)) + ' %'
-                #print('obj[2] {}'.format(obj[2]))
-                #print('Threshold: {}'.format(obj[2]))
-                #print(' ')
-                #print('class_id : ' + str(class_id))
-                # Draw box and label\class_id
-                #color = (min(class_id * 12.5, 255), min(class_id * 7, 255), min(class_id * 5, 255))
-                #color = (0,0,255)
-                #cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), color, 2)
-                #cv2.putText(frame, det_label + ' ' + str(round(obj[2] * 100, 1)) + ' %', (xmin, ymin - 7), cv2.FONT_HERSHEY_COMPLEX, 0.6, color, 1)
+        #if not ret:
+        #    break
 
 
-        # Draw performance stats
-        #inf_time_message = "Inference time: N\A for async mode" 
-        #render_time_message = "OpenCV rendering time: {:.3f} ms".format(render_time * 1000)
-        #async_mode_message = "Async mode is on. Processing request {}".format(cur_request_id)
+        initial_w = cap.get(3)
+        initial_h = cap.get(4)
+        # Main sync point:
+        # in the truly Async mode we start the NEXT infer request, while waiting for the CURRENT to complete
+        # in the regular mode we start the CURRENT request and immediately wait for it's completion
+        #inf_start = time.time()
+        in_frame = cv2.resize(next_frame, (w, h))
+        in_frame = in_frame.transpose((2, 0, 1))  # Change data layout from HWC to CHW
+        in_frame = in_frame.reshape((n, c, h, w))
+        exec_net.start_async(request_id=next_request_id, inputs={input_blob: in_frame})
 
-        #cv2.putText(frame, inf_time_message, (15, 15), cv2.FONT_HERSHEY_COMPLEX, 0.5, (200, 10, 10), 1)
-        #cv2.putText(frame, render_time_message, (15, 30), cv2.FONT_HERSHEY_COMPLEX, 0.5, (10, 10, 200), 1)
-        #cv2.putText(frame, async_mode_message, (10, int(initial_h - 20)), cv2.FONT_HERSHEY_COMPLEX, 0.5, (10, 10, 200), 1)
+        if exec_net.requests[cur_request_id].wait(-1) == 0:
+            #inf_end = time.time()
+            #det_time = inf_end - inf_start
 
-        #print('label: {}'.format(label))
+            # Parse detection results of the current request
+            res = exec_net.requests[cur_request_id].outputs[out_blob]
+            #prob_threshold = 0.80
+            #print('shape of res : ' + str(res.shape))
+            #print('size res[0]0] : ' + str(len(res[0][0])))
+            #print('size res : ' + str(res.size))
+            for obj in res[0][0]:
+                # Draw only objects when probability more than specified threshold
+                if obj[2] > prob_threshold:
+                    xmin = int(obj[3] * initial_w)
+                    ymin = int(obj[4] * initial_h)
+                    xmax = int(obj[5] * initial_w)
+                    ymax = int(obj[6] * initial_h)
+                    class_id = int(obj[1])
+                    det_label = labels_map[class_id] if labels_map else str(class_id)
+                    label = det_label + ' ' + str(round(obj[2] * 100, 1)) + ' %'
+                    #print('obj[2] {}'.format(obj[2]))
+                    #print('Threshold: {}'.format(obj[2]))
+                    #print(' ')
+                    #print('class_id : ' + str(class_id))
+                    # Draw box and label\class_id
+                    #color = (min(class_id * 12.5, 255), min(class_id * 7, 255), min(class_id * 5, 255))
+                    #color = (0,0,255)
+                    #cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), color, 2)
+                    #cv2.putText(frame, det_label + ' ' + str(round(obj[2] * 100, 1)) + ' %', (xmin, ymin - 7), cv2.FONT_HERSHEY_COMPLEX, 0.6, color, 1)
 
-        box = (xmin, ymin, xmax, ymax, label, class_id, det_label)
-        #print('box from plugin: {}'.format(box))
+
+            # Draw performance stats
+            #inf_time_message = "Inference time: N\A for async mode" 
+            #render_time_message = "OpenCV rendering time: {:.3f} ms".format(render_time * 1000)
+            #async_mode_message = "Async mode is on. Processing request {}".format(cur_request_id)
+
+            #cv2.putText(frame, inf_time_message, (15, 15), cv2.FONT_HERSHEY_COMPLEX, 0.5, (200, 10, 10), 1)
+            #cv2.putText(frame, render_time_message, (15, 30), cv2.FONT_HERSHEY_COMPLEX, 0.5, (10, 10, 200), 1)
+            #cv2.putText(frame, async_mode_message, (10, int(initial_h - 20)), cv2.FONT_HERSHEY_COMPLEX, 0.5, (10, 10, 200), 1)
+
+            #print('label: {}'.format(label))
+
+            box = (xmin, ymin, xmax, ymax, label, class_id, det_label)
+            #print('box from plugin: {}'.format(box))
 
 
-        if det_label is 'pessoa' or \
-                    det_label is 'gato' or \
-                    det_label is 'carro' or \
-                    det_label is 'cachorro':
+            if det_label is 'pessoa' or \
+                        det_label is 'gato' or \
+                        det_label is 'carro' or \
+                        det_label is 'cachorro':
 
-            boxTracking = (xmin, ymin, xmax, ymax)
-            listObjectsTracking.append(boxTracking)
-            listRectanglesDetected.append(box)
+                boxTracking = (xmin, ymin, xmax, ymax)
+                listObjectsTracking.append(boxTracking)
+                listRectanglesDetected.append(box)
 
 
-    return frame, next_frame, cur_request_id, next_request_id, listRectanglesDetected, listObjectsTracking
+    listReturn = [frame, next_frame, cur_request_id, next_request_id, listRectanglesDetected, listObjectsTracking]
+
+    return ret, listReturn 

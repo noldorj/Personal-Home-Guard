@@ -1,5 +1,5 @@
 import cv2 as cv
-#import numpy as np
+import numpy as np
 #from datetime import date
 import time
 from objectTracking.pyimagesearch.centroidtracker import CentroidTracker
@@ -151,11 +151,53 @@ mode = True         # if True, draw rectangle.
 ix, iy = -1, -1
 
 ref_point = []
+ref_point_polygon = list() 
 crop = False
+cropPolygon = False
 portaoVirtualSelecionado = False
 showGate = False
 regiaoPortao = None
 sel_rect_endpoint = []
+
+from matplotlib.path import Path
+
+def isIdInsideRegion(centroid, ref_point_polygon):
+
+    path = Path(ref_point_polygon)
+    #print('centroid[0]: {}'.format(centroid[0]))
+    #print('centroid[1]: {}'.format(centroid[1]))
+    mask = path.contains_points([(centroid[0], centroid[1])])
+    #print('mask: {}'.format(mask))
+    return mask
+
+
+def polygonSelection(event, x, y, flags, param):
+
+    global ref_point_polygon, cropPolygon, portaoVirtualSelecionado
+    #print('polygonSelection')
+    #print('flags: {}'.format(flags))
+    #print('event: {}'.format(event))
+
+    if event == cv.EVENT_LBUTTONDOWN and not portaoVirtualSelecionado and flags == cv.EVENT_FLAG_CTRLKEY+1:
+
+        ref_point_polygon.append((x, y))
+        print(' ')
+        print('cv.EVENT_FLAG_CTRLKEY on')
+        print('size of ref_point_polygon: {}'.format(len(ref_point_polygon)))
+        cropPolygon = True
+
+    #elif not portaoVirtualSelecionado and event == cv.EVENT_LBUTTONUP and flags == cv.EVENT_FLAG_SHIFTKEY+1 and cropPolygon:
+    elif not portaoVirtualSelecionado and flags == 0 and cropPolygon:
+
+        #ref_point_polygon.append((x, y))
+        print(' ')
+        print('cv.EVENT_FLAG_ALTKEY off')
+        #print('size of ref_point_polygon: {}'.format(len(ref_point_polygon)))
+        cropPolygon = False
+        portaoVirtualSelecionado = True
+
+
+
 
 def shape_selection(event, x, y, flags, param):
     # grab references to the global variables
@@ -190,6 +232,7 @@ def shape_selection(event, x, y, flags, param):
 
 cv.namedWindow('frame')
 cv.setMouseCallback('frame', shape_selection)
+cv.setMouseCallback('frame', polygonSelection)
 
 objDetectado = False
 
@@ -253,7 +296,7 @@ while True:
     conectado, frame_no_label_email = ipCam.read()
     conectado, frame_screen = ipCam.read()
 
-    if (conectado and frame is not None):
+    if (conectado and frame is not None and next_frame is not None):
 
 
         objects = ct.update(rects = listObjectsTracking)
@@ -262,17 +305,27 @@ while True:
         currentData.pop('hour')
 
         if current_data_dir != currentData:
-            status_dir_criado, dir_video_trigger = utils.createDirectory()
+            status_dir_criado, dir_video_trigger = utils.createDirectory(statusConfig.data["dirVideos"])
             current_data_dir = utils.getDate()
             current_data_dir.pop('hour')
 
 #        if frame is not None and conectado:
 
         if portaoVirtualSelecionado:
-           cv.rectangle(frame_screen, ref_point[0], ref_point[1], (0, 255, 0), 2)
+           #cv.rectangle(frame_screen, ref_point[0], ref_point[1], (0, 255, 0), 2)
+
+           pts = np.array(ref_point_polygon, np.int32)
+           pts = pts.reshape((-1,1,2))
+           cv.polylines(frame_screen,[pts],True,(0,255,255))
+
 
         if crop and sel_rect_endpoint:
             cv.rectangle(frame_screen, ref_point[0], sel_rect_endpoint[0], (0, 255, 0), 2)
+
+        if cropPolygon:
+            pts = np.array(ref_point_polygon, np.int32)
+            pts = pts.reshape((-1,1,2))
+            cv.polylines(frame_screen,[pts],True,(0,255,255))
 
 
         #passando o Frame selecionado do portao para deteccao somente se o portao virtual estiver selecionado
@@ -280,12 +333,19 @@ while True:
 
             if isOpenVino:
             ### ---------------  OpenVino Get Objects ----------------- ###
-                frame, next_frame, cur_request_id, next_request_id, listObjects, listObjectsTracking  = pOpenVino.getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, prob_threshold)
+                #frame, next_frAme, cur_request_id, next_request_id, listObjects, listObjectsTracking  = pOpenVino.getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, prob_threshold)
 
-                cur_request_id, next_request_id = next_request_id, cur_request_id
-                frame = next_frame
+                ret, listReturn  = pOpenVino.getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, prob_threshold)
+
+                if ret:
+                    frame = next_frame
+                    frame, next_frAme, cur_request_id, next_request_id, listObjects, listObjectsTracking  = listReturn[0], listReturn[1], listReturn[2], listReturn[3], listReturn[4], listReturn[5]
+
+                    cur_request_id, next_request_id = next_request_id, cur_request_id
+
             else:
                 #chamada para a CNN do OpenCV - TensorFlow Object Detection API 
+                log.info("CNN via TF Object Detection API")
                 listObjects = objectDetection(frame)
 
         #print('# Objetos: ' + str(len(listObjects)))
@@ -353,9 +413,14 @@ while True:
                         cv.putText(frame_screen, text, (centroid[0] - 10, centroid[1] - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                         cv.circle(frame_screen, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
+
+
                         #se o objeto estiver contido no portaoVirtual
-                        if centroid[0] >= ref_point[0][0] and centroid[0] <= ref_point[1][0] \
-                        and centroid[1] >= ref_point[0][1] and centroid[1] <= ref_point[1][1]:
+                        #if centroid[0] >= ref_point[0][0] and centroid[0] <= ref_point[1][0] \
+                        #and centroid[1] >= ref_point[0][1] and centroid[1] <= ref_point[1][1]:
+
+                        #TODO check centroid[0]
+                        if isIdInsideRegion(centroid, ref_point_polygon):
 
                             #print("Objeto dentro do portao virtual")
                            # print('Desenhando objetos')
@@ -436,8 +501,10 @@ while True:
 
             #if portaoVirtualSelecionado:
             portaoVirtualSelecionado = False
-                #print('Portao já selecionado')
-                #print('Selecione novo portao')
+            sel_rect_endpoint.clear()
+            ref_point_polygon.clear()
+            #print('Portao já selecionado')
+            print('Selecione novo portao')
 
     else:
 #        print('frame lost - while')
