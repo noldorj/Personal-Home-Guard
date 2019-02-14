@@ -29,11 +29,18 @@ classes = ["background", "pessoa", "bicileta", "carro", "moto", "airplane", "bus
 
 #tie, suitecase (= carro)
 
-statusConfig = utils.StatusConfig('config.json.gpu.webcam')
+statusConfig = utils.StatusConfig(configFile='config.json.gpu')
 
 # dnnMOdel for TensorFlow Object Detection API
 pb = statusConfig.data["dnnModelPb"] 
 pbtxt = statusConfig.data["dnnModelPbTxt"] 
+
+#Carregando regioes salvas
+regions = statusConfig.regions['regions']
+portaoVirtualSelecionado = False
+#se existirem regioes ja selecionadas, o portao virtual é mostrado
+if len(regions) > 0:
+    portaoVirtualSelecionado = True
 
 #Criando diretorio para salvar videos de alarmes
 status_dir_criado, dir_video_trigger = utils.createDirectory(statusConfig.data["dirVideos"])
@@ -154,7 +161,6 @@ ref_point = []
 ref_point_polygon = list() 
 crop = False
 cropPolygon = False
-portaoVirtualSelecionado = False
 showGate = False
 regiaoPortao = None
 sel_rect_endpoint = []
@@ -279,14 +285,11 @@ posConfigPv = 255
 #statusButtonEmail = None
 def initInterface():
 
-    #cv.createButton('Configurar Regioes', callbackButtonRegioes, None,cv.QT_PUSH_BUTTON)
+    cv.createButton('Adicionar Regioes', callbackButtonRegioes, None,cv.QT_PUSH_BUTTON)
     cv.createButton('Novo Portao', callbackAtivarPortao, None, cv.QT_PUSH_BUTTON)
     cv.createButton('Campainha', callbackCampainha, None, cv.QT_CHECKBOX, 1 if isSoundAlert else 0)
     #print('initInterface  -  enviarAlerta: {}'.format(enviarAlerta))
     cv.createButton('Enviar Email', callbackEnviarEmail, None, cv.QT_CHECKBOX, 1 if enviarAlerta else 0)
-
-#def callbackTrackBar(self, ret):
-#    print('callbackTrackBar')
 
 def callbackButtonRegioes(self, ret):
     print('Button regioes')
@@ -354,13 +357,20 @@ while True:
         if portaoVirtualSelecionado:
            #cv.rectangle(frame_screen, ref_point[0], ref_point[1], (0, 255, 0), 2)
 
-           pts = np.array(ref_point_polygon, np.int32)
-           pts = pts.reshape((-1,1,2))
-           cv.polylines(frame_screen,[pts],True,(0,255,255))
+           #pts = np.array(ref_point_polygon, np.int32)
+           #pts = pts.reshape((-1,1,2))
+           #cv.polylines(frame_screen,[pts],True,(0,255,255))
+           #print('pts: {}'.format(ref_point_polygon))
+
+           #desenhando regioes
+           for r in regions:
+                pts = np.array(r.get("pointsPolygon"), np.int32)
+                pts = pts.reshape((-1,1,2))
+                cv.polylines(frame_screen,[pts],True,(0,255,255))
 
 
-        if crop and sel_rect_endpoint:
-            cv.rectangle(frame_screen, ref_point[0], sel_rect_endpoint[0], (0, 255, 0), 2)
+        #if crop and sel_rect_endpoint:
+        #    cv.rectangle(frame_screen, ref_point[0], sel_rect_endpoint[0], (0, 255, 0), 2)
 
         if cropPolygon:
             pts = np.array(ref_point_polygon, np.int32)
@@ -460,64 +470,69 @@ while True:
                         #and centroid[1] >= ref_point[0][1] and centroid[1] <= ref_point[1][1]:
 
                         #TODO check centroid[0]
-                        if isIdInsideRegion(centroid, ref_point_polygon):
+                        #if isIdInsideRegion(centroid, ref_point_polygon):
+                        #checando para varias regioes
+                        for r in regions:
+                            #print('checando pv {}'.format(r.get('nameRegion')))
 
-                            #print("Objeto dentro do portao virtual")
-                           # print('Desenhando objetos')
+                            if isIdInsideRegion(centroid, r.get('pointsPolygon')):
 
-                            #desenhando o box e label
-                            #cv.rectangle(frame_screen, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
-                            #top = int (box[1])
-                            #y = top - 15 if top - 15 > 15 else top + 15
-                            #cv.putText(frame_screen, str(box[4]), (int(box[0]), int(y)),cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
+                                #print("Objeto dentro do portao virtual")
+                               # print('Desenhando objetos')
+
+                                #desenhando o box e label
+                                #cv.rectangle(frame_screen, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
+                                #top = int (box[1])
+                                #y = top - 15 if top - 15 > 15 else top + 15
+                                #cv.putText(frame_screen, str(box[4]), (int(box[0]), int(y)),cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
 
 
-                            #desenhando o ID no centro do objeto
-                            #text = "ID {}".format(objectID)
-                            #cv.putText(frame_screen, text, (centroid[0] - 10, centroid[1] - 10),
-                            #    cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                            #cv.circle(frame_screen, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+                                #desenhando o ID no centro do objeto
+                                #text = "ID {}".format(objectID)
+                                #cv.putText(frame_screen, text, (centroid[0] - 10, centroid[1] - 10),
+                                #    cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                                #cv.circle(frame_screen, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
-                            if listObjectMailAlerted.count(objectID) == 0:
+                                if listObjectMailAlerted.count(objectID) == 0:
 
-                                if isSoundAlert:
-                                    utils.playSound()
+                                    if isSoundAlert:
+                                        utils.playSound()
 
-                                if enviarAlerta:
+                                    if enviarAlerta:
 
-                                    print('Enviando alerta por email')
+                                        print('Enviando alerta por email')
 
-                                    #salvando foto para treinamento
-                                    #crop no box
-                                   #left, top, right, bottom
-                                    frame_no_label = frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
-                                    saveImageBox(frame_no_label, str(box[6]))
+                                        #salvando foto para treinamento
+                                        #crop no box
+                                       #left, top, right, bottom
+                                        frame_no_label = frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
+                                        saveImageBox(frame_no_label, str(box[6]))
 
-                       #cv.imwrite(dir_video_trigger + '/foto_alerta.jpg',frame)'
+                       #    cv.imwrite(dir_video_trigger + '/foto_alerta.jpg',frame)'
 
-                                    if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame_no_label_email, str(box[6]))):
+                                        if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame_no_label_email, str(box[6]))):
 
-                                        print('Alerta enviado ID[' + str(objectID) + ']')
-                                        print('...')
+                                            print('Alerta enviado ID[' + str(objectID) + ']')
+                                            print('...')
 
-                                         #para evitar o envio de varios emails do mesmo reconhecimento
-                                         #novo_alerta = False
+                                             #para evitar o envio de varios emails do mesmo reconhecimento
+                                             #novo_alerta = False
 
-                                    listObjectMailAlerted.append(objectID)
+                                        listObjectMailAlerted.append(objectID)
 
-                            if gravando and newVideo:
-                                  #grava video novo se tiver um objeto novo na cena
-                                  if out_video is not None:
-                                      out_video.release()
+                                if gravando and newVideo:
+                                      #grava video novo se tiver um objeto novo na cena
+                                      if out_video is not None:
+                                          out_video.release()
 
-                                  hora = utils.getDate()['hour'].replace(':','-')
-                                  out_video = cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
-                                  out_video.write(frame_no_label)
-                                  newVideo = False
-#                                  cv.waitKey(100)
+                                      hora = utils.getDate()['hour'].replace(':','-')
+                                      out_video = cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
+                                      out_video.write(frame_no_label)
+                                      newVideo = False
+#                                      cv.waitKey(100)
 
-                            else:
-                                out_video.write(frame_no_label)
+                                else:
+                                    out_video.write(frame_no_label)
 
         cv.imshow('frame', frame_screen)
 

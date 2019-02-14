@@ -136,10 +136,7 @@ class StatusConfig:
         self.region["pointsPolygon"]            = pointsPolygon
 
         self.regions["regions"].append(self.region)
-        
 
-#    def __init__(self,isRecording, isEmailAlert, isGateSelected, isSoundAlert,
-#                 dnnModel, emailConfig, dirVideos):
 
     def __init__(self, configFile='config.json', regionsFile='regions.json'):
         #configuracoes setadas pelo arquivo sobrescrevem as configuracoes padroes
@@ -233,23 +230,23 @@ def playSound():
     pygame.mixer.music.play(0)
     
 
-status = StatusConfig()
-
-t = {"start":"7:00", "end":"12:00"}
-days = {'mon':'False', 'tues':'False','wed':'False', 'thurs':'False', 'fri':'False','sat':'False','sun':'False'}
-objectType = {'person':'teste', 'car':'teste', 'bike':'teste', 'dog':'teste'}
-points = [[[15,15],[15,65],[65,15],[65,65]]]
-
-status.addRegion("teste", "true", "true", t, days, objectType, 0.45, points)
-status.addRegion("teste2", "true2", "true2", t, days, objectType, 0.45, points)
-
-status.printRegions()
-status.deleteRegion(nameRegion="teste")
-
-status.saveRegionFile('region.teste.json')
-status2 = StatusConfig(regionsFile='region.teste.json')
-status.regions
-status.regions["regioes"][1]
+#status = StatusConfig()
+#
+#t = {"start":"7:00", "end":"12:00"}
+#days = {'mon':'False', 'tues':'False','wed':'False', 'thurs':'False', 'fri':'False','sat':'False','sun':'False'}
+#objectType = {'person':'teste', 'car':'teste', 'bike':'teste', 'dog':'teste'}
+#points = [[[15,15],[15,65],[65,15],[65,65]]]
+#
+#status.addRegion("teste", "true", "true", t, days, objectType, 0.45, points)
+#status.addRegion("teste2", "true2", "true2", t, days, objectType, 0.45, points)
+#
+#status.printRegions()
+#status.deleteRegion(nameRegion="teste")
+#
+#status.saveRegionFile('region.teste.json')
+#status2 = StatusConfig(regionsFile='region.teste.json')
+#status.regions
+#status.regions["regioes"][1]
 
 
 
