@@ -24,11 +24,9 @@ def saveImageBox(frame, classe):
 
 
 #envia alerta do portao virtual com imagem anexada ao email
-def sendMailAlert(sender, recipients, frame, tipoObjetoDetectado):
+def sendMailAlert(sender, recipients, frame, tipoObjetoDetectado, region):
 
     status = False
-
-
 
     img_file = os.getcwd() + '/' + 'foto_alerta.jpg'
 
@@ -55,7 +53,7 @@ def sendMailAlert(sender, recipients, frame, tipoObjetoDetectado):
 
     data = utils.getDate()
     msg = MIMEMultipart()
-    msg['Subject'] = 'PV - ' + '"' + tipoObjetoDetectado + '"' + ' detectado' + data['hour']
+    msg['Subject'] = 'PV - ' + '"' + tipoObjetoDetectado + '"' + ' na ' + region + '-' + data['hour']
     msg['From'] = sender
     msg['To'] = recipients
 

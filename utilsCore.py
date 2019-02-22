@@ -52,7 +52,7 @@ def createDirectory(dirVideos):
 
     dir_temp = current_dir + month_dir + today_dir
 
-    return status, dir_temp 
+    return status, dir_temp
 
 class StatusConfig:
 
@@ -84,8 +84,18 @@ class StatusConfig:
         "nameRegion"        : "garagem",
         "isEmailAlert"      : "True",
         "isSoundAlert"      : "True",
-        "time"              : {'start':'8:00', 'end':'21:00'},
-        "days"              : {'mon':'True', 'tues':'true','wed':'true', 'thurs':'true', 'fri':'true','sat':'true','sun':'true'},
+        "alarm":[
+                {
+                        "name": "alarm1",
+                        "time"              : {'start':'8:00', 'end':'21:00'},
+                        "days"              : {'mon':'True', 'tues':'true','wed':'true', 'thurs':'true', 'fri':'true','sat':'true','sun':'true'},
+                },
+                {
+                        "name": "alarm2",
+                        "time"              : {'start':'8:00', 'end':'21:00'},
+                        "days"              : {'mon':'True', 'tues':'true','wed':'true', 'thurs':'true', 'fri':'true','sat':'true','sun':'true'},
+                }
+        ],
         "objectType"        : {'person':'true', 'car':'true', 'bike':'true', 'dog':'true'},
         "prob_threshold"    : 0.70,
         "pointsPolygon"     : []
@@ -99,13 +109,13 @@ class StatusConfig:
         self.data["isEmailAlert"]             = isEmailAlert
         self.data["isGateSelected"]           = isGateSelected
         self.data["isSoundAlert"]             = isSoundAlert
-        self.data["camSource"]                = camSource 
-        self.data["prob_threshold"]           = prob_threshold 
+        self.data["camSource"]                = camSource
+        self.data["prob_threshold"]           = prob_threshold
         self.data["isOpenVino"]               = isOpenVino
         self.data["dnnModelPb"]               = dnnModelPb
         self.data["dnnModelPbTxt"]            = dnnModelPbTxt
         self.data["openVinoDevice"]           = openVinoDevice
-        self.data["openVinoModel"]            = openVinoModel 
+        self.data["openVinoModel"]            = openVinoModel
         self.data["dirVideos"]                = dirVideos
         self.data["emailConfig"]["port"]      = emailConfig["port"]
         self.data["emailConfig"]["smtp"]      = emailConfig["smtp"]
@@ -114,20 +124,12 @@ class StatusConfig:
         self.data["emailConfig"]["subject"]   = emailConfig["subject"]
         self.data["emailConfig"]["to"]        = emailConfig["to"]
 
-    def addRegion(self, nameRegion, isEmailAlert, isSoundAlert, time, days, objectType, prob_threshold, pointsPolygon):
+    def addRegion(self, nameRegion, isEmailAlert, isSoundAlert, alarm, objectType, prob_threshold, pointsPolygon):
 
         self.region["nameRegion"]               = nameRegion
         self.region["isEmailAlert"]             = isEmailAlert
         self.region["isSoundAlert"]             = isSoundAlert
-        self.region["time"]["start"]            = time["start"]
-        self.region["time"]["end"]              = time["end"]
-        self.region["days"]["mon"]              = days["mon"]
-        self.region["days"]["tues"]             = days["tues"]
-        self.region["days"]["wed"]              = days["wed"]
-        self.region["days"]["thurs"]            = days["thurs"]
-        self.region["days"]["fri"]              = days["fri"]
-        self.region["days"]["sat"]              = days["sat"]
-        self.region["days"]["sun"]              = days["sun"]
+        self.region["alarm"]                    = alarm
         self.region["objectType"]["person"]     = objectType["person"]
         self.region["objectType"]["car"]        = objectType["car"]
         self.region["objectType"]["bike"]       = objectType["bike"]
@@ -136,6 +138,13 @@ class StatusConfig:
         self.region["pointsPolygon"]            = pointsPolygon
 
         self.regions["regions"].append(self.region)
+
+    def addAlarm(self, idRegion, alarm):
+        self.regions["regions"][idRegion].get('alarm').append(alarm)
+        self.saveRegionFile()
+        self.printRegions()
+        print('Alarme inserido com sucesso')
+        #TO-DO try catch toleranca a falhas
 
 
     def __init__(self, configFile='config.json', regionsFile='regions.json'):
@@ -152,21 +161,21 @@ class StatusConfig:
         print('Lendo arquivo de regiões: ' + os.getcwd() + '/' + file)
         self.regions = json.load(open(file,'r'))
         self.printRegions()
-    
+
     def deleteRegion(self, nameRegion='regions1'):
         i = 0
         print('Region {} to be removed'.format(nameRegion))
-        
+
         for r in self.regions["regions"]:
             print('nameRegion {}'.format(r.get("nameRegion")))
-            if r.get("nameRegion") == nameRegion:                
+            if r.get("nameRegion") == nameRegion:
                 del self.regions["regions"][i]
                 print('Region {} removed i: {}'.format(nameRegion, i))
-                return True            
-            
+                return True
+
             i = i+1
         return False
-        
+
 
 
     def printConfig(self):
@@ -186,36 +195,40 @@ class StatusConfig:
         print('emailConfig/smtp:  {}'.format(self.data.get('emailConfig').get('smtp')))
         print('emailConfig/port:  {}'.format(self.data.get('emailConfig').get('port')))
         print('dirVideos:         {}'.format(self.data.get('dirVideos')))
-        
-        
+
+
     def printRegions(self):
             print('                                      ')
             print('--- Regions status  ---')
             print('# regions: {}'.format(len(self.regions["regions"])))
             for r in self.regions["regions"]:
-                
+
+                print('             ')
                 print('nameRegion:            {}'.format(r.get('nameRegion')))
                 print('isEmailAlert:          {}'.format(r.get('isEmailAlert')))
                 print('isSoundAlert:          {}'.format(r.get('isSoundAlert')))
-                print('Prob_threshold:        {}'.format(r.get('prob_threshold')))   
-                print('Alarm Time start:      {}'.format(r.get('time').get('start')))
-                print('Alarm Time end:        {}'.format(r.get('time').get('end')))
-                print('PointsPolygon:         {}'.format(r.get('pointsPolygon')))   
-                print('Alarm Days:')
-                print('  Monday:        {}'.format(r.get('days').get('mon')))                
-                print('  Tuesday:       {}'.format(r.get('days').get('tues')))                
-                print('  Wednesday:     {}'.format(r.get('days').get('wed')))                
-                print('  Thrusday:      {}'.format(r.get('days').get('thurs')))                
-                print('  Friday:        {}'.format(r.get('days').get('fri')))                
-                print('  Saturday:      {}'.format(r.get('days').get('sat')))                
-                print('  Sunday:        {}'.format(r.get('days').get('sun')))                                   
-                print('----------------------------------------------------------------')
+                print('Prob_threshold:        {}'.format(r.get('prob_threshold')))
+                print('PointsPolygon:         {}'.format(r.get('pointsPolygon')))
+                for a in r["alarm"]:
+                    print('Alarm Name:            {}'.format(a.get('name')))
+                    print('Alarm Time start:      {}:{}'.format(a.get('time').get('start').get('hour'),a.get('time').get('start').get('min') ) )
 
-    def saveRegionFile(self, file = 'region.json'):
+                    print('Alarm Time end:      {}:{}'.format(a.get('time').get('end').get('hour'), a.get('time').get('end').get('min')))
+                    print('Alarm Days:')
+                    print('  Monday:        {}'.format(a.get('days').get('mon')))
+                    print('  Tuesday:       {}'.format(a.get('days').get('tues')))
+                    print('  Wednesday:     {}'.format(a.get('days').get('wed')))
+                    print('  Thrusday:      {}'.format(a.get('days').get('thurs')))
+                    print('  Friday:        {}'.format(a.get('days').get('fri')))
+                    print('  Saturday:      {}'.format(a.get('days').get('sat')))
+                    print('  Sunday:        {}'.format(a.get('days').get('sun')))
+                    print('             ')
+
+    def saveRegionFile(self, file = 'regions.json'):
         print('Salvando arquivo de regiones: ' + os.getcwd() + '/' + file)
         json.dump(self.regions, open(file, 'w'), indent=4)
-    
-    
+
+
     def saveConfigFile(self, file = 'config.json'):
         print('Salvando arquivo de configuração: ' + os.getcwd() + '/' + file)
         json.dump(self.data, open(file,'w'), indent=4)
@@ -228,21 +241,31 @@ def playSound():
     pygame.init()
     pygame.mixer.music.load('campainha.mp3')
     pygame.mixer.music.play(0)
-    
+
 
 #status = StatusConfig()
-#
+##
 #t = {"start":"7:00", "end":"12:00"}
+#t2 = {"start":"10:00", "end":"15:00"}
+#
 #days = {'mon':'False', 'tues':'False','wed':'False', 'thurs':'False', 'fri':'False','sat':'False','sun':'False'}
+##alarm = []
 #objectType = {'person':'teste', 'car':'teste', 'bike':'teste', 'dog':'teste'}
+#alarm1 = {"name":"alarm1", "time":t, "days":days}
+#alarm2 = {"name":"alarm2", "time":t2, "days":days}
+#alarms = [alarm1, alarm2]
+#for a in alarms:
+#    print(str(a["name"]))
+#    print(str(a["time"]["start"]))
+#
 #points = [[[15,15],[15,65],[65,15],[65,65]]]
-#
-#status.addRegion("teste", "true", "true", t, days, objectType, 0.45, points)
+##
+#status.addRegion("teste", "true", "true", alarms, objectType, 0.45, points)
 #status.addRegion("teste2", "true2", "true2", t, days, objectType, 0.45, points)
-#
+##
 #status.printRegions()
 #status.deleteRegion(nameRegion="teste")
-#
+##
 #status.saveRegionFile('region.teste.json')
 #status2 = StatusConfig(regionsFile='region.teste.json')
 #status.regions
