@@ -103,6 +103,13 @@ class StatusConfig:
 
     regions = list()
 
+    def getRegions(self):
+        return self.regions
+
+
+
+
+
     def setConfig(self, isRecording, isEmailAlert, isGateSelected, isSoundAlert, isOpenVino,
                       dnnModel, openVinoModel, emailConfig, dirVideos, camSource, openVinoDevice, prob_threshold):
         self.data["isRecording"]              = isRecording
@@ -126,23 +133,27 @@ class StatusConfig:
 
     def addRegion(self, nameRegion, isEmailAlert, isSoundAlert, alarm, objectType, prob_threshold, pointsPolygon):
 
-        self.region["nameRegion"]               = nameRegion
-        self.region["isEmailAlert"]             = isEmailAlert
-        self.region["isSoundAlert"]             = isSoundAlert
-        self.region["alarm"]                    = alarm
-        self.region["objectType"]["person"]     = objectType["person"]
-        self.region["objectType"]["car"]        = objectType["car"]
-        self.region["objectType"]["bike"]       = objectType["bike"]
-        self.region["objectType"]["dog"]        = objectType["dog"]
-        self.region["prob_threshold"]           = prob_threshold
-        self.region["pointsPolygon"]            = pointsPolygon
 
-        self.regions["regions"].append(self.region)
+        region = {
+            "nameRegion"     : nameRegion,
+            "isEmailAlert"   : isEmailAlert,
+            "isSoundAlert"   : isSoundAlert,
+            "alarm"          : alarm,
+            "objectType"     : objectType,
+            "prob_threshold" : prob_threshold,
+            "pointsPolygon"  : pointsPolygon
+        }
+
+        #self.regions["regions"].append(self.region)
+        self.regions.append(region)
+
+        self.saveRegionFile()
+        #self.printRegions()
 
     def addAlarm(self, idRegion, alarm):
-        self.regions["regions"][idRegion].get('alarm').append(alarm)
+        self.regions[idRegion].get('alarm').append(alarm)
         self.saveRegionFile()
-        self.printRegions()
+        #self.printRegions()
         print('Alarme inserido com sucesso')
         #TO-DO try catch toleranca a falhas
 
@@ -159,8 +170,15 @@ class StatusConfig:
 
     def readRegionsFile(self, file = 'regions.json'):
         print('Lendo arquivo de regiões: ' + os.getcwd() + '/' + file)
-        self.regions = json.load(open(file,'r'))
-        self.printRegions()
+        try:
+            self.regions = json.load(open(file,'r'))
+        except OSError as ex:
+
+                print('Arquivo de Regioes inexistente - será criado um novo arquivo') 
+        else:
+            print('Arquivo de regiões lido com sucesso')
+            #self.printRegions()
+
 
     def deleteRegion(self, nameRegion='regions1'):
         i = 0
@@ -226,7 +244,15 @@ class StatusConfig:
 
     def saveRegionFile(self, file = 'regions.json'):
         print('Salvando arquivo de regiones: ' + os.getcwd() + '/' + file)
-        json.dump(self.regions, open(file, 'w'), indent=4)
+        try:
+            json.dump(self.regions, open(file, 'w'), indent=4)
+
+        except OSError as ex:
+
+            print('Erro ao salvar arquivo {}'.format(file))
+
+        else:
+            print('Arquivo {} salvo'.format(file))
 
 
     def saveConfigFile(self, file = 'config.json'):
