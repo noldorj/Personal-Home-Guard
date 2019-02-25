@@ -130,19 +130,6 @@
        </item>
       </layout>
      </widget>
-     <widget class="QPushButton" name="btnSaveRegion">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>410</y>
-        <width>151</width>
-        <height>27</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Salvar Região</string>
-      </property>
-     </widget>
      <widget class="QWidget" name="formLayoutWidget_3">
       <property name="geometry">
        <rect>
@@ -359,6 +346,39 @@
          </property>
          <property name="text">
           <string>+ Novo Alarme</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="horizontalLayoutWidget">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>399</y>
+        <width>391</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout_4">
+       <item>
+        <widget class="QPushButton" name="btnSaveRegion">
+         <property name="text">
+          <string>Salvar Região</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnDeleteRegion">
+         <property name="text">
+          <string>Deletar</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnCancelRegion">
+         <property name="text">
+          <string>Cancelar</string>
          </property>
         </widget>
        </item>

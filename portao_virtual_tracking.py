@@ -495,12 +495,12 @@ while True:
 
                                 if listObjectMailAlerted.count(objectID) == 0:
 
-                                    if isSoundAlert:
+                                    if r.get('isSoundAlert') == "True":
                                         utils.playSound()
 
-                                    if enviarAlerta:
+                                    if r.get('isEmailAlert') == "True":
 
-                                        print('Enviando alerta por email')
+                                        log.info('Enviando alerta por email')
 
                                         #salvando foto para treinamento
                                         #crop no box
@@ -510,10 +510,9 @@ while True:
 
                        #    cv.imwrite(dir_video_trigger + '/foto_alerta.jpg',frame)'
 
-                                        if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame_no_label_email, str(box[6]))):
+                                        if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame_no_label_email, str(box[6]), r.get('nameRegion'))):
 
-                                            print('Alerta enviado ID[' + str(objectID) + ']')
-                                            print('...')
+                                            log.info('Alerta enviado ID[' + str(objectID) + ']')
 
                                              #para evitar o envio de varios emails do mesmo reconhecimento
                                              #novo_alerta = False

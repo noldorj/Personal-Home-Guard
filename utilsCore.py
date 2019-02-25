@@ -106,8 +106,21 @@ class StatusConfig:
     def getRegions(self):
         return self.regions
 
+    def isRegionsEmpty(self):
+        return True if (len(self.regions) == 0) else False
+
+    def isAlarmEmpty(self, regionName):
+        status = False 
+
+        print('regionName : {}'.format(regionName))
+
+        for r in self.regions:
+            print('nameRegion {}'.format(r.get("nameRegion")))
+            if r.get("nameRegion") == regionName:
+                status = (len(r.get('alarm')) == 0)
 
 
+        return status
 
 
     def setConfig(self, isRecording, isEmailAlert, isGateSelected, isSoundAlert, isOpenVino,
@@ -180,19 +193,49 @@ class StatusConfig:
             #self.printRegions()
 
 
+    def deleteAlarm(self, regionName, alarmName):
+        #print('regionName : {}'.format(regionName))
+        #print('alarmName: {}'.format(alarmName))
+
+        indexRegion = 0
+        indexAlarm = 0
+
+        for r in self.regions:
+            #print('nameRegion {}'.format(r.get("nameRegion")))
+            if r.get("nameRegion") == regionName:
+                for a in r.get('alarm'):
+                    print('name alarm: {}'.format(a.get("name")))
+                    if a.get('name') == alarmName:
+                        del self.regions[indexRegion].get('alarm')[indexAlarm]
+                        print('Alarm removed: {}'.format(alarmName))
+                    indexAlarm = indexAlarm+1
+               # return True
+
+            indexRegion = indexRegion+1
+        #return False
+
+        print("Alarm '{}' removido com sucesso".format(alarmName))
+        #self.saveConfigFile()
+        self.saveRegionFile()
+
+
+
     def deleteRegion(self, nameRegion='regions1'):
         i = 0
-        print('Region {} to be removed'.format(nameRegion))
+        #print('Region {} to be removed'.format(nameRegion))
 
-        for r in self.regions["regions"]:
-            print('nameRegion {}'.format(r.get("nameRegion")))
+        for r in self.regions:
+            #print('nameRegion {}'.format(r.get("nameRegion")))
             if r.get("nameRegion") == nameRegion:
-                del self.regions["regions"][i]
-                print('Region {} removed i: {}'.format(nameRegion, i))
-                return True
+                del self.regions[i]
+                #print('Region {} removed i: {}'.format(nameRegion, i))
+                #return True
 
             i = i+1
-        return False
+        #return False
+        self.saveRegionFile()
+        print("Regiao '{}' removido com sucesso".format(nameRegion))
+
 
 
 
