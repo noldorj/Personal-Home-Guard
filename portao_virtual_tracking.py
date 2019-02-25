@@ -11,6 +11,7 @@ from Utils_tracking import saveImageBox
 import utilsCore as utils
 import pluginOpenVino as pOpenVino
 import logging as log
+import mainFormSlots
 
 #import tensorflow as tf
 
@@ -36,7 +37,7 @@ pb = statusConfig.data["dnnModelPb"]
 pbtxt = statusConfig.data["dnnModelPbTxt"] 
 
 #Carregando regioes salvas
-regions = statusConfig.regions['regions']
+regions = statusConfig.getRegions()
 portaoVirtualSelecionado = False
 #se existirem regioes ja selecionadas, o portao virtual é mostrado
 if len(regions) > 0:
@@ -293,6 +294,7 @@ def initInterface():
 
 def callbackButtonRegioes(self, ret):
     print('Button regioes')
+    windowConfig.show()
 
 def callbackAtivarPortao(ret, ret2):
     global portaoVirtualSelecionado
