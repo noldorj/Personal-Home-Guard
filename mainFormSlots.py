@@ -288,7 +288,7 @@ def comboAlarmsUpdate(i):
 if __name__ == "__main__":
 
     #preenchendo lista de regioes
-    if not statusConfig.isRegionsEmpty:
+    if not statusConfig.isRegionsEmpty():
         ui.btnDeleteRegion.setEnabled(True)
         ui.btnDeleteAlarm.setEnabled(True)
 

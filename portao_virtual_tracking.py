@@ -11,7 +11,7 @@ from Utils_tracking import saveImageBox
 import utilsCore as utils
 import pluginOpenVino as pOpenVino
 import logging as log
-import mainFormSlots
+#import mainFormSlots
 
 #import tensorflow as tf
 
@@ -294,7 +294,7 @@ def initInterface():
 
 def callbackButtonRegioes(self, ret):
     print('Button regioes')
-    windowConfig.show()
+    #windowConfig.show()
 
 def callbackAtivarPortao(ret, ret2):
     global portaoVirtualSelecionado
