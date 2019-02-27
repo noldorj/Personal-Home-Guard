@@ -204,10 +204,10 @@ class StatusConfig:
             #print('nameRegion {}'.format(r.get("nameRegion")))
             if r.get("nameRegion") == regionName:
                 for a in r.get('alarm'):
-                    print('name alarm: {}'.format(a.get("name")))
+                    #print('name alarm: {}'.format(a.get("name")))
                     if a.get('name') == alarmName:
                         del self.regions[indexRegion].get('alarm')[indexAlarm]
-                        print('Alarm removed: {}'.format(alarmName))
+                        #print('Alarm removed: {}'.format(alarmName))
                     indexAlarm = indexAlarm+1
                # return True
 

@@ -2,17 +2,18 @@ import sys
 from PyQt5.QtWidgets import QMainWindow, QApplication, QErrorMessage, QMessageBox, QPushButton
 from PyQt5.QtCore import QTime
 from mainForm import *
-import utilsCore as utils
+from portao_virtual_tracking import *
+#import utilsCore as utils
 
 
-app = QtWidgets.QApplication(sys.argv)
-windowConfig = QtWidgets.QMainWindow()
-ui = Ui_windowConfig()
-ui.setupUi(windowConfig)
+#app = QtWidgets.QApplication(sys.argv)
+#windowConfig = QtWidgets.QMainWindow()
+#ui = Ui_windowConfig()
+#ui.setupUi(windowConfig)
 
-statusConfig = utils.StatusConfig(configFile='config.json.gpu')
+#statusConfig = utils.StatusConfig(configFile='config.json.gpu')
 #TODO getRegions
-regions = statusConfig.getRegions()
+#regions = statusConfig.getRegions()
 
 def refreshStatusConfig():
     statusConfig = utils.StatusConfig(configFile='config.json.gpu')
@@ -285,42 +286,43 @@ def comboAlarmsUpdate(i):
 
 
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
+#def winShow():
 
-    #preenchendo lista de regioes
-    if not statusConfig.isRegionsEmpty():
-        ui.btnDeleteRegion.setEnabled(True)
-        ui.btnDeleteAlarm.setEnabled(True)
-
-        for r in regions:
-            ui.comboRegions.addItem(r.get("nameRegion"))
-        comboRegionsUpdate(ui.comboRegions.currentIndex())
-        comboAlarmsUpdate(ui.comboAlarms.currentIndex())
-    else:
-        ui.btnDeleteRegion.setEnabled(False)
-        ui.btnDeleteAlarm.setEnabled(False)
-
-    ui.btnSaveAlarm.setEnabled(False)
-    ui.btnCancelRegion.setEnabled(False)
-    ui.btnCancelAlarm.setEnabled(False)
-    ui.btnSaveRegion.setEnabled(False)
-    ui.btnNewAlarm.setEnabled(True)
-    ui.comboAlarms.setEnabled(True)
-
-    #linkando com slots
-    ui.comboRegions.activated['int'].connect(comboRegionsUpdate)
-    #ui.comboRegions.currentIndexChanged['int'].connect(comboRegionsUpdate)
-    ui.comboAlarms.activated['int'].connect(comboAlarmsUpdate)
-    ui.btnSaveAlarm.clicked.connect(btnSaveAlarm)
-    ui.btnSaveRegion.clicked.connect(btnSaveRegion)
-    ui.btnDeleteAlarm.clicked.connect(btnDeleteAlarm)
-    ui.btnDeleteRegion.clicked.connect(btnDeleteRegion)
-    ui.btnCancelAlarm.clicked.connect(btnCancelAlarm)
-    ui.btnCancelRegion.clicked.connect(btnCancelRegion)
-    ui.btnNewRegion.clicked.connect(btnNewRegion)
-    ui.btnNewAlarm.clicked.connect(btnNewAlarm)
-
-
-    windowConfig.show()
-    sys.exit(app.exec_())
+#preenchendo lista de regioes
+#if not statusConfig.isRegionsEmpty():
+#    ui.btnDeleteRegion.setEnabled(True)
+#    ui.btnDeleteAlarm.setEnabled(True)
+#
+#    for r in regions:
+#        ui.comboRegions.addItem(r.get("nameRegion"))
+#    comboRegionsUpdate(ui.comboRegions.currentIndex())
+#    comboAlarmsUpdate(ui.comboAlarms.currentIndex())
+#else:
+#    ui.btnDeleteRegion.setEnabled(False)
+#    ui.btnDeleteAlarm.setEnabled(False)
+#
+#ui.btnSaveAlarm.setEnabled(False)
+#ui.btnCancelRegion.setEnabled(False)
+#ui.btnCancelAlarm.setEnabled(False)
+#ui.btnSaveRegion.setEnabled(False)
+#ui.btnNewAlarm.setEnabled(True)
+#ui.comboAlarms.setEnabled(True)
+#
+##linkando com slots
+#ui.comboRegions.activated['int'].connect(comboRegionsUpdate)
+##ui.comboRegions.currentIndexChanged['int'].connect(comboRegionsUpdate)
+#ui.comboAlarms.activated['int'].connect(comboAlarmsUpdate)
+#ui.btnSaveAlarm.clicked.connect(btnSaveAlarm)
+#ui.btnSaveRegion.clicked.connect(btnSaveRegion)
+#ui.btnDeleteAlarm.clicked.connect(btnDeleteAlarm)
+#ui.btnDeleteRegion.clicked.connect(btnDeleteRegion)
+#ui.btnCancelAlarm.clicked.connect(btnCancelAlarm)
+#ui.btnCancelRegion.clicked.connect(btnCancelRegion)
+#ui.btnNewRegion.clicked.connect(btnNewRegion)
+#ui.btnNewAlarm.clicked.connect(btnNewAlarm)
+#
+#
+#windowConfig.show()
+#sys.exit(app.exec_())
 
