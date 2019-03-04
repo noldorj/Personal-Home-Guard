@@ -9,7 +9,7 @@ from objectTracking.pyimagesearch.centroidtracker import CentroidTracker
 from Utils_tracking import sendMailAlert
 from Utils_tracking import saveImageBox
 import utilsCore as utils
-import pluginOpenVino as pOpenVino
+#import pluginOpenVino as pOpenVino
 import logging as log
 #import mainFormSlots
 
@@ -47,10 +47,8 @@ if len(regions) > 0:
 status_dir_criado, dir_video_trigger = utils.createDirectory(statusConfig.data["dirVideos"])
 
 #origem do stream do video
-#source = "rtsp://admin:WWYZRL@192.168.5.101/live/mpeg4:554"
-#source = 'webcam'
 source = statusConfig.data["camSource"]
-print('source: {}'.format(source))
+log.info('source: {}'.format(source))
 ipCam = utils.camSource(source)
 
 prob_threshold = float(statusConfig.data["prob_threshold"])
@@ -164,7 +162,6 @@ crop = False
 cropPolygon = False
 showGate = False
 regiaoPortao = None
-sel_rect_endpoint = []
 
 from matplotlib.path import Path
 
@@ -205,57 +202,16 @@ def polygonSelection(event, x, y, flags, param):
         portaoVirtualSelecionado = True
 
 
-
-
-def shape_selection(event, x, y, flags, param):
-    # grab references to the global variables
-    global ref_point, crop, portaoVirtualSelecionado, sel_rect_endpoint
-
-    # if the left mouse button was clicked, record the starting
-    # (x, y) coordinates and indicate that cropping is being performed
-    if event == cv.EVENT_LBUTTONDOWN and not portaoVirtualSelecionado:
-        ref_point = [(x, y)]
-        crop = True
-#        print('X: ', ref_point[0][0])
-#        print('Y: ', ref_point[0][1])
-
-    # check to see if the left mouse button was released
-    elif event == cv.EVENT_LBUTTONUP and not portaoVirtualSelecionado:
-        # record the ending (x, y) coordinates and indicate that
-        # the cropping operation is finished
-        ref_point.append((x, y))
-        crop = False
-        # draw a rectangle around the region of interest
-#        cv.rectangle(frame, ref_point[0], ref_point[1], (0, 255, 0), 2)
-#        print('W: ', ref_point[1][0])
-#        print('H: ', ref_point[1][1])qqq
-#        cv.imshow("frame", frame)
-        portaoVirtualSelecionado = True
-
-
-    elif event == cv.EVENT_MOUSEMOVE and not portaoVirtualSelecionado:
-        # record the ending (x, y) coordinates and indicate that
-        # the cropping operation is finished
-        sel_rect_endpoint = [(x, y)]
-
 cv.namedWindow('frame')
-#cv.setMouseCallback('frame', shape_selection)
 cv.setMouseCallback('frame', polygonSelection)
 
 objDetectado = False
-
 
 hora = utils.getDate()['hour'].replace(':','-')
 
 #TO-DO: tem que pegar do arquivo de texto
 current_data_dir = utils.getDate()
-current_data_dir.pop('hour')
-
-
-#
-
-#todo pegar status de arquivo de configuracao
-#statusConfig = utils.StatusConfig()
+current_data_dir = [current_data_dir.get('day'), current_data_dir.get('month')]
 
 timer_without_object = 0
 start_time = 0
@@ -264,12 +220,10 @@ newVideo = True
 objects = None
 #FPS = ipCam.get(cv.CAP_PROP_FPS) #30.0 #frames per second
 FPS = 8  #de acordo com o manual da mibo ic5 intelbras
-enviarAlerta = statusConfig.data["isEmailAlert"] == 'True'
-novo_alerta = True
-isSoundAlert = statusConfig.data["isSoundAlert"] == 'True'
 
 #primeiro objeto é enviado
 listObjectMailAlerted = []
+listObjectSoundAlerted = []
 
 out_video = None
 
@@ -280,11 +234,12 @@ fourcc = cv.VideoWriter_fourcc(*'XVID')
 cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
 
 isOpenVino = statusConfig.data["isOpenVino"] == 'True'
-print('isOpenVino: {}'.format(isOpenVino))
+if isOpenVino:
+    import pluginOpenVino as pOpenVino
+
 device = statusConfig.data["openVinoDevice"]
 
 posConfigPv = 255
-#statusButtonEmail = None
 
 #import mainFormSlots
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -295,17 +250,11 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QErrorMessage, QMessageBo
 from PyQt5.QtCore import QTime
 
 windowConfig = QWidget()
-ui = Ui_windowConfig()
+ui = Ui_formConfig()
 ui.setupUi(windowConfig)
 
 def initInterface():
-
-
     cv.createButton('Configurar ', callbackButtonRegioes, None,cv.QT_PUSH_BUTTON)
-    #cv.createButton('Novo Portao', callbackAtivarPortao, None, cv.QT_PUSH_BUTTON)
-    #cv.createButton('Campainha', callbackCampainha, None, cv.QT_CHECKBOX, 1 if isSoundAlert else 0)
-    #print('initInterface  -  enviarAlerta: {}'.format(enviarAlerta))
-    #cv.createButton('Enviar Email', callbackEnviarEmail, None, cv.QT_CHECKBOX, 1 if enviarAlerta else 0)
 
 
 #---------------- gui -------------------
@@ -330,7 +279,7 @@ def btnCancelRegion():
 
     global portaoVirtualSelecionado
     portaoVirtualSelecionado = True
-    
+
 
 def clearFields():
     ui.txtRegionName.clear()
@@ -368,7 +317,7 @@ def btnNewRegion():
     global portaoVirtualSelecionado, ref_point_polygon
 
     portaoVirtualSelecionado = False
-    #ref_point_polygon.clear()
+    ref_point_polygon.clear()
     print('Selecione novo portao com a tecla CTLR pressionada')
 
     #clear fields
@@ -388,6 +337,7 @@ def btnSaveRegion():
     msg.setIcon(QMessageBox.Information)
     msg.setWindowTitle("Campo em branco")
     msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+    global ref_point_polygon, portaoVirtualSelecionado, cropPolygon
 
     #checando campos em branco
 
@@ -409,18 +359,27 @@ def btnSaveRegion():
         ui.txtNameAlarm.setFocus()
         statusFields = False
 
-    if statusFields:
+    elif len(ref_point_polygon) == 0:
+        msg.setText("Região não selecionada! manter tecla CTRL pressionada até selecionar todos os pontos desejados")
+        msg.exec()
+        portaoVirtualSelecionado = False
+
+    if statusFields and len(ref_point_polygon) > 0:
+
         t = {'start':{'hour':ui.timeStart.time().hour(), 'min':ui.timeStart.time().minute()},
              'end':{'hour':ui.timeEnd.time().hour(), 'min':ui.timeEnd.time().minute()}}
         days = {'mon':'True' if ui.checkMon.isChecked() else 'False',
-                'tues':'True' if ui.checkTue.isChecked() else 'False',
+                'tue':'True' if ui.checkTue.isChecked() else 'False',
                 'wed':'True' if ui.checkWed.isChecked() else 'False',
-                'thurs':'True' if ui.checkThur.isChecked() else 'False',
+                'thu':'True' if ui.checkThur.isChecked() else 'False',
                 'fri':'True' if ui.checkFri.isChecked() else 'False',
                 'sat':'True' if ui.checkSat.isChecked() else 'False',
                 'sun':'True' if ui.checkSun.isChecked() else 'False'
                }
-        newAlarm = [{"name":ui.txtNameAlarm.displayText(), 'time':t, 'days':days}]
+        newAlarm = [{"name":ui.txtNameAlarm.displayText(), 'time':t, 'days':days, 
+                     'isEmailAlert':'True' if ui.checkEmailAlert.isChecked() else 'False',
+                     'isSoundAlert':'True' if ui.checkAlertSound.isChecked() else 'False'
+                    }]
 
         objectType = {'person':'True' if ui.checkPerson.isChecked() else 'False',
                       'car':'True' if ui.checkCar.isChecked() else 'False',
@@ -432,17 +391,15 @@ def btnSaveRegion():
         #points = [[[15,15],[15,65],[65,15],[65,65]]]
 
         statusConfig.addRegion(ui.txtRegionName.displayText(),
-                               'True' if ui.checkEmailAlert.isChecked() else 'False' ,
-                               'True' if ui.checkAlertSound.isChecked() else 'False' ,
                                newAlarm, objectType, round(float(ui.txtThreshold.displayText())/100,2), points )
         refreshStatusConfig()
         #print('count: {}'.format(len(regions)))
         comboRegionsUpdate(len(regions)-1)
         comboAlarmsUpdate(0)
         ui.btnSaveRegion.setEnabled(False)
+        #ref_point_polygon.clear()
 
 
-        global portaoVirtualSelecionado, cropPolygon
 
         portaoVirtualSelecionado = True
         cropPolygon = False
@@ -468,14 +425,18 @@ def btnSaveAlarm():
         t = {'start':{'hour':ui.timeStart.time().hour(), 'min':ui.timeStart.time().minute()},
              'end':{'hour':ui.timeEnd.time().hour(), 'min':ui.timeEnd.time().minute()}}
         days = {'mon':'True' if ui.checkMon.isChecked() else 'False',
-                'tues':'True' if ui.checkTue.isChecked() else 'False',
+                'tue':'True' if ui.checkTue.isChecked() else 'False',
                 'wed':'True' if ui.checkWed.isChecked() else 'False',
-                'thurs':'True' if ui.checkThur.isChecked() else 'False',
+                'thu':'True' if ui.checkThur.isChecked() else 'False',
                 'fri':'True' if ui.checkFri.isChecked() else 'False',
                 'sat':'True' if ui.checkSat.isChecked() else 'False',
                 'sun':'True' if ui.checkSun.isChecked() else 'False'
                }
-        a = {"name":ui.txtNameAlarm.displayText(), 'time':t, 'days':days}
+        a = {"name":ui.txtNameAlarm.displayText(), 'time':t, 'days':days, 
+                     'isEmailAlert':'True' if ui.checkEmailAlert.isChecked() else 'False',
+                     'isSoundAlert':'True' if ui.checkAlertSound.isChecked() else 'False'
+                    }
+        #a = {"name":ui.txtNameAlarm.displayText(), 'time':t, 'days':days}
         statusConfig.addAlarm(ui.comboRegions.currentIndex(), a)
         refreshStatusConfig()
 
@@ -541,7 +502,7 @@ def comboRegionsUpdate(i):
             fillComboAlarm(i)
             #comboAlarmsUpdate(0)
             #ui.comboAlarms.setCurrentIndex(0)
-            print('alarm update from regionupdate')
+            #print('alarm update from regionupdate')
 
         ui.comboRegions.setCurrentIndex(i)
         comboAlarmsUpdate(0)
@@ -580,9 +541,9 @@ def comboAlarmsUpdate(i):
         ui.btnDeleteAlarm.setEnabled(True)
         a = regions[ui.comboRegions.currentIndex()].get('alarm')[i]
         ui.checkMon.setCheckState(a.get('days').get('mon') == 'True')
-        ui.checkTue.setCheckState(a.get('days').get('tues') == 'True')
+        ui.checkTue.setCheckState(a.get('days').get('tue') == 'True')
         ui.checkWed.setCheckState(a.get('days').get('wed') == 'True')
-        ui.checkThur.setCheckState(a.get('days').get('thurs') == 'True')
+        ui.checkThur.setCheckState(a.get('days').get('thu') == 'True')
         ui.checkFri.setCheckState(a.get('days').get('fri') == 'True')
         ui.checkSat.setCheckState(a.get('days').get('sat') == 'True')
         ui.checkSun.setCheckState(a.get('days').get('sun') == 'True')
@@ -602,7 +563,6 @@ def comboAlarmsUpdate(i):
 
 #---------------- gui -------------------
 def callbackButtonRegioes(self, ret):
-
 
     if not statusConfig.isRegionsEmpty():
         ui.btnDeleteRegion.setEnabled(True)
@@ -636,35 +596,10 @@ def callbackButtonRegioes(self, ret):
     ui.btnNewRegion.clicked.connect(btnNewRegion)
     ui.btnNewAlarm.clicked.connect(btnNewAlarm)
     windowConfig.show()
-    print('Button regioes')
+    #print('Button regioes')
 
-
-
-
-def callbackAtivarPortao(ret, ret2):
-    global portaoVirtualSelecionado
-    #if portaoVirtualSelecionado:
-    #    log.info('Portao já selecionado')
-
-    portaoVirtualSelecionado = False
-    #print('portaoVirtualSelecionado: {}'.format(portaoVirtualSelecionado))
-    sel_rect_endpoint.clear()
-    ref_point_polygon.clear()
-    log.info('Selecione novo portao')
-
-def callbackEnviarEmail(ret, ret2):
-    global enviarAlerta 
-    enviarAlerta = True if ret else False 
-    print('enviarAlerta: {}'.format(enviarAlerta))
-    #print('ret: {}'.format(ret))
-
-def callbackCampainha(ret, ret2):
-    global isSoundAlert
-    isSoundAlert = True if ret else False 
-    print('isSoundAlert: {}'.format(isSoundAlert))
 
 initInterface()
-
 
 ### ---------------  OpenVino Init ----------------- ###
 if isOpenVino:
@@ -688,36 +623,23 @@ while True:
 
     if (conectado and frame is not None and next_frame is not None):
 
-
         objects = ct.update(rects = listObjectsTracking)
 
         currentData = utils.getDate()
-        currentData.pop('hour')
+        currentData = [currentData.get('day'), currentData.get('month')]
+        #print('currentData: {}'.format(currentData))
+        #print('currentDir: {}'.format(current_data_dir))
 
         if current_data_dir != currentData:
             status_dir_criado, dir_video_trigger = utils.createDirectory(statusConfig.data["dirVideos"])
             current_data_dir = utils.getDate()
             current_data_dir.pop('hour')
 
-#        if frame is not None and conectado:
-
-        #if portaoVirtualSelecionado:
-           #cv.rectangle(frame_screen, ref_point[0], ref_point[1], (0, 255, 0), 2)
-
-           #pts = np.array(ref_point_polygon, np.int32)
-           #pts = pts.reshape((-1,1,2))
-           #cv.polylines(frame_screen,[pts],True,(0,255,255))
-           #print('pts: {}'.format(ref_point_polygon))
-
-           #desenhando regioes
+        #desenhando regioes
         for r in regions:
              pts = np.array(r.get("pointsPolygon"), np.int32)
              pts = pts.reshape((-1,1,2))
              cv.polylines(frame_screen,[pts],True,(0,255,255))
-
-
-        #if crop and sel_rect_endpoint:
-        #    cv.rectangle(frame_screen, ref_point[0], sel_rect_endpoint[0], (0, 255, 0), 2)
 
         if cropPolygon:
             pts = np.array(ref_point_polygon, np.int32)
@@ -730,7 +652,6 @@ while True:
 
             if isOpenVino:
             ### ---------------  OpenVino Get Objects ----------------- ###
-                #frame, next_frAme, cur_request_id, next_request_id, listObjects, listObjectsTracking  = pOpenVino.getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, prob_threshold)
 
                 ret, listReturn  = pOpenVino.getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, prob_threshold)
 
@@ -750,40 +671,24 @@ while True:
         if len(listObjects) == 0 and portaoVirtualSelecionado: 
             #print('Sem objetos...')
             #start_time = time.time()
-           #print('start_time ' + str(start_time))
-           #print('timer_without_object: ' + str(timer_without_object))
+            #print('start_time ' + str(start_time))
+            #print('timer_without_object: ' + str(timer_without_object))
             gravando = False
             newVideo = True
-            novo_alerta = False
 
             listObjects.clear()
             listObjectsTracking.clear()
             objects = ct.update(listObjectsTracking)
 
-
             if out_video is not None:
                 #print('Video release')
                 out_video.release()
-
-           # if (timer_without_object - start_time) >= 5:
-           #     print('Gravando false')
-           #     gravando = False
-           #     start_time = 0
-           #     timer_without_object = 0
-           #     newVideo = True
-
-           # else:
-           #     print('Gravando enquanto objeto some')
-           #     out_video = cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, 20.0, (1280,720))
-           #     out_video.write(frame)
-           #     gravando = True
 
         #se tem objetos detectados pela CNN
         else:
 
             #enquanto tiver objetos, grava
             gravando = True
-            novo_alerta = True
 
             for box in listObjects:
 
@@ -798,9 +703,6 @@ while True:
 
                     for (objectID, centroid) in objectsTracking.items():
 
-                       #print('ref_point[0][0]: ', ref_point[0][0], 'ref_point[1][0]: ', ref_point[1][0], 'centroid[0]: ', centroid[0])
-                       # print('ref_point[0][1]: ', ref_point[0][1], 'ref_point[1][1]: ', ref_point[1][1], 'centroid[0]: ', centroid[1])
-
                         #desenhando o box e label
                         cv.rectangle(frame_screen, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
                         top = int (box[1])
@@ -810,75 +712,77 @@ while True:
                         cv.putText(frame_screen, text, (centroid[0] - 10, centroid[1] - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                         cv.circle(frame_screen, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
-
-
-                        #se o objeto estiver contido no portaoVirtual
-                        #if centroid[0] >= ref_point[0][0] and centroid[0] <= ref_point[1][0] \
-                        #and centroid[1] >= ref_point[0][1] and centroid[1] <= ref_point[1][1]:
-
-                        #TODO check centroid[0]
-                        #if isIdInsideRegion(centroid, ref_point_polygon):
                         #checando para varias regioes
                         for r in regions:
                             #print('checando pv {}'.format(r.get('nameRegion')))
 
                             if isIdInsideRegion(centroid, r.get('pointsPolygon')):
 
-                                #print("Objeto dentro do portao virtual")
-                               # print('Desenhando objetos')
+                                #checando alarmes 
+                                d = utils.getDate()
+                                weekDay = d['weekDay']
+                                #print('weekDay {}'.format(weekDay))
+                                minute = int(d['minute'])
+                                hour = int(d['hourOnly'])
 
-                                #desenhando o box e label
-                                #cv.rectangle(frame_screen, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
-                                #top = int (box[1])
-                                #y = top - 15 if top - 15 > 15 else top + 15
-                                #cv.putText(frame_screen, str(box[4]), (int(box[0]), int(y)),cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
+                                currentMinutes = (hour * 60) + minute
+                                #print('currentMinutes: {}'.format(currentMinutes))
 
+                                for a in r.get('alarm'):
 
-                                #desenhando o ID no centro do objeto
-                                #text = "ID {}".format(objectID)
-                                #cv.putText(frame_screen, text, (centroid[0] - 10, centroid[1] - 10),
-                                #    cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                                #cv.circle(frame_screen, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+                                    startMinutes = (int(a.get('time').get('start').get('hour'))*60) + int(a.get('time').get('start').get('min'))
+                                    endMinutes = (int(a.get('time').get('end').get('hour'))*60) + int(a.get('time').get('end').get('min'))
 
-                                if listObjectMailAlerted.count(objectID) == 0:
+                                    #print('startMinutes: {}'.format(startMinutes))
+                                    #print('endMinutes: {}'.format(endMinutes))
+                                    #print('a.get(days).get(weekDay) {}'.format(a.get('days').get(weekDay)))
 
-                                    if r.get('isSoundAlert') == "True":
-                                        utils.playSound()
+                                    if a.get('days').get(weekDay) == "True":
 
-                                    if r.get('isEmailAlert') == "True":
+                                        if currentMinutes >= startMinutes and currentMinutes < endMinutes:
+                                            #print('break')
+                                            #break
+                                            log.info("Dentro do periodo de alarme")
 
-                                        log.info('Enviando alerta por email')
+                                            if a.get('isSoundAlert') == "True":
+                                                #evitar campainhas seguidas para mesmo objeto
+                                                if listObjectSoundAlerted.count(objectID) == 0:
+                                                    utils.playSound()
 
-                                        #salvando foto para treinamento
-                                        #crop no box
-                                       #left, top, right, bottom
-                                        frame_no_label = frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
-                                        saveImageBox(frame_no_label, str(box[6]))
+                                            if a.get('isEmailAlert') == "True":
+                                                #evitar emails seguidos para mesmo objeto
+                                                if listObjectMailAlerted.count(objectID) == 0:
 
-                       #    cv.imwrite(dir_video_trigger + '/foto_alerta.jpg',frame)'
+                                                    log.info('Enviando alerta por email')
+                                                    #salvando foto para treinamento
+                                                    #crop no box
+                                                    #left, top, right, bottom
+                                                    #frame_no_label = frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
+                                                    #saveImageBox(frame_no_label, str(box[6]))
 
-                                        if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame_no_label_email, str(box[6]), r.get('nameRegion'))):
+                                                    if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame_no_label_email, str(box[6]), r.get('nameRegion'))):
+                                                        log.info('Alerta enviado ID[' + str(objectID) + ']')
 
-                                            log.info('Alerta enviado ID[' + str(objectID) + ']')
+                                                    listObjectMailAlerted.append(objectID)
+                                #end loop alarms
 
-                                             #para evitar o envio de varios emails do mesmo reconhecimento
-                                             #novo_alerta = False
+                            #end if isIdInsideRegion
 
-                                        listObjectMailAlerted.append(objectID)
+                        #end loop in Regions
 
-                                if gravando and newVideo:
-                                      #grava video novo se tiver um objeto novo na cena
-                                      if out_video is not None:
-                                          out_video.release()
+                        if gravando and newVideo:
+                              #grava video novo se tiver um objeto novo na cena
+                              if out_video is not None:
+                                  out_video.release()
 
-                                      hora = utils.getDate()['hour'].replace(':','-')
-                                      out_video = cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
-                                      out_video.write(frame_no_label)
-                                      newVideo = False
-#                                      cv.waitKey(100)
+                              hora = utils.getDate()['hour'].replace(':','-')
+                              out_video = cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
+                              out_video.write(frame_no_label)
+                              newVideo = False
+#                              cv.waitKey(100)
 
-                                else:
-                                    out_video.write(frame_no_label)
+                        else:
+                            out_video.write(frame_no_label)
 
         cv.imshow('frame', frame_screen)
 
@@ -889,19 +793,19 @@ while True:
         if cv.waitKey(1) & 0xFF == ord('q'):
             break
 
-        if cv.waitKey(1) & 0xFF == ord('a'):
-            enviarAlerta = not enviarAlerta
-            if (enviarAlerta):
-                print('Alerta por email ativado')
-            else:
-                print('Alerta por email desativado')
+        #TO:DO refazer de acordo com a regiao 
+        #if cv.waitKey(1) & 0xFF == ord('a'):
+        #    enviarAlerta = not enviarAlerta
+        #    if (enviarAlerta):
+        #        print('Alerta por email ativado')
+        #    else:
+        #        print('Alerta por email desativado')
 
         #to select the Region of Interest
         if cv.waitKey(1) & 0xFF == ord('s'):
 
             #if portaoVirtualSelecionado:
             portaoVirtualSelecionado = False
-            #sel_rect_endpoint.clear()
             ref_point_polygon.clear()
             #print('Portao já selecionado')
             print('Selecione novo portao')

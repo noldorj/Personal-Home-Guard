@@ -65,7 +65,7 @@ def btnCancelAlarm():
     comboRegionsUpdate(ui.comboRegions.currentIndex())
 
 def btnSaveRegion():
-    print('botao btnSaveRegion')
+    #print('botao btnSaveRegion')
     statusFields = True
     msg = QMessageBox()
     msg.setIcon(QMessageBox.Information)
@@ -139,7 +139,7 @@ def btnSaveAlarm():
 
     if statusFields:
 
-        print('botao btnSAveAlarm')
+        #print('botao btnSAveAlarm')
         t = {'start':{'hour':ui.timeStart.time().hour(), 'min':ui.timeStart.time().minute()},
              'end':{'hour':ui.timeEnd.time().hour(), 'min':ui.timeEnd.time().minute()}}
         days = {'mon':'True' if ui.checkMon.isChecked() else 'False',
@@ -227,7 +227,7 @@ def comboRegionsUpdate(i):
             fillComboAlarm(i)
             #comboAlarmsUpdate(0)
             #ui.comboAlarms.setCurrentIndex(0)
-            print('alarm update from regionupdate')
+            #print('alarm update from regionupdate')
 
         ui.comboRegions.setCurrentIndex(i)
         comboAlarmsUpdate(0)
@@ -257,7 +257,7 @@ def btnNewAlarm():
     ui.comboAlarms.setEnabled(False)
 
 def comboAlarmsUpdate(i):
-    print('alarmUpdate i: {}'.format(i))
+    #print('alarmUpdate i: {}'.format(i))
     clearFieldsAlarm()
 
     #preenchendo lista de alarmes

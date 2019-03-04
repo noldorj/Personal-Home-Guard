@@ -17,7 +17,10 @@ def getDate():
     #para dias com um digito
     if data.count("") > 0:
         data.remove("")
-    data = {'day':data[2], 'month':data[1],'hour':data[3], 'year':data[4]  }
+    #minute = data[3].split(":")[1]
+    #hourOnly = data[3].split(":")[0]
+    #weekDay = data[0].lower()
+    data = {'day':data[2], 'month':data[1],'hour':data[3], 'year':data[4], 'weekDay':data[0].lower(), 'minute':data[3].split(":")[1], 'hourOnly':data[3].split(":")[0]}
     return data
 
 def createDirectory(dirVideos):
@@ -88,12 +91,12 @@ class StatusConfig:
                 {
                         "name": "alarm1",
                         "time"              : {'start':'8:00', 'end':'21:00'},
-                        "days"              : {'mon':'True', 'tues':'true','wed':'true', 'thurs':'true', 'fri':'true','sat':'true','sun':'true'},
+                        "days"              : {'mon':'True', 'tue':'true','wed':'true', 'thu':'true', 'fri':'true','sat':'true','sun':'true'},
                 },
                 {
                         "name": "alarm2",
                         "time"              : {'start':'8:00', 'end':'21:00'},
-                        "days"              : {'mon':'True', 'tues':'true','wed':'true', 'thurs':'true', 'fri':'true','sat':'true','sun':'true'},
+                        "days"              : {'mon':'True', 'tue':'true','wed':'true', 'thu':'true', 'fri':'true','sat':'true','sun':'true'},
                 }
         ],
         "objectType"        : {'person':'true', 'car':'true', 'bike':'true', 'dog':'true'},
@@ -112,10 +115,10 @@ class StatusConfig:
     def isAlarmEmpty(self, regionName):
         status = False 
 
-        print('regionName : {}'.format(regionName))
+        #print('regionName : {}'.format(regionName))
 
         for r in self.regions:
-            print('nameRegion {}'.format(r.get("nameRegion")))
+            #print('nameRegion {}'.format(r.get("nameRegion")))
             if r.get("nameRegion") == regionName:
                 status = (len(r.get('alarm')) == 0)
 
@@ -123,12 +126,9 @@ class StatusConfig:
         return status
 
 
-    def setConfig(self, isRecording, isEmailAlert, isGateSelected, isSoundAlert, isOpenVino,
+    def setConfig(self, isRecording, isOpenVino,
                       dnnModel, openVinoModel, emailConfig, dirVideos, camSource, openVinoDevice, prob_threshold):
         self.data["isRecording"]              = isRecording
-        self.data["isEmailAlert"]             = isEmailAlert
-        self.data["isGateSelected"]           = isGateSelected
-        self.data["isSoundAlert"]             = isSoundAlert
         self.data["camSource"]                = camSource
         self.data["prob_threshold"]           = prob_threshold
         self.data["isOpenVino"]               = isOpenVino
@@ -144,13 +144,11 @@ class StatusConfig:
         self.data["emailConfig"]["subject"]   = emailConfig["subject"]
         self.data["emailConfig"]["to"]        = emailConfig["to"]
 
-    def addRegion(self, nameRegion, isEmailAlert, isSoundAlert, alarm, objectType, prob_threshold, pointsPolygon):
+    def addRegion(self, nameRegion, alarm, objectType, prob_threshold, pointsPolygon):
 
 
         region = {
             "nameRegion"     : nameRegion,
-            "isEmailAlert"   : isEmailAlert,
-            "isSoundAlert"   : isSoundAlert,
             "alarm"          : alarm,
             "objectType"     : objectType,
             "prob_threshold" : prob_threshold,
@@ -277,9 +275,9 @@ class StatusConfig:
                     print('Alarm Time end:      {}:{}'.format(a.get('time').get('end').get('hour'), a.get('time').get('end').get('min')))
                     print('Alarm Days:')
                     print('  Monday:        {}'.format(a.get('days').get('mon')))
-                    print('  Tuesday:       {}'.format(a.get('days').get('tues')))
+                    print('  Tuesday:       {}'.format(a.get('days').get('tue')))
                     print('  Wednesday:     {}'.format(a.get('days').get('wed')))
-                    print('  Thrusday:      {}'.format(a.get('days').get('thurs')))
+                    print('  Thrusday:      {}'.format(a.get('days').get('thu')))
                     print('  Friday:        {}'.format(a.get('days').get('fri')))
                     print('  Saturday:      {}'.format(a.get('days').get('sat')))
                     print('  Sunday:        {}'.format(a.get('days').get('sun')))
@@ -317,7 +315,7 @@ def playSound():
 #t = {"start":"7:00", "end":"12:00"}
 #t2 = {"start":"10:00", "end":"15:00"}
 #
-#days = {'mon':'False', 'tues':'False','wed':'False', 'thurs':'False', 'fri':'False','sat':'False','sun':'False'}
+#days = {'mon':'False', 'tue':'False','wed':'False', 'thu':'False', 'fri':'False','sat':'False','sun':'False'}
 ##alarm = []
 #objectType = {'person':'teste', 'car':'teste', 'bike':'teste', 'dog':'teste'}
 #alarm1 = {"name":"alarm1", "time":t, "days":days}
