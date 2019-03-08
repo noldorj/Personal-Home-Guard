@@ -30,6 +30,26 @@ classes = ["background", "pessoa", "bicileta", "carro", "moto", "airplane", "bus
 
 #tie, suitecase (= carro)
 
+import subprocess
+import ewmh
+
+active_id = hex(ewmh.EWMH().getActiveWindow().id)
+
+def suspend_screensaver():
+    print('suspend')
+    #window_id = subprocess.Popen('xwininfo -root | grep xwininfo | cut -d" " -f4', stdout=subprocess.PIPE, shell=True).stdout.read().strip()
+    #run xdg-screensaver on root window
+    subprocess.call('xdg-screensaver', 'suspend')
+
+def resume_screensaver():
+    print('resume')
+    subprocess.Popen('xdg-screensaver resume ')
+
+def activate_screensaver():
+    subprocess.Popen('xdg-screensaver activate')
+
+
+
 statusConfig = utils.StatusConfig(configFile='config.json.gpu.webcam')
 #statusConfig = utils.StatusConfig(configFile='config.json.gpu')
 
@@ -606,6 +626,9 @@ def callbackButtonRegioes(self, ret):
 
 initInterface()
 counter = 0
+tEmpty = 0
+tEmptyEnd = 0
+tEmptyStart = 0
 
 ### ---------------  OpenVino Init ----------------- ###
 if isOpenVino:
@@ -620,6 +643,15 @@ if isOpenVino:
 else:
     cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
 
+conectado, frame = ipCam.read()
+if frame is not None:
+    (h,w) = frame.shape[:2]
+
+#print('w,h {}'.format((w,h)))
+
+#tempo sem objetos detectados
+tEmptyStart = time.time()
+
 while True:
 
     #if counter == 0:
@@ -631,7 +663,6 @@ while True:
     conectado, frame_no_label = ipCam.read()
     conectado, frame_no_label_email = ipCam.read()
     conectado, frame_screen = ipCam.read()
-    (h,w) = frame.shape[:2]
 
     #print('w,h {}'.format((w,h)))
 
@@ -680,19 +711,25 @@ while True:
 
 
         if len(listObjects) == 0 and portaoVirtualSelecionado:
-            #gravando = False
-            #newVideo = True
+
 
             listObjects.clear()
             listObjectsTracking.clear()
             objects = ct.update(listObjectsTracking)
 
+            tEmptyEnd = time.time()
+            tEmpty = tEmptyEnd- tEmptyStart
+            print('sem objetos')
+            print('empty: {}'.format(tEmpty))
+
+            if tEmpty > 10:
+                print('tempty > 10')
+                gravando = False
+                newVideo = True
+                releaseVideo = True
 
         #se tem objetos detectados pela CNN
         else:
-
-            #enquanto tiver objetos, grava
-            #gravando = True
 
             for box in listObjects:
 
@@ -723,8 +760,15 @@ while True:
 
                                 if isIdInsideRegion(centroid, r.get('pointsPolygon')):
 
+                                    tEmptyEnd = time.time()
+                                    tEmpty = tEmptyEnd- tEmptyStart
+                                    #print('tEmpty {}:'.format(tEmpty))
+
+                                    tEmptyStart = time.time()
+
                                     #enquanto tiver objetos dentro da regiao o video eh gravado, independente do alarme
                                     gravando = True
+                                    #resume_screensaver()
 
                                     #checando alarmes 
                                     d = utils.getDate()
@@ -770,9 +814,16 @@ while True:
                                     #end loop alarms
                                 else:
 
-                                    gravando = False
-                                    newVideo = True
-                                    releaseVideo = True
+                                    tEmptyEnd = time.time()
+                                    tEmpty = tEmptyEnd- tEmptyStart
+                                    #print('tEmpty {}'.format(tEmpty))
+
+                                    if tEmpty > 10:
+                                        gravando = False
+                                        newVideo = True
+                                        releaseVideo = True
+                                        #suspend_screensaver()
+
 
                                 #end if isIdInsideRegion
 
@@ -781,11 +832,13 @@ while True:
                     #end loop objectTracking.items()
             #end loop for box listObjects
 
+        tEmptyEnd = time.time()
+        tEmpty = tEmptyEnd- tEmptyStart
+        #print('tEmpty end loop {}'.format(tEmpty))
 
         if newVideo and gravando:
 
              if out_video is not None:
-                 print("video release: {}".format(nameVideo))
                  out_video.release()
                  out_video = None
                  releaseVideo = False
@@ -793,36 +846,22 @@ while True:
              #grava video novo se tiver um objeto novo na cena
              hora = utils.getDate()['hour'].replace(':','-')
              nameVideo = dir_video_trigger + '/' + hora + '.avi'
-             #out_video = cv.VideoWriter(nameVideo, fourcc, FPS, (1280,720))
              out_video = cv.VideoWriter(nameVideo, fourcc, FPS, (w,h))
              out_video.write(frame_no_label)
-             print("Gravando novo video: {}".format(nameVideo))
              newVideo = False
 
-        else:
+        if gravando:
             if out_video is not None:
                 out_video.write(frame_no_label)
 
         cv.imshow('frame', frame_screen)
 
         end = time.time()
-        #endFps = end
-        #counter = counter+1
- 
-        #secFps = endFps - startFps
-        #fpsReal = counter / secFps
-
-        #if counter > 30:
-        #    print('FPS: {:.2f}'.format(fpsReal))
-
-        #if counter == sys.maxsize -1000:
-        #    counter = 0
 
         renderTime = (end-start)*1000
         FPS = 1000/renderTime
         #print('render time: {:10.2f} ms'.format(renderTime))
-        print('FPS: {:10.2f} ms'.format(FPS))
-
+        #print('FPS: {:10.2f} ms'.format(FPS))
 
         listObjects.clear()
         listObjectsTracking.clear()
