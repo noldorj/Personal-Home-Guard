@@ -27,7 +27,7 @@ from  openvino.inference_engine import IENetwork, IEPlugin
 #def main():
 log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 #labels_map = ["background", "pessoa", "carro", "bicileta"]
-labels_map = ["background", "carro", "pessoa", "bicileta"]
+labels_map = ["background", "car", "person", "bike"]
 
 #lista de boxes detectados
 listRectanglesDetected = []
@@ -213,10 +213,10 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
             #print('box from plugin: {}'.format(box))
 
 
-            if det_label is 'pessoa' or \
-                        det_label is 'gato' or \
-                        det_label is 'carro' or \
-                        det_label is 'cachorro':
+            if det_label is 'person' or \
+                        det_label is 'cat' or \
+                        det_label is 'car' or \
+                        det_label is 'dog':
 
                 boxTracking = (xmin, ymin, xmax, ymax)
                 listObjectsTracking.append(boxTracking)

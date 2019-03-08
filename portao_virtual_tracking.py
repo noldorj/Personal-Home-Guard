@@ -30,7 +30,8 @@ classes = ["background", "pessoa", "bicileta", "carro", "moto", "airplane", "bus
 
 #tie, suitecase (= carro)
 
-statusConfig = utils.StatusConfig(configFile='config.json.gpu')
+statusConfig = utils.StatusConfig(configFile='config.json.gpu.webcam')
+#statusConfig = utils.StatusConfig(configFile='config.json.gpu')
 
 # dnnMOdel for TensorFlow Object Detection API
 pb = statusConfig.data["dnnModelPb"] 
@@ -215,23 +216,26 @@ current_data_dir = [current_data_dir.get('day'), current_data_dir.get('month')]
 
 timer_without_object = 0
 start_time = 0
-gravando = statusConfig.data["isRecording"] == 'True'
+#gravando = statusConfig.data["isRecording"] == 'True'
+nameVideo  = 'firstVideo'
+gravando = False
 newVideo = True
+releaseVideo = False 
 objects = None
 #FPS = ipCam.get(cv.CAP_PROP_FPS) #30.0 #frames per second
-FPS = 8  #de acordo com o manual da mibo ic5 intelbras
+FPS = 4  #de acordo com o manual da mibo ic5 intelbras
 
 #primeiro objeto é enviado
 listObjectMailAlerted = []
 listObjectSoundAlerted = []
-
+listObjectVideoRecorded = []
 out_video = None
 
 #fourcc = cv.VideoWriter_fourcc(*'X264')
 #for linux x264 need to recompile opencv mannually
 fourcc = cv.VideoWriter_fourcc(*'XVID')
 #fourcc = cv.VideoWriter_fourcc('M','J','P','G')
-cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
+#cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
 
 isOpenVino = statusConfig.data["isOpenVino"] == 'True'
 if isOpenVino:
@@ -287,8 +291,8 @@ def clearFields():
     ui.txtThreshold.clear()
     ui.comboAlarms.clear()
     ui.comboRegions.clear()
-    ui.checkEmailAlert.setCheckState(False)
-    ui.checkAlertSound.setCheckState(False)
+    #ui.checkEmailAlert.setCheckState(False)
+    #ui.checkAlertSound.setCheckState(False)
     ui.checkPerson.setCheckState(False)
     ui.checkBike.setCheckState(False)
     ui.checkCar.setCheckState(False)
@@ -449,9 +453,6 @@ def btnSaveAlarm():
 
 
 def btnDeleteAlarm():
-    #print('botao btnDeleteAlarm')
-    #print('alarmId: {}'.format(ui.comboRegions.currentText()))
-    #print('regionId: {}'.format(ui.comboAlarms.currentText()))
     statusConfig.deleteAlarm(ui.comboRegions.currentText(), ui.comboAlarms.currentText())
     refreshStatusConfig()
     comboRegionsUpdate(0)
@@ -491,8 +492,8 @@ def comboRegionsUpdate(i):
         r = regions[i]
         ui.txtRegionName.insert(r.get('nameRegion'))
         ui.txtThreshold.insert(str(r.get('prob_threshold')*100))
-        ui.checkEmailAlert.setCheckState(r.get('isEmailAlert')=="True")
-        ui.checkAlertSound.setCheckState(r.get('isSoundAlert')=="True")
+        #ui.checkEmailAlert.setCheckState(r.get('isEmailAlert')=="True")
+        #ui.checkAlertSound.setCheckState(r.get('isSoundAlert')=="True")
         ui.checkPerson.setCheckState(r.get('objectType').get('person')=="True")
         ui.checkCar.setCheckState(r.get('objectType').get('car')=="True")
         ui.checkBike.setCheckState(r.get('objectType').get('bike')=="True")
@@ -519,6 +520,8 @@ def clearFieldsAlarm():
     ui.checkFri.setCheckState(False)
     ui.checkSat.setCheckState(False)
     ui.checkSun.setCheckState(False)
+    ui.checkEmailAlert.setCheckState(False)
+    ui.checkAlertSound.setCheckState(False)
     ui.timeStart.clear()
     ui.timeEnd.clear()
     ui.txtNameAlarm.clear()
@@ -547,6 +550,8 @@ def comboAlarmsUpdate(i):
         ui.checkFri.setCheckState(a.get('days').get('fri') == 'True')
         ui.checkSat.setCheckState(a.get('days').get('sat') == 'True')
         ui.checkSun.setCheckState(a.get('days').get('sun') == 'True')
+        ui.checkEmailAlert.setCheckState(a.get('isEmailAlert') == 'True')
+        ui.checkAlertSound.setCheckState(a.get('isSoundAlert') == 'True')
         ui.txtNameAlarm.insert(a.get('name'))
         ui.comboAlarms.setCurrentIndex(i)
 
@@ -600,6 +605,7 @@ def callbackButtonRegioes(self, ret):
 
 
 initInterface()
+counter = 0
 
 ### ---------------  OpenVino Init ----------------- ###
 if isOpenVino:
@@ -616,10 +622,18 @@ else:
 
 while True:
 
+    #if counter == 0:
+    #    startFps = time.time()
+
+    start = time.time()
+
     conectado, frame = ipCam.read()
     conectado, frame_no_label = ipCam.read()
     conectado, frame_no_label_email = ipCam.read()
     conectado, frame_screen = ipCam.read()
+    (h,w) = frame.shape[:2]
+
+    #print('w,h {}'.format((w,h)))
 
     if (conectado and frame is not None and next_frame is not None):
 
@@ -627,13 +641,11 @@ while True:
 
         currentData = utils.getDate()
         currentData = [currentData.get('day'), currentData.get('month')]
-        #print('currentData: {}'.format(currentData))
-        #print('currentDir: {}'.format(current_data_dir))
 
         if current_data_dir != currentData:
             status_dir_criado, dir_video_trigger = utils.createDirectory(statusConfig.data["dirVideos"])
             current_data_dir = utils.getDate()
-            current_data_dir.pop('hour')
+            current_data_dir = [current_data_dir.get('day'), current_data_dir.get('month')]
 
         #desenhando regioes
         for r in regions:
@@ -666,40 +678,29 @@ while True:
                 log.info("CNN via TF Object Detection API")
                 listObjects = objectDetection(frame)
 
-        #print('# Objetos: ' + str(len(listObjects)))
 
-        if len(listObjects) == 0 and portaoVirtualSelecionado: 
-            #print('Sem objetos...')
-            #start_time = time.time()
-            #print('start_time ' + str(start_time))
-            #print('timer_without_object: ' + str(timer_without_object))
-            gravando = False
-            newVideo = True
+        if len(listObjects) == 0 and portaoVirtualSelecionado:
+            #gravando = False
+            #newVideo = True
 
             listObjects.clear()
             listObjectsTracking.clear()
             objects = ct.update(listObjectsTracking)
 
-            if out_video is not None:
-                #print('Video release')
-                out_video.release()
 
         #se tem objetos detectados pela CNN
         else:
 
             #enquanto tiver objetos, grava
-            gravando = True
+            #gravando = True
 
             for box in listObjects:
 
                 if portaoVirtualSelecionado:
                     #print('Checando portao virtual')
 
-                    #box = left, top, right, bottom, label, idx, classe
-                    #print('box inside pv: {}'.format(box))
-
+                    #objetos com ID e centro de massa
                     objectsTracking = ct.update(listObjectsTracking)
-                    #print('objectTracking size: {}'.format(len(objectsTracking)))
 
                     for (objectID, centroid) in objectsTracking.items():
 
@@ -714,77 +715,114 @@ while True:
 
                         #checando para varias regioes
                         for r in regions:
-                            #print('checando pv {}'.format(r.get('nameRegion')))
 
-                            if isIdInsideRegion(centroid, r.get('pointsPolygon')):
+                            #checando tipo objeto
+                            typeObject = str(box[6])
 
-                                #checando alarmes 
-                                d = utils.getDate()
-                                weekDay = d['weekDay']
-                                #print('weekDay {}'.format(weekDay))
-                                minute = int(d['minute'])
-                                hour = int(d['hourOnly'])
+                            if r.get('objectType').get(typeObject) == "True":
 
-                                currentMinutes = (hour * 60) + minute
-                                #print('currentMinutes: {}'.format(currentMinutes))
+                                if isIdInsideRegion(centroid, r.get('pointsPolygon')):
 
-                                for a in r.get('alarm'):
+                                    #enquanto tiver objetos dentro da regiao o video eh gravado, independente do alarme
+                                    gravando = True
 
-                                    startMinutes = (int(a.get('time').get('start').get('hour'))*60) + int(a.get('time').get('start').get('min'))
-                                    endMinutes = (int(a.get('time').get('end').get('hour'))*60) + int(a.get('time').get('end').get('min'))
+                                    #checando alarmes 
+                                    d = utils.getDate()
+                                    weekDay = d['weekDay']
+                                    #print('weekDay {}'.format(weekDay))
+                                    minute = int(d['minute'])
+                                    hour = int(d['hourOnly'])
 
-                                    #print('startMinutes: {}'.format(startMinutes))
-                                    #print('endMinutes: {}'.format(endMinutes))
-                                    #print('a.get(days).get(weekDay) {}'.format(a.get('days').get(weekDay)))
+                                    currentMinutes = (hour * 60) + minute
 
-                                    if a.get('days').get(weekDay) == "True":
+                                    for a in r.get('alarm'):
 
-                                        if currentMinutes >= startMinutes and currentMinutes < endMinutes:
-                                            #print('break')
-                                            #break
-                                            log.info("Dentro do periodo de alarme")
 
-                                            if a.get('isSoundAlert') == "True":
-                                                #evitar campainhas seguidas para mesmo objeto
-                                                if listObjectSoundAlerted.count(objectID) == 0:
-                                                    utils.playSound()
+                                        startMinutes = (int(a.get('time').get('start').get('hour'))*60) + int(a.get('time').get('start').get('min'))
+                                        endMinutes = (int(a.get('time').get('end').get('hour'))*60) + int(a.get('time').get('end').get('min'))
 
-                                            if a.get('isEmailAlert') == "True":
-                                                #evitar emails seguidos para mesmo objeto
-                                                if listObjectMailAlerted.count(objectID) == 0:
 
-                                                    log.info('Enviando alerta por email')
-                                                    #salvando foto para treinamento
-                                                    #crop no box
-                                                    #left, top, right, bottom
-                                                    #frame_no_label = frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
-                                                    #saveImageBox(frame_no_label, str(box[6]))
+                                        if a.get('days').get(weekDay) == "True":
 
-                                                    if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame_no_label_email, str(box[6]), r.get('nameRegion'))):
-                                                        log.info('Alerta enviado ID[' + str(objectID) + ']')
+                                            if currentMinutes >= startMinutes and currentMinutes < endMinutes:
 
-                                                    listObjectMailAlerted.append(objectID)
-                                #end loop alarms
+                                                if a.get('isSoundAlert') == "True":
+                                                    #evitar campainhas seguidas para mesmo objeto
+                                                    if listObjectSoundAlerted.count(objectID) == 0:
+                                                        utils.playSound()
+                                                        listObjectSoundAlerted.append(objectID)
 
-                            #end if isIdInsideRegion
+                                                if a.get('isEmailAlert') == "True":
+                                                    #evitar emails seguidos para mesmo objeto
+                                                    if listObjectMailAlerted.count(objectID) == 0:
+
+                                                        log.info('Enviando alerta por email')
+                                                        #salvando foto para treinamento
+                                                        #crop no box
+                                                        #left, top, right, bottom
+                                                        #frame_no_label = frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
+                                                        #saveImageBox(frame_no_label, str(box[6]))
+
+                                                        if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame_no_label_email, str(box[6]), r.get('nameRegion'))):
+                                                            log.info('Alerta enviado ID[' + str(objectID) + ']')
+
+                                                        listObjectMailAlerted.append(objectID)
+                                    #end loop alarms
+                                else:
+
+                                    gravando = False
+                                    newVideo = True
+                                    releaseVideo = True
+
+                                #end if isIdInsideRegion
 
                         #end loop in Regions
 
-                        if gravando and newVideo:
-                              #grava video novo se tiver um objeto novo na cena
-                              if out_video is not None:
-                                  out_video.release()
+                    #end loop objectTracking.items()
+            #end loop for box listObjects
 
-                              hora = utils.getDate()['hour'].replace(':','-')
-                              out_video = cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
-                              out_video.write(frame_no_label)
-                              newVideo = False
-#                              cv.waitKey(100)
 
-                        else:
-                            out_video.write(frame_no_label)
+        if newVideo and gravando:
+
+             if out_video is not None:
+                 print("video release: {}".format(nameVideo))
+                 out_video.release()
+                 out_video = None
+                 releaseVideo = False
+
+             #grava video novo se tiver um objeto novo na cena
+             hora = utils.getDate()['hour'].replace(':','-')
+             nameVideo = dir_video_trigger + '/' + hora + '.avi'
+             #out_video = cv.VideoWriter(nameVideo, fourcc, FPS, (1280,720))
+             out_video = cv.VideoWriter(nameVideo, fourcc, FPS, (w,h))
+             out_video.write(frame_no_label)
+             print("Gravando novo video: {}".format(nameVideo))
+             newVideo = False
+
+        else:
+            if out_video is not None:
+                out_video.write(frame_no_label)
 
         cv.imshow('frame', frame_screen)
+
+        end = time.time()
+        #endFps = end
+        #counter = counter+1
+ 
+        #secFps = endFps - startFps
+        #fpsReal = counter / secFps
+
+        #if counter > 30:
+        #    print('FPS: {:.2f}'.format(fpsReal))
+
+        #if counter == sys.maxsize -1000:
+        #    counter = 0
+
+        renderTime = (end-start)*1000
+        FPS = 1000/renderTime
+        #print('render time: {:10.2f} ms'.format(renderTime))
+        print('FPS: {:10.2f} ms'.format(FPS))
+
 
         listObjects.clear()
         listObjectsTracking.clear()
@@ -793,30 +831,14 @@ while True:
         if cv.waitKey(1) & 0xFF == ord('q'):
             break
 
-        #TO:DO refazer de acordo com a regiao 
-        #if cv.waitKey(1) & 0xFF == ord('a'):
-        #    enviarAlerta = not enviarAlerta
-        #    if (enviarAlerta):
-        #        print('Alerta por email ativado')
-        #    else:
-        #        print('Alerta por email desativado')
-
-        #to select the Region of Interest
-        if cv.waitKey(1) & 0xFF == ord('s'):
-
-            #if portaoVirtualSelecionado:
-            portaoVirtualSelecionado = False
-            ref_point_polygon.clear()
-            #print('Portao já selecionado')
-            print('Selecione novo portao')
-
     else:
-#        print('frame lost - while')
         if not conectado:
-#            print('Reconecting ...')
+            print('Reconectando em 10 segundos...')
+            time.sleep(10)
             ipCam = utils.camSource(source)
 
 if out_video is not None:
+    print('video release fora do loop')
     out_video.release()
 
 ipCam.release()

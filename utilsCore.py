@@ -177,7 +177,7 @@ class StatusConfig:
     def readConfigFile(self, file = 'config.json'):
         print('Lendo arquivo de configuração: ' + os.getcwd() + '/' + file)
         self.data = json.load(open(file,'r'))
-        self.printConfig()
+        #self.printConfig()
 
     def readRegionsFile(self, file = 'regions.json'):
         print('Lendo arquivo de regiões: ' + os.getcwd() + '/' + file)
