@@ -50,8 +50,8 @@ def activate_screensaver():
 
 
 
-statusConfig = utils.StatusConfig(configFile='config.json.gpu.webcam')
-#statusConfig = utils.StatusConfig(configFile='config.json.gpu')
+#statusConfig = utils.StatusConfig(configFile='config.json.gpu.webcam')
+statusConfig = utils.StatusConfig(configFile='config.json.gpu')
 
 # dnnMOdel for TensorFlow Object Detection API
 pb = statusConfig.data["dnnModelPb"] 
@@ -91,6 +91,7 @@ exec_net = None
 out_blob = None
 input_blob = None
 cur_request_id, next_request_id, render_time = 0, 0, 0
+prob_threshold_returned = 0
 
 #colors = np.random.uniform(0, 255, size=(len(classes), 3))
 
@@ -660,13 +661,14 @@ while True:
     start = time.time()
 
     conectado, frame = ipCam.read()
-    conectado, frame_no_label = ipCam.read()
-    conectado, frame_no_label_email = ipCam.read()
-    conectado, frame_screen = ipCam.read()
 
     #print('w,h {}'.format((w,h)))
 
     if (conectado and frame is not None and next_frame is not None):
+
+        frame_no_label = frame.copy()
+        frame_screen = frame.copy()
+        frame_no_label_email = frame.copy()
 
         objects = ct.update(rects = listObjectsTracking)
 
@@ -700,7 +702,7 @@ while True:
 
                 if ret:
                     frame = next_frame
-                    frame, next_frAme, cur_request_id, next_request_id, listObjects, listObjectsTracking  = listReturn[0], listReturn[1], listReturn[2], listReturn[3], listReturn[4], listReturn[5]
+                    frame, next_frAme, cur_request_id, next_request_id, listObjects, listObjectsTracking, prob_threshold_returned  = listReturn[0], listReturn[1], listReturn[2], listReturn[3], listReturn[4], listReturn[5], listReturn[6]
 
                     cur_request_id, next_request_id = next_request_id, cur_request_id
 
@@ -719,11 +721,11 @@ while True:
 
             tEmptyEnd = time.time()
             tEmpty = tEmptyEnd- tEmptyStart
-            print('sem objetos')
-            print('empty: {}'.format(tEmpty))
+            #print('sem objetos')
+            #print('empty: {}'.format(tEmpty))
 
             if tEmpty > 10:
-                print('tempty > 10')
+                #print('tempty > 10')
                 gravando = False
                 newVideo = True
                 releaseVideo = True
@@ -758,74 +760,84 @@ while True:
 
                             if r.get('objectType').get(typeObject) == "True":
 
-                                if isIdInsideRegion(centroid, r.get('pointsPolygon')):
+                                print('prob_threshold_returned: {}'.format(prob_threshold_returned))
+                                print('prob_threshold config: {}'.format(r.get('prob_threshold')))
 
-                                    tEmptyEnd = time.time()
-                                    tEmpty = tEmptyEnd- tEmptyStart
-                                    #print('tEmpty {}:'.format(tEmpty))
+                                if prob_threshold_returned >= int(r.get('prob_threshold')):
+                                    print(' ')
+                                    print('in')
 
-                                    tEmptyStart = time.time()
+                                    if isIdInsideRegion(centroid, r.get('pointsPolygon')):
 
-                                    #enquanto tiver objetos dentro da regiao o video eh gravado, independente do alarme
-                                    gravando = True
-                                    #resume_screensaver()
+                                        tEmptyEnd = time.time()
+                                        tEmpty = tEmptyEnd- tEmptyStart
+                                        #print('tEmpty {}:'.format(tEmpty))
 
-                                    #checando alarmes 
-                                    d = utils.getDate()
-                                    weekDay = d['weekDay']
-                                    #print('weekDay {}'.format(weekDay))
-                                    minute = int(d['minute'])
-                                    hour = int(d['hourOnly'])
+                                        tEmptyStart = time.time()
 
-                                    currentMinutes = (hour * 60) + minute
+                                        #enquanto tiver objetos dentro da regiao o video eh gravado, independente do alarme
+                                        gravando = True
+                                        #resume_screensaver()
 
-                                    for a in r.get('alarm'):
+                                        #checando alarmes 
+                                        d = utils.getDate()
+                                        weekDay = d['weekDay']
+                                        #print('weekDay {}'.format(weekDay))
+                                        minute = int(d['minute'])
+                                        hour = int(d['hourOnly'])
 
+                                        currentMinutes = (hour * 60) + minute
 
-                                        startMinutes = (int(a.get('time').get('start').get('hour'))*60) + int(a.get('time').get('start').get('min'))
-                                        endMinutes = (int(a.get('time').get('end').get('hour'))*60) + int(a.get('time').get('end').get('min'))
-
-
-                                        if a.get('days').get(weekDay) == "True":
-
-                                            if currentMinutes >= startMinutes and currentMinutes < endMinutes:
-
-                                                if a.get('isSoundAlert') == "True":
-                                                    #evitar campainhas seguidas para mesmo objeto
-                                                    if listObjectSoundAlerted.count(objectID) == 0:
-                                                        utils.playSound()
-                                                        listObjectSoundAlerted.append(objectID)
-
-                                                if a.get('isEmailAlert') == "True":
-                                                    #evitar emails seguidos para mesmo objeto
-                                                    if listObjectMailAlerted.count(objectID) == 0:
-
-                                                        log.info('Enviando alerta por email')
-                                                        #salvando foto para treinamento
-                                                        #crop no box
-                                                        #left, top, right, bottom
-                                                        #frame_no_label = frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
-                                                        #saveImageBox(frame_no_label, str(box[6]))
-
-                                                        if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame_no_label_email, str(box[6]), r.get('nameRegion'))):
-                                                            log.info('Alerta enviado ID[' + str(objectID) + ']')
-
-                                                        listObjectMailAlerted.append(objectID)
-                                    #end loop alarms
-                                else:
-
-                                    tEmptyEnd = time.time()
-                                    tEmpty = tEmptyEnd- tEmptyStart
-                                    #print('tEmpty {}'.format(tEmpty))
-
-                                    if tEmpty > 10:
-                                        gravando = False
-                                        newVideo = True
-                                        releaseVideo = True
-                                        #suspend_screensaver()
+                                        for a in r.get('alarm'):
 
 
-                                #end if isIdInsideRegion
+                                            startMinutes = (int(a.get('time').get('start').get('hour'))*60) + int(a.get('time').get('start').get('min'))
+                                            endMinutes = (int(a.get('time').get('end').get('hour'))*60) + int(a.get('time').get('end').get('min'))
+
+
+                                            if a.get('days').get(weekDay) == "True":
+
+                                                if currentMinutes >= startMinutes and currentMinutes < endMinutes:
+
+                                                    if a.get('isSoundAlert') == "True":
+                                                        #evitar campainhas seguidas para mesmo objeto
+                                                        if listObjectSoundAlerted.count(objectID) == 0:
+                                                            utils.playSound()
+                                                            listObjectSoundAlerted.append(objectID)
+
+                                                    if a.get('isEmailAlert') == "True":
+                                                        #evitar emails seguidos para mesmo objeto
+                                                        if listObjectMailAlerted.count(objectID) == 0:
+
+                                                            log.info('Enviando alerta por email')
+                                                            #salvando foto para treinamento
+                                                            #crop no box
+                                                            #left, top, right, bottom
+                                                            #frame_no_label = frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
+                                                            #saveImageBox(frame_no_label, str(box[6]))
+
+                                                            if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame_no_label_email, str(box[6]), r.get('nameRegion'))):
+                                                                log.info('Alerta enviado ID[' + str(objectID) + ']')
+
+                                                            listObjectMailAlerted.append(objectID)
+                                        #end loop alarms
+                                    else:
+
+                                        tEmptyEnd = time.time()
+                                        tEmpty = tEmptyEnd- tEmptyStart
+                                        #print('tEmpty {}'.format(tEmpty))
+
+                                        if tEmpty > 10:
+                                            gravando = False
+                                            newVideo = True
+                                            releaseVideo = True
+                                            #suspend_screensaver()
+
+
+                                    #end if isIdInsideRegion
+
+                                #end if prob_threshold_returned
+
 
                         #end loop in Regions
 
@@ -872,8 +884,8 @@ while True:
 
     else:
         if not conectado:
-            print('Reconectando em 10 segundos...')
-            time.sleep(10)
+            print('Reconectando em 3 segundos...')
+            time.sleep(3)
             ipCam = utils.camSource(source)
 
 if out_video is not None:

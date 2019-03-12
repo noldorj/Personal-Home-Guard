@@ -132,7 +132,7 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
     #else:
     #    labels_map = None
 
-    xmin, xmax, ymin, ymax, det_label, class_id, label  = 0, 0, 0, 0, ' ', 0, ' '
+    prob_threshold_returned, xmin, xmax, ymin, ymax, det_label, class_id, label  = 0,0, 0, 0, 0, ' ', 0, ' '
 
     n, c, h, w = nchw[0], nchw[1], nchw[2], nchw[3]
 
@@ -186,7 +186,8 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
                     ymax = int(obj[6] * initial_h)
                     class_id = int(obj[1])
                     det_label = labels_map[class_id] if labels_map else str(class_id)
-                    label = det_label + ' ' + str(round(obj[2] * 100, 1)) + ' %'
+                    prob_threshold_returned = round(obj[2] * 100, 1)
+                    label = det_label + ' ' + str(prob_threshold_returned) + ' %'
                     #print('obj[2] {}'.format(obj[2]))
                     #print('Threshold: {}'.format(obj[2]))
                     #print(' ')
@@ -222,7 +223,6 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
                 listObjectsTracking.append(boxTracking)
                 listRectanglesDetected.append(box)
 
-
-    listReturn = [frame, next_frame, cur_request_id, next_request_id, listRectanglesDetected, listObjectsTracking]
+    listReturn = [frame, next_frame, cur_request_id, next_request_id, listRectanglesDetected, listObjectsTracking, prob_threshold_returned]
 
     return ret, listReturn 
