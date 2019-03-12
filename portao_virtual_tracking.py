@@ -95,6 +95,7 @@ prob_threshold_returned = 0
 
 #colors = np.random.uniform(0, 255, size=(len(classes), 3))
 
+tSound, tSoundEnd, tSoundLimit, tSoundStart = 0, 0, 0, 0
 
 #cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
 # initialize our centroid tracker and frame dimensions
@@ -280,6 +281,9 @@ ui.setupUi(windowConfig)
 
 def initInterface():
     cv.createButton('Configurar ', callbackButtonRegioes, None,cv.QT_PUSH_BUTTON)
+    cv.createButton('+1 min pausar campainha', callbackButton1min, None,cv.QT_PUSH_BUTTON)
+    cv.createButton('+30 min pausar campainha', callbackButton30min, None,cv.QT_PUSH_BUTTON)
+    cv.createButton('Voltar campainha', callbackButtonResumeSound, None,cv.QT_PUSH_BUTTON)
 
 
 #---------------- gui -------------------
@@ -588,6 +592,25 @@ def comboAlarmsUpdate(i):
 
 
 #---------------- gui -------------------
+def callbackButton1min(self, ret):
+    global tSoundLimit, tSoundStart
+    tSoundLimit = tSoundLimit + 60
+    tSoundStart = time.time()
+    #print('tSoundLimit button: {}'.format(tSoundLimit))
+
+def callbackButton30min(self, ret):
+    global tSoundLimit, tSoundStart
+    tSoundLimit = tSoundLimit + 1800
+    tSoundStart = time.time()
+
+def callbackButtonResumeSound(self, ret):
+    global tSoundLimit, tSoundStart, stopSound
+    tSoundLimit = 0
+    tSoundStart = 0
+    tSoundEnd = 0
+    tSound = 0
+    stopSound = False
+
 def callbackButtonRegioes(self, ret):
 
     if not statusConfig.isRegionsEmpty():
@@ -630,6 +653,7 @@ counter = 0
 tEmpty = 0
 tEmptyEnd = 0
 tEmptyStart = 0
+stopSound = False
 
 ### ---------------  OpenVino Init ----------------- ###
 if isOpenVino:
@@ -736,7 +760,6 @@ while True:
             for box in listObjects:
 
                 if portaoVirtualSelecionado:
-                    #print('Checando portao virtual')
 
                     #objetos com ID e centro de massa
                     objectsTracking = ct.update(listObjectsTracking)
@@ -760,12 +783,12 @@ while True:
 
                             if r.get('objectType').get(typeObject) == "True":
 
-                                print('prob_threshold_returned: {}'.format(prob_threshold_returned))
-                                print('prob_threshold config: {}'.format(r.get('prob_threshold')))
+                                #print('prob_threshold_returned: {}'.format(prob_threshold_returned))
+                                #print('prob_threshold config: {}'.format(r.get('prob_threshold')))
 
                                 if prob_threshold_returned >= int(r.get('prob_threshold')):
-                                    print(' ')
-                                    print('in')
+                                    #print(' ')
+                                    #print('in')
 
                                     if isIdInsideRegion(centroid, r.get('pointsPolygon')):
 
@@ -799,7 +822,18 @@ while True:
 
                                                 if currentMinutes >= startMinutes and currentMinutes < endMinutes:
 
-                                                    if a.get('isSoundAlert') == "True":
+                                                    if tSoundLimit > 0:
+
+                                                        tSoundEnd = time.time()
+                                                        tSound = tSoundEnd - tSoundStart
+
+                                                        if tSound < tSoundLimit:
+                                                            stopSound = True
+                                                        else:
+                                                            stopSound = False
+                                                            tSoundLimit = 0
+
+                                                    if a.get('isSoundAlert') == "True" and not stopSound:
                                                         #evitar campainhas seguidas para mesmo objeto
                                                         if listObjectSoundAlerted.count(objectID) == 0:
                                                             utils.playSound()
