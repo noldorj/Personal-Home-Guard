@@ -416,7 +416,7 @@ def btnSaveRegion():
         #points = [[[15,15],[15,65],[65,15],[65,65]]]
 
         statusConfig.addRegion(ui.txtRegionName.displayText(),
-                               newAlarm, objectType, round(float(ui.txtThreshold.displayText())/100,2), points )
+                               newAlarm, objectType, round(float(ui.txtThreshold.displayText()),2), points )
         refreshStatusConfig()
         #print('count: {}'.format(len(regions)))
         comboRegionsUpdate(len(regions)-1)
