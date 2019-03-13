@@ -51,7 +51,9 @@ def activate_screensaver():
 
 
 #statusConfig = utils.StatusConfig(configFile='config.json.gpu.webcam')
-statusConfig = utils.StatusConfig(configFile='config.json.gpu')
+#statusConfig = utils.StatusConfig(configFile='config.json.gpu')
+#statusConfig = utils.StatusConfig(configFile='config.json')
+statusConfig = utils.StatusConfig()
 
 # dnnMOdel for TensorFlow Object Detection API
 pb = statusConfig.data["dnnModelPb"] 
@@ -59,6 +61,8 @@ pbtxt = statusConfig.data["dnnModelPbTxt"]
 
 #Carregando regioes salvas
 regions = statusConfig.getRegions()
+emailConfig = statusConfig.getEmailConfig()
+
 portaoVirtualSelecionado = False
 #se existirem regioes ja selecionadas, o portao virtual é mostrado
 if len(regions) > 0:
@@ -286,11 +290,174 @@ def initInterface():
     cv.createButton('Voltar campainha', callbackButtonResumeSound, None,cv.QT_PUSH_BUTTON)
 
 
-#---------------- gui -------------------
+
+#---------------- gui  tab configuração geral -------------------
+
+
+def clearFieldsTabGeralEmail():
+    ui.txtEmailName.clear()
+    ui.txtEmailPort.clear()
+    ui.txtEmailSmtp.clear()
+    ui.txtEmailSubject.clear()
+    ui.txtEmailTo.clear()
+    ui.txtEmailUser.clear()
+    ui.txtEmailPassword.clear()
+
+
+def btnSaveEmail():
+    statusFields = True
+    msg = QMessageBox()
+    msg.setIcon(QMessageBox.Information)
+    msg.setWindowTitle("Campo em branco")
+    msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+
+    #checando campos em branco
+
+    if len(ui.txtEmailName.text()) == 0:
+        msg.setText("Campo 'Nome' em branco")
+        msg.exec()
+        ui.txtEmailNome.setFocus()
+        statusFields = False
+
+    elif len(ui.txtEmailPort.text()) == 0:
+        msg.setText("Campo 'Porta' em branco")
+        msg.exec()
+        ui.txtEmailPort.setFocus()
+        statusFields = False
+
+    elif len(ui.txtEmailSmtp.text()) == 0:
+        msg.setText("Campo 'SMTP' em branco")
+        msg.exec()
+        ui.txtEmailSmtp.setFocus()
+        statusFields = False
+
+    elif len(ui.txtEmailUser.text()) == 0:
+        msg.setText("Campo 'Usuário' em branco")
+        msg.exec()
+        ui.txtEmailUser.setFocus()
+        statusFields = False
+
+    elif len(ui.txtEmailPassword.text()) == 0:
+        msg.setText("Campo 'Senha' em branco")
+        msg.exec()
+        ui.txtEmailPassword.setFocus()
+        statusFields = False
+
+    elif len(ui.txtEmailSubject.text()) == 0:
+        msg.setText("Campo 'Assunto' em branco")
+        msg.exec()
+        ui.txtEmailSubject.setFocus()
+        statusFields = False
+
+    elif len(ui.txtEmailTo.text()) == 0:
+        msg.setText("Campo 'Destinatários' em branco")
+        msg.exec()
+        ui.txtEmailTo.setFocus()
+        statusFields = False
+
+    elif len(ui.txtDirRecording.text()) == 0:
+        msg.setText("Campo 'Diretório de gravação' em branco")
+        msg.exec()
+        ui.txtDirRecording.setFocus()
+        statusFields = False
+
+
+    if statusFields:
+        camSource = "webcam" if ui.checkBoxWebCam.isChecked() else ui.txtUrlRstp.text()
+        isRecording = "True" if ui.checkBoxVideoRecording.isChecked() else "False"
+
+        statusConfig.addConfigGeral(ui.txtEmailName.text(),
+                              ui.txtEmailPort.text(),
+                              ui.txtEmailSmtp.text(),
+                              ui.txtEmailUser.text(),
+                              ui.txtEmailPassword.text(),
+                              ui.txtEmailSubject.text(),
+                              ui.txtEmailTo.text(),
+                              isRecording,
+                              ui.txtDirRecording.text(),
+                              camSource)
+
+
+        refreshStatusConfig()
+        clearFieldsTabGeralEmail()
+        fillTabGeral()
+        ui.btnEditEmail.setEnabled(True)
+        ui.btnSaveEmail.setEnabled(False)
+        ui.btnCancelEmail.setEnabled(False)
+
+
+def btnCancelEmail():
+    clearFieldsTabGeralEmail()
+    fillTabGeral()
+    ui.btnEditEmail.setEnabled(True)
+    ui.btnSaveEmail.setEnabled(False)
+    ui.btnCancelEmail.setEnabled(False)
+
+
+def btnEmailEdit():
+    ui.txtEmailName.setEnabled(True)
+    ui.txtEmailPort.setEnabled(True)
+    ui.txtEmailSmtp.setEnabled(True)
+    ui.txtEmailUser.setEnabled(True)
+    ui.txtEmailPassword.setEnabled(True)
+    ui.txtEmailSubject.setEnabled(True)
+    ui.txtEmailTo.setEnabled(True)
+    ui.txtUrlRstp.setEnabled(True)
+    ui.txtDirRecording.setEnabled(True)
+    ui.checkBoxWebCam.setEnabled(True)
+    ui.checkBoxVideoRecording.setEnabled(True)
+
+    ui.btnEditEmail.setEnabled(False)
+    ui.btnSaveEmail.setEnabled(True)
+    ui.btnCancelEmail.setEnabled(True)
+
+
+def fillTabGeral():
+
+    global emailConfig, statusConfig
+
+    clearFieldsTabGeralEmail()
+
+    ui.checkBoxVideoRecording.setCheckState( True if statusConfig.data.get("isRecording") == "True" else False )
+
+    if statusConfig.data.get("camSource") == "webcam":
+        ui.checkBoxWebCam.setCheckState(True)
+        ui.txtUrlRstp.clear()
+        ui.txtUrlRstp.setEnabled(False)
+    else:
+        ui.txtUrlRstp.setText(statusConfig.data.get("camSource"))
+        ui.checkBoxWebCam.setEnabled(False)
+
+    ui.txtDirRecording.setText(statusConfig.data.get("dirVideos"))
+
+
+    ui.txtEmailName.setText(statusConfig.data["emailConfig"].get('name'))
+    ui.txtEmailPort.setText(statusConfig.data["emailConfig"].get('port'))
+    ui.txtEmailSmtp.setText(statusConfig.data["emailConfig"].get('smtp'))
+    ui.txtEmailUser.setText(statusConfig.data["emailConfig"].get('user'))
+    ui.txtEmailPassword.setText(statusConfig.data["emailConfig"].get('password'))
+    ui.txtEmailSubject.setText(statusConfig.data["emailConfig"].get('subject'))
+    ui.txtEmailTo.setText(statusConfig.data["emailConfig"].get('to'))
+
+    ui.txtEmailName.setEnabled(False)
+    ui.txtEmailPort.setEnabled(False)
+    ui.txtEmailSmtp.setEnabled(False)
+    ui.txtEmailUser.setEnabled(False)
+    ui.txtEmailPassword.setEnabled(False)
+    ui.txtEmailSubject.setEnabled(False)
+    ui.txtEmailTo.setEnabled(False)
+    ui.txtDirRecording.setEnabled(False)
+    ui.txtUrlRstp.setEnabled(False)
+    ui.checkBoxWebCam.setEnabled(False)
+    ui.checkBoxVideoRecording.setEnabled(False)
+
+
+#---------------- gui  tab adicionar regiao -------------------
 
 def refreshStatusConfig():
-    statusConfig = utils.StatusConfig(configFile='config.json.gpu')
+    statusConfig = utils.StatusConfig()
     regions = statusConfig.getRegions()
+    emailConfig = statusConfig.getEmailConfig()
 
 
 def btnCancelRegion():
@@ -303,14 +470,14 @@ def btnCancelRegion():
 
     ui.btnNewRegion.setEnabled(True)
     ui.btnNewAlarm.setEnabled(True)
-    clearFields()
+    clearFieldsTabRegiao()
     comboRegionsUpdate(0)
 
     global portaoVirtualSelecionado
     portaoVirtualSelecionado = True
 
 
-def clearFields():
+def clearFieldsTabRegiao():
     ui.txtRegionName.clear()
     ui.txtNameAlarm.clear()
     ui.txtThreshold.clear()
@@ -350,7 +517,7 @@ def btnNewRegion():
     print('Selecione novo portao com a tecla CTLR pressionada')
 
     #clear fields
-    clearFields()
+    clearFieldsTabRegiao()
     #ui.comboRegions.clear()
     ui.btnCancelRegion.setEnabled(True)
     ui.btnDeleteRegion.setEnabled(False)
@@ -505,7 +672,7 @@ def comboRegionsUpdate(i):
     #print('combo regions update')
     #print('comboBox id: {}'.format(i))
 
-    clearFields()
+    clearFieldsTabRegiao()
     #r = regions[i]
 
     ui.comboAlarms.clear()
@@ -610,9 +777,35 @@ def callbackButtonResumeSound(self, ret):
     tSoundEnd = 0
     tSound = 0
     stopSound = False
+def checkBoxWebcamStateChanged(state):
+    if state == 0:
+       ui.txtUrlRstp.setEnabled(True)
+    # Qt.Checked 
+    elif (state == 1 or state == 2):
+        ui.txtUrlRstp.clear()
+        ui.txtUrlRstp.setEnabled(False)
 
 def callbackButtonRegioes(self, ret):
 
+    # ----------- init tab configuração geral --------------- 
+
+    ui.btnSaveEmail.setEnabled(False)
+    ui.btnCancelEmail.setEnabled(False)
+    ui.btnSaveEmail.setEnabled(False)
+
+
+    fillTabGeral()
+
+
+    #slots
+    ui.btnEditEmail.clicked.connect(btnEmailEdit)
+    ui.btnSaveEmail.clicked.connect(btnSaveEmail)
+    ui.btnCancelEmail.clicked.connect(btnCancelEmail)
+    ui.checkBoxWebCam.stateChanged.connect(checkBoxWebcamStateChanged)
+    refreshStatusConfig()
+
+
+    # ----------- init tab adicionar regioes --------------- 
     if not statusConfig.isRegionsEmpty():
         ui.btnDeleteRegion.setEnabled(True)
         ui.btnDeleteAlarm.setEnabled(True)

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>878</width>
-    <height>500</height>
+    <width>909</width>
+    <height>521</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,12 +18,12 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>871</width>
-     <height>481</height>
+     <width>891</width>
+     <height>521</height>
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>2</number>
    </property>
    <widget class="QWidget" name="tabRegion">
     <attribute name="title">
@@ -386,7 +386,7 @@
    </widget>
    <widget class="QWidget" name="tabConfigGeneral">
     <attribute name="title">
-     <string>Configuração</string>
+     <string>Configuração Geral</string>
     </attribute>
     <widget class="QWidget" name="gridLayoutWidget">
      <property name="geometry">
@@ -394,11 +394,18 @@
        <x>2</x>
        <y>19</y>
        <width>561</width>
-       <height>382</height>
+       <height>408</height>
       </rect>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="6" column="0">
+      <item row="12" column="1">
+       <widget class="QLineEdit" name="txtEmailTo">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Utilizar vírgula para separar vários destinatários&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="0">
        <widget class="QLabel" name="label_16">
         <property name="text">
          <string>Porta:</string>
@@ -408,19 +415,19 @@
       <item row="5" column="0">
        <widget class="QLabel" name="label_15">
         <property name="text">
-         <string>Emails cadastrados:</string>
+         <string>Configuração de Email</string>
         </property>
        </widget>
       </item>
       <item row="3" column="0">
        <widget class="QLabel" name="label_14">
         <property name="text">
-         <string>Camera RSTP:</string>
+         <string>URL Câmera RSTP:</string>
         </property>
        </widget>
       </item>
-      <item row="10" column="1">
-       <widget class="QLineEdit" name="lineEdit_7"/>
+      <item row="11" column="1">
+       <widget class="QLineEdit" name="txtEmailSubject"/>
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_13">
@@ -429,78 +436,72 @@
         </property>
        </widget>
       </item>
+      <item row="3" column="1">
+       <widget class="QLineEdit" name="txtUrlRstp"/>
+      </item>
       <item row="0" column="0">
-       <widget class="QCheckBox" name="checkBox">
+       <widget class="QCheckBox" name="checkBoxVideoRecording">
         <property name="text">
          <string>Gravação de video</string>
         </property>
        </widget>
       </item>
-      <item row="5" column="1">
-       <widget class="QComboBox" name="comboBox"/>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="txtDirRecording"/>
       </item>
-      <item row="3" column="1">
-       <widget class="QLineEdit" name="lineEdit_2"/>
-      </item>
-      <item row="11" column="1">
-       <widget class="QLineEdit" name="lineEdit_8"/>
-      </item>
-      <item row="6" column="4">
+      <item row="7" column="4">
        <widget class="QLabel" name="label_10">
         <property name="text">
          <string/>
         </property>
        </widget>
       </item>
-      <item row="7" column="0">
+      <item row="8" column="0">
        <widget class="QLabel" name="label_17">
         <property name="text">
          <string>SMTP:</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="lineEdit"/>
+      <item row="8" column="1">
+       <widget class="QLineEdit" name="txtEmailSmtp"/>
       </item>
-      <item row="9" column="0">
+      <item row="10" column="0">
        <widget class="QLabel" name="label_19">
         <property name="text">
          <string>Senha:</string>
         </property>
        </widget>
       </item>
-      <item row="7" column="1">
-       <widget class="QLineEdit" name="lineEdit_4"/>
+      <item row="9" column="1">
+       <widget class="QLineEdit" name="txtEmailUser"/>
       </item>
-      <item row="8" column="1">
-       <widget class="QLineEdit" name="lineEdit_5"/>
+      <item row="7" column="1">
+       <widget class="QLineEdit" name="txtEmailPort"/>
       </item>
       <item row="2" column="0">
-       <widget class="QCheckBox" name="checkBox_2">
+       <widget class="QCheckBox" name="checkBoxWebCam">
         <property name="text">
          <string>Capturar da WebCam</string>
         </property>
        </widget>
       </item>
-      <item row="6" column="1">
-       <widget class="QLineEdit" name="lineEdit_3"/>
-      </item>
-      <item row="10" column="0">
+      <item row="11" column="0">
        <widget class="QLabel" name="label_20">
         <property name="text">
          <string>Campo &quot;Assunto&quot;:</string>
         </property>
        </widget>
       </item>
-      <item row="11" column="0">
+      <item row="12" column="0">
        <widget class="QLabel" name="label_21">
         <property name="text">
-         <string>Destinatário:</string>
+         <string>Destinatário(s):</string>
         </property>
        </widget>
       </item>
-      <item row="9" column="1">
-       <widget class="QLineEdit" name="lineEdit_6">
+      <item row="10" column="1">
+       <widget class="QLineEdit" name="txtEmailPassword">
         <property name="inputMethodHints">
          <set>Qt::ImhHiddenText|Qt::ImhNoAutoUppercase|Qt::ImhNoPredictiveText|Qt::ImhSensitiveData</set>
         </property>
@@ -509,7 +510,7 @@
         </property>
        </widget>
       </item>
-      <item row="8" column="0">
+      <item row="9" column="0">
        <widget class="QLabel" name="label_18">
         <property name="text">
          <string>Usuário:</string>
@@ -542,6 +543,16 @@
         </property>
        </spacer>
       </item>
+      <item row="6" column="0">
+       <widget class="QLabel" name="label_29">
+        <property name="text">
+         <string>Nome:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QLineEdit" name="txtEmailName"/>
+      </item>
      </layout>
     </widget>
     <widget class="QLabel" name="label_12">
@@ -561,42 +572,28 @@
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>400</y>
+       <y>430</y>
        <width>561</width>
        <height>41</height>
       </rect>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_5">
       <item>
-       <widget class="QPushButton" name="pushButton">
-        <property name="text">
-         <string>Novo Email</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="pushButton_2">
-        <property name="text">
-         <string>Salvar</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="pushButton_3">
+       <widget class="QPushButton" name="btnEditEmail">
         <property name="text">
          <string>Editar</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton_4">
+       <widget class="QPushButton" name="btnSaveEmail">
         <property name="text">
-         <string>Deletar</string>
+         <string>Salvar</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton_5">
+       <widget class="QPushButton" name="btnCancelEmail">
         <property name="text">
          <string>Cancelar</string>
         </property>
@@ -607,7 +604,7 @@
    </widget>
    <widget class="QWidget" name="tabConfigDetection">
     <attribute name="title">
-     <string>Page</string>
+     <string>Configuração OpenVINO </string>
     </attribute>
     <widget class="QWidget" name="gridLayoutWidget_2">
      <property name="geometry">
@@ -615,25 +612,36 @@
        <x>0</x>
        <y>10</y>
        <width>641</width>
-       <height>242</height>
+       <height>298</height>
       </rect>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="2" column="1">
-       <widget class="QLineEdit" name="lineEdit_10"/>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_28">
+        <property name="text">
+         <string>Modelo:</string>
+        </property>
+       </widget>
       </item>
-      <item row="3" column="1">
-       <widget class="QTextEdit" name="textEdit"/>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_24">
+        <property name="text">
+         <string>Arquivo .xml</string>
+        </property>
+       </widget>
       </item>
-      <item row="5" column="0">
+      <item row="3" column="2">
+       <widget class="QLineEdit" name="txtXml"/>
+      </item>
+      <item row="7" column="0">
        <widget class="QLabel" name="label_25">
         <property name="text">
          <string>Device</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QComboBox" name="comboBox_2">
+      <item row="0" column="2">
+       <widget class="QComboBox" name="comboModelDetection">
         <item>
          <property name="text">
           <string>Intel OpenVINO</string>
@@ -646,12 +654,15 @@
         </item>
        </widget>
       </item>
-      <item row="1" column="0">
+      <item row="2" column="0">
        <widget class="QLabel" name="label_23">
         <property name="text">
          <string>Arquivo .bin</string>
         </property>
        </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QLineEdit" name="txtBin"/>
       </item>
       <item row="0" column="0">
        <widget class="QLabel" name="label_22">
@@ -660,25 +671,8 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="lineEdit_9"/>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_24">
-        <property name="text">
-         <string>Arquivo .xml</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_26">
-        <property name="text">
-         <string>Arquivo CPU</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="1">
-       <widget class="QComboBox" name="comboBox_3">
+      <item row="7" column="2">
+       <widget class="QComboBox" name="comboDevices">
         <item>
          <property name="text">
           <string>CPU</string>
@@ -697,14 +691,27 @@
        </widget>
       </item>
       <item row="4" column="0">
+       <widget class="QLabel" name="label_26">
+        <property name="text">
+         <string>Plugins CPU</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="2">
+       <widget class="QLineEdit" name="txtDirPlugins"/>
+      </item>
+      <item row="6" column="0">
        <widget class="QLabel" name="label_27">
         <property name="text">
          <string>Diretórios de plugins</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="1">
-       <widget class="QLineEdit" name="lineEdit_11"/>
+      <item row="1" column="2">
+       <widget class="QComboBox" name="comboModels"/>
+      </item>
+      <item row="4" column="2">
+       <widget class="QLineEdit" name="txtCpuPlugin"/>
       </item>
      </layout>
     </widget>
@@ -712,35 +719,35 @@
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>260</y>
+       <y>310</y>
        <width>641</width>
        <height>80</height>
       </rect>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_6">
       <item>
-       <widget class="QPushButton" name="pushButton_6">
+       <widget class="QPushButton" name="btnNewOpenVino">
         <property name="text">
          <string>Salvar</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton_7">
+       <widget class="QPushButton" name="btnEditOpenVino">
         <property name="text">
          <string>Editar</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton_8">
+       <widget class="QPushButton" name="btnDeleteOpenVino">
         <property name="text">
          <string>Deletar</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton_9">
+       <widget class="QPushButton" name="btnCancelOpenVino">
         <property name="text">
          <string>Cancelar</string>
         </property>
@@ -752,6 +759,7 @@
   </widget>
  </widget>
  <tabstops>
+  <tabstop>tabConfig</tabstop>
   <tabstop>comboRegions</tabstop>
   <tabstop>btnNewRegion</tabstop>
   <tabstop>txtRegionName</tabstop>
@@ -760,27 +768,51 @@
   <tabstop>checkBike</tabstop>
   <tabstop>checkDog</tabstop>
   <tabstop>txtThreshold</tabstop>
+  <tabstop>comboAlarms</tabstop>
+  <tabstop>btnNewAlarm</tabstop>
   <tabstop>txtNameAlarm</tabstop>
   <tabstop>checkMon</tabstop>
   <tabstop>checkTue</tabstop>
   <tabstop>checkWed</tabstop>
   <tabstop>checkThur</tabstop>
+  <tabstop>checkEmailAlert</tabstop>
   <tabstop>checkFri</tabstop>
   <tabstop>checkSat</tabstop>
   <tabstop>checkSun</tabstop>
-  <tabstop>checkEmailAlert</tabstop>
   <tabstop>checkAlertSound</tabstop>
   <tabstop>timeStart</tabstop>
   <tabstop>timeEnd</tabstop>
   <tabstop>btnSaveAlarm</tabstop>
-  <tabstop>btnSaveRegion</tabstop>
-  <tabstop>tabConfig</tabstop>
   <tabstop>btnDeleteAlarm</tabstop>
-  <tabstop>comboAlarms</tabstop>
-  <tabstop>btnNewAlarm</tabstop>
   <tabstop>btnCancelAlarm</tabstop>
+  <tabstop>btnSaveRegion</tabstop>
   <tabstop>btnDeleteRegion</tabstop>
   <tabstop>btnCancelRegion</tabstop>
+  <tabstop>checkBoxVideoRecording</tabstop>
+  <tabstop>txtDirRecording</tabstop>
+  <tabstop>checkBoxWebCam</tabstop>
+  <tabstop>txtUrlRstp</tabstop>
+  <tabstop>txtEmailName</tabstop>
+  <tabstop>txtEmailPort</tabstop>
+  <tabstop>txtEmailSmtp</tabstop>
+  <tabstop>txtEmailUser</tabstop>
+  <tabstop>txtEmailPassword</tabstop>
+  <tabstop>txtEmailSubject</tabstop>
+  <tabstop>txtEmailTo</tabstop>
+  <tabstop>btnEditEmail</tabstop>
+  <tabstop>btnSaveEmail</tabstop>
+  <tabstop>btnCancelEmail</tabstop>
+  <tabstop>comboModelDetection</tabstop>
+  <tabstop>comboModels</tabstop>
+  <tabstop>txtBin</tabstop>
+  <tabstop>txtXml</tabstop>
+  <tabstop>txtCpuPlugin</tabstop>
+  <tabstop>txtDirPlugins</tabstop>
+  <tabstop>comboDevices</tabstop>
+  <tabstop>btnNewOpenVino</tabstop>
+  <tabstop>btnEditOpenVino</tabstop>
+  <tabstop>btnDeleteOpenVino</tabstop>
+  <tabstop>btnCancelOpenVino</tabstop>
  </tabstops>
  <resources/>
  <connections/>

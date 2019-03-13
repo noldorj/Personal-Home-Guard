@@ -62,24 +62,21 @@ class StatusConfig:
 
     data = {
             "isRecording"       : "True",
-            "isEmailAlert"      : "True",
-            "isGateSelected"    : "False",
-            "isSoundAlert"      : "True",
             "isOpenVino"        : "True",
-            "camSource"         :  "webcam",
-            "prob_threshold"    :  0.60,
+            "camSource"         : "webcam",
+            "prob_threshold"    : 0.60,
             # aponta para pastas dentro de dlModels
             "dnnModelPb"        : "./dlModels/ssd-mobilenet/frozen_inference_graph_v1_coco_2017_11_17.pb",
             "dnnModelPbTxt"     : "./dlModels/ssd-mobilenet/ssd_mobilenet_v1_coco_2017_11_17.pbtxt",
             "openVinoModelXml"  : "./computer_vision_sdk/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP32/person-vehicle-bike-detection-crossroad-0078.xml",
             "openVinoModelBin"  : "./computer_vision_sdk/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP32/person-vehicle-bike-detection-crossroad-0078.bin",
             "openVinoDevice"    : "CPU",
-        #    dnnModel = {'pb':'dlModels/frozen_inference_graph_v1_coco_2017_11_17.pb',
-        #                'pbtxt':'dlModels/ssd_mobilenet_v1_coco_2017_11_17.pbtxt'}
-
-        "emailConfig"    : {'port':'587', 'smtp':'smtp.gmail.com','user':'user@user.com', 'password':'password', 'subject':'Alarme PV',
-                           'to':'destiny@server.com'},
-
+            "emailConfig"    : [ {'port':'587', 
+                              'smtp':'smtp.gmail.com',
+                              'user':'user@user.com', 
+                              'password':'password', 
+                              'subject':'Alarme PV',
+                              'to':'destiny@server.com'}],
             "dirVideos"      : "/home/igor/videos_alarmes"
     }
 
@@ -105,6 +102,10 @@ class StatusConfig:
     }
 
     regions = list()
+    listEmails = list()
+
+    def getEmailConfig(self):
+        return self.data["emailConfig"]
 
     def getRegions(self):
         return self.regions
@@ -124,7 +125,22 @@ class StatusConfig:
 
 
         return status
+    
+    def addConfigGeral(self, name, port, smtp, user, password, subject, to, isRecording, dirVideos, camSource):
+        email = {'name':name,
+                 'port':port,
+                 'smtp':smtp,
+                 'user':user,
+                 'password':password,
+                 'subject':subject,
+                 'to':to
+                }
 
+        self.data["isRecording"] = isRecording
+        self.data["dirVideos"] = dirVideos
+        self.data["camSource"] = camSource
+        self.data["emailConfig"] = email
+        self.saveConfigFile()
 
     def setConfig(self, isRecording, isOpenVino,
                       dnnModel, openVinoModel, emailConfig, dirVideos, camSource, openVinoDevice, prob_threshold):
@@ -137,12 +153,14 @@ class StatusConfig:
         self.data["openVinoDevice"]           = openVinoDevice
         self.data["openVinoModel"]            = openVinoModel
         self.data["dirVideos"]                = dirVideos
-        self.data["emailConfig"]["port"]      = emailConfig["port"]
-        self.data["emailConfig"]["smtp"]      = emailConfig["smtp"]
-        self.data["emailConfig"]["user"]      = emailConfig["user"]
-        self.data["emailConfig"]["password"]  = emailConfig["password"]
-        self.data["emailConfig"]["subject"]   = emailConfig["subject"]
-        self.data["emailConfig"]["to"]        = emailConfig["to"]
+        self.data["emailConfig"]              = emailConfig #list of emails
+
+        #self.data["emailConfig"]["port"]      = emailConfig["port"]
+        #self.data["emailConfig"]["smtp"]      = emailConfig["smtp"]
+        #self.data["emailConfig"]["user"]      = emailConfig["user"]
+        #self.data["emailConfig"]["password"]  = emailConfig["password"]
+        #self.data["emailConfig"]["subject"]   = emailConfig["subject"]
+        #self.data["emailConfig"]["to"]        = emailConfig["to"]
 
     def addRegion(self, nameRegion, alarm, objectType, prob_threshold, pointsPolygon):
 
@@ -155,7 +173,6 @@ class StatusConfig:
             "pointsPolygon"  : pointsPolygon
         }
 
-        #self.regions["regions"].append(self.region)
         self.regions.append(region)
 
         self.saveRegionFile()
@@ -192,8 +209,6 @@ class StatusConfig:
 
 
     def deleteAlarm(self, regionName, alarmName):
-        #print('regionName : {}'.format(regionName))
-        #print('alarmName: {}'.format(alarmName))
 
         indexRegion = 0
         indexAlarm = 0
@@ -217,24 +232,17 @@ class StatusConfig:
         self.saveRegionFile()
 
 
-
     def deleteRegion(self, nameRegion='regions1'):
         i = 0
-        #print('Region {} to be removed'.format(nameRegion))
-
         for r in self.regions:
             #print('nameRegion {}'.format(r.get("nameRegion")))
             if r.get("nameRegion") == nameRegion:
                 del self.regions[i]
-                #print('Region {} removed i: {}'.format(nameRegion, i))
-                #return True
+                self.saveRegionFile()
+                print("Regiao '{}' removido com sucesso".format(nameRegion))
 
             i = i+1
         #return False
-        self.saveRegionFile()
-        print("Regiao '{}' removido com sucesso".format(nameRegion))
-
-
 
 
     def printConfig(self):
@@ -250,6 +258,7 @@ class StatusConfig:
         print('dnnModelPbTxt:     {}'.format(self.data.get('dnnModelPbTxt')))
         print('openVinoModelXml:  {}'.format(self.data.get('openVinoModelXml')))
         print('openVinoModelBin:  {}'.format(self.data.get('openVinoModelBin')))
+        #TODO printar lista de emails
         print('emailConfig/user:  {}'.format(self.data.get('emailConfig').get('user')))
         print('emailConfig/smtp:  {}'.format(self.data.get('emailConfig').get('smtp')))
         print('emailConfig/port:  {}'.format(self.data.get('emailConfig').get('port')))
@@ -311,32 +320,28 @@ def playSound():
 
 
 #status = StatusConfig()
-##
-#t = {"start":"7:00", "end":"12:00"}
-#t2 = {"start":"10:00", "end":"15:00"}
-#
-#days = {'mon':'False', 'tue':'False','wed':'False', 'thu':'False', 'fri':'False','sat':'False','sun':'False'}
-##alarm = []
-#objectType = {'person':'teste', 'car':'teste', 'bike':'teste', 'dog':'teste'}
-#alarm1 = {"name":"alarm1", "time":t, "days":days}
-#alarm2 = {"name":"alarm2", "time":t2, "days":days}
-#alarms = [alarm1, alarm2]
-#for a in alarms:
-#    print(str(a["name"]))
-#    print(str(a["time"]["start"]))
-#
-#points = [[[15,15],[15,65],[65,15],[65,65]]]
-##
-#status.addRegion("teste", "true", "true", alarms, objectType, 0.45, points)
-#status.addRegion("teste2", "true2", "true2", t, days, objectType, 0.45, points)
-##
-#status.printRegions()
-#status.deleteRegion(nameRegion="teste")
-##
-#status.saveRegionFile('region.teste.json')
-#status2 = StatusConfig(regionsFile='region.teste.json')
-#status.regions
-#status.regions["regioes"][1]
+
+#status.deleteEmail("email2")
+
+#status.addEmail('email3', '22', 'smtp.uol.com', 'user1', 'senha', 'assunto', 'destino@gmail.com')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
