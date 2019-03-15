@@ -13,6 +13,9 @@ import utilsCore as utils
 import logging as log
 #import mainFormSlots
 import sys
+#import mainFormSlots
+
+from threading import Thread
 
 #import tensorflow as tf
 
@@ -275,13 +278,12 @@ device, openVinoModelXml, openVinoModelBin, openVinoModelName  = statusConfig.ge
 
 posConfigPv = 255
 
-#import mainFormSlots
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QWidget
 import sys
 from mainForm import *
 from PyQt5.QtWidgets import QMainWindow, QApplication, QErrorMessage, QMessageBox, QPushButton
-from PyQt5.QtCore import QTime
+from PyQt5.QtCore import QTime, QThread
 
 class FormProc(QWidget):
     def __init__(self, parent=None):
@@ -570,6 +572,7 @@ def comboListModelsUpdate(i):
 #---------------- gui  tab adicionar regiao -------------------
 
 def refreshStatusConfig():
+    global statusConfig, regions, emailConfig
     statusConfig = utils.StatusConfig()
     regions = statusConfig.getRegions()
     emailConfig = statusConfig.getEmailConfig()
@@ -1196,17 +1199,29 @@ while True:
 
                                                             #if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame_no_label_email, str(box[6]), r.get('nameRegion'))):
                                                             #    log.info('Alerta enviado ID[' + str(objectID) + ']')
-                                                            if (sendMailAlert(emailConfig['name'],
-                                                                              emailConfig['to'],
-                                                                              emailConfig['subject'],
-                                                                              emailConfig['port'],
-                                                                              emailConfig['smtp'],
-                                                                              emailConfig['user'],
-                                                                              emailConfig['password'],
-                                                                              frame_no_label_email,
-                                                                              str(box[6]),
-                                                                              r.get('nameRegion'))):
-                                                                log.info('Alerta enviado ID[' + str(objectID) + ']')
+                                                            threadEmail = Thread(target=sendMailAlert, args=(emailConfig['name'],
+                                                                                                               emailConfig['to'],
+                                                                                                               emailConfig['subject'],
+                                                                                                               emailConfig['port'],
+                                                                                                               emailConfig['smtp'],
+                                                                                                               emailConfig['user'],
+                                                                                                               emailConfig['password'],
+                                                                                                               frame_no_label_email,
+                                                                                                               str(box[6]),
+                                                                                                               r.get('nameRegion')))
+                                                            threadEmail.start()
+
+                                                            #if (sendMailAlert(emailConfig['name'],
+                                                            #                  emailConfig['to'],
+                                                            #                  emailConfig['subject'],
+                                                            #                  emailConfig['port'],
+                                                            #                  emailConfig['smtp'],
+                                                            #                  emailConfig['user'],
+                                                            #                  emailConfig['password'],
+                                                            #                  frame_no_label_email,
+                                                            #                  str(box[6]),
+                                                            #                  r.get('nameRegion'))):
+                                                            #    log.info('Alerta enviado ID[' + str(objectID) + ']')
 
                                                             listObjectMailAlerted.append(objectID)
                                         #end loop alarms
