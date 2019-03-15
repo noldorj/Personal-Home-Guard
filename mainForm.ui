@@ -2,6 +2,9 @@
 <ui version="4.0">
  <class>formConfig</class>
  <widget class="QWidget" name="formConfig">
+  <property name="windowModality">
+   <enum>Qt::WindowModal</enum>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -10,8 +13,11 @@
     <height>521</height>
    </rect>
   </property>
+  <property name="focusPolicy">
+   <enum>Qt::TabFocus</enum>
+  </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Configurações</string>
   </property>
   <widget class="QTabWidget" name="tabConfig">
    <property name="geometry">
@@ -23,7 +29,10 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>2</number>
+    <number>1</number>
+   </property>
+   <property name="tabsClosable">
+    <bool>true</bool>
    </property>
    <widget class="QWidget" name="tabRegion">
     <attribute name="title">
@@ -579,23 +588,9 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_5">
       <item>
-       <widget class="QPushButton" name="btnEditEmail">
-        <property name="text">
-         <string>Editar</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QPushButton" name="btnSaveEmail">
         <property name="text">
          <string>Salvar</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="btnCancelEmail">
-        <property name="text">
-         <string>Cancelar</string>
         </property>
        </widget>
       </item>
@@ -611,7 +606,7 @@
       <rect>
        <x>0</x>
        <y>10</y>
-       <width>641</width>
+       <width>741</width>
        <height>298</height>
       </rect>
      </property>
@@ -619,29 +614,29 @@
       <item row="1" column="0">
        <widget class="QLabel" name="label_28">
         <property name="text">
-         <string>Modelo:</string>
+         <string>Modelos:</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
+      <item row="4" column="0">
        <widget class="QLabel" name="label_24">
         <property name="text">
-         <string>Arquivo .xml</string>
+         <string>Arquivo .xml:</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="2">
-       <widget class="QLineEdit" name="txtXml"/>
+      <item row="4" column="2">
+       <widget class="QLineEdit" name="txtModelXml"/>
       </item>
-      <item row="7" column="0">
+      <item row="6" column="0">
        <widget class="QLabel" name="label_25">
         <property name="text">
-         <string>Device</string>
+         <string>Dispositivo de processamento:</string>
         </property>
        </widget>
       </item>
       <item row="0" column="2">
-       <widget class="QComboBox" name="comboModelDetection">
+       <widget class="QComboBox" name="comboListModelDetection">
         <item>
          <property name="text">
           <string>Intel OpenVINO</string>
@@ -654,15 +649,15 @@
         </item>
        </widget>
       </item>
-      <item row="2" column="0">
+      <item row="3" column="0">
        <widget class="QLabel" name="label_23">
         <property name="text">
-         <string>Arquivo .bin</string>
+         <string>Arquivo .bin:</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="2">
-       <widget class="QLineEdit" name="txtBin"/>
+      <item row="3" column="2">
+       <widget class="QLineEdit" name="txtModelBin"/>
       </item>
       <item row="0" column="0">
        <widget class="QLabel" name="label_22">
@@ -671,8 +666,34 @@
         </property>
        </widget>
       </item>
-      <item row="7" column="2">
-       <widget class="QComboBox" name="comboDevices">
+      <item row="2" column="2">
+       <widget class="QLineEdit" name="txtModelName"/>
+      </item>
+      <item row="1" column="2">
+       <widget class="QComboBox" name="comboListModels"/>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_30">
+        <property name="text">
+         <string>Nome:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3">
+       <widget class="QPushButton" name="btnNewModel">
+        <property name="text">
+         <string>+ Adicionar </string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="2">
+       <widget class="QComboBox" name="comboListDevices">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <item>
          <property name="text">
           <string>CPU</string>
@@ -690,52 +711,29 @@
         </item>
        </widget>
       </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="label_26">
+      <item row="2" column="3">
+       <widget class="QCheckBox" name="checkBoxActiveModel">
         <property name="text">
-         <string>Plugins CPU</string>
+         <string>Ativo</string>
         </property>
        </widget>
-      </item>
-      <item row="6" column="2">
-       <widget class="QLineEdit" name="txtDirPlugins"/>
-      </item>
-      <item row="6" column="0">
-       <widget class="QLabel" name="label_27">
-        <property name="text">
-         <string>Diretórios de plugins</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="QComboBox" name="comboModels"/>
-      </item>
-      <item row="4" column="2">
-       <widget class="QLineEdit" name="txtCpuPlugin"/>
       </item>
      </layout>
     </widget>
     <widget class="QWidget" name="horizontalLayoutWidget_5">
      <property name="geometry">
       <rect>
-       <x>0</x>
+       <x>50</x>
        <y>310</y>
        <width>641</width>
-       <height>80</height>
+       <height>41</height>
       </rect>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_6">
       <item>
-       <widget class="QPushButton" name="btnNewOpenVino">
+       <widget class="QPushButton" name="btnSaveOpenVino">
         <property name="text">
          <string>Salvar</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="btnEditOpenVino">
-        <property name="text">
-         <string>Editar</string>
         </property>
        </widget>
       </item>
@@ -799,18 +797,13 @@
   <tabstop>txtEmailPassword</tabstop>
   <tabstop>txtEmailSubject</tabstop>
   <tabstop>txtEmailTo</tabstop>
-  <tabstop>btnEditEmail</tabstop>
   <tabstop>btnSaveEmail</tabstop>
-  <tabstop>btnCancelEmail</tabstop>
-  <tabstop>comboModelDetection</tabstop>
-  <tabstop>comboModels</tabstop>
-  <tabstop>txtBin</tabstop>
-  <tabstop>txtXml</tabstop>
-  <tabstop>txtCpuPlugin</tabstop>
-  <tabstop>txtDirPlugins</tabstop>
-  <tabstop>comboDevices</tabstop>
-  <tabstop>btnNewOpenVino</tabstop>
-  <tabstop>btnEditOpenVino</tabstop>
+  <tabstop>comboListModelDetection</tabstop>
+  <tabstop>comboListModels</tabstop>
+  <tabstop>txtModelBin</tabstop>
+  <tabstop>txtModelXml</tabstop>
+  <tabstop>comboListDevices</tabstop>
+  <tabstop>btnSaveOpenVino</tabstop>
   <tabstop>btnDeleteOpenVino</tabstop>
   <tabstop>btnCancelOpenVino</tabstop>
  </tabstops>

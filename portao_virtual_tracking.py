@@ -12,9 +12,11 @@ import utilsCore as utils
 #import pluginOpenVino as pOpenVino
 import logging as log
 #import mainFormSlots
+import sys
 
 #import tensorflow as tf
 
+log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 
 classes = ["background", "pessoa", "bicileta", "carro", "moto", "airplane", "bus", "train", "truck", "boat", "traffic light", "fire hydrant",
     "unknown", "stop sign", "parking meter", "bench", "bird", "gato", "cachorro", "horse",
@@ -267,7 +269,9 @@ isOpenVino = statusConfig.data["isOpenVino"] == 'True'
 if isOpenVino:
     import pluginOpenVino as pOpenVino
 
-device = statusConfig.data["openVinoDevice"]
+
+#device = statusConfig.data["openVinoDevice"]
+device, openVinoModelXml, openVinoModelBin, openVinoModelName  = statusConfig.getActiveDevice()
 
 posConfigPv = 255
 
@@ -279,9 +283,36 @@ from mainForm import *
 from PyQt5.QtWidgets import QMainWindow, QApplication, QErrorMessage, QMessageBox, QPushButton
 from PyQt5.QtCore import QTime
 
-windowConfig = QWidget()
+class FormProc(QWidget):
+    def __init__(self, parent=None):
+        super(FormProc, self).__init__(parent)
+        self.ui = Ui_formConfig()
+        self.ui.setupUi(self)
+
+    def closeEvent(self, event):
+        statusFields = True
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setWindowTitle("Campo 'Ativo'")
+        msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+
+        #checar se há somente 1 modelo OpenVino ativo
+        if not statusConfig.checkActiveModel():
+            msg.setText("Um modelo deve estar selecionado como 'Ativo'")
+            msg.exec()
+            event.ignore()
+
+        elif not statusConfig.checkDuplicatedActiveModels():
+            print("Existe mais de um modelo 'Ativo'")
+            msg.setText("Existe mais de um modelo como 'Ativo'")
+            msg.exec()
+            event.ignore()
+
 ui = Ui_formConfig()
+windowConfig = FormProc()
 ui.setupUi(windowConfig)
+#windowConfig = QWidget()
+#ui.setupUi(windowConfig)
 
 def initInterface():
     cv.createButton('Configurar ', callbackButtonRegioes, None,cv.QT_PUSH_BUTTON)
@@ -361,6 +392,12 @@ def btnSaveEmail():
         ui.txtDirRecording.setFocus()
         statusFields = False
 
+    elif  ui.checkBoxWebCam.isChecked() and len(ui.txtUrlRstp.text()) > 0:
+        msg.setText("Escolha somente 'Capturar da Webcam' ou 'Câmera RSTP'")
+        msg.exec()
+        ui.txtUrlRstp.setFocus()
+        statusFields = False
+
 
     if statusFields:
         camSource = "webcam" if ui.checkBoxWebCam.isChecked() else ui.txtUrlRstp.text()
@@ -381,35 +418,7 @@ def btnSaveEmail():
         refreshStatusConfig()
         clearFieldsTabGeralEmail()
         fillTabGeral()
-        ui.btnEditEmail.setEnabled(True)
-        ui.btnSaveEmail.setEnabled(False)
-        ui.btnCancelEmail.setEnabled(False)
 
-
-def btnCancelEmail():
-    clearFieldsTabGeralEmail()
-    fillTabGeral()
-    ui.btnEditEmail.setEnabled(True)
-    ui.btnSaveEmail.setEnabled(False)
-    ui.btnCancelEmail.setEnabled(False)
-
-
-def btnEmailEdit():
-    ui.txtEmailName.setEnabled(True)
-    ui.txtEmailPort.setEnabled(True)
-    ui.txtEmailSmtp.setEnabled(True)
-    ui.txtEmailUser.setEnabled(True)
-    ui.txtEmailPassword.setEnabled(True)
-    ui.txtEmailSubject.setEnabled(True)
-    ui.txtEmailTo.setEnabled(True)
-    ui.txtUrlRstp.setEnabled(True)
-    ui.txtDirRecording.setEnabled(True)
-    ui.checkBoxWebCam.setEnabled(True)
-    ui.checkBoxVideoRecording.setEnabled(True)
-
-    ui.btnEditEmail.setEnabled(False)
-    ui.btnSaveEmail.setEnabled(True)
-    ui.btnCancelEmail.setEnabled(True)
 
 
 def fillTabGeral():
@@ -421,16 +430,11 @@ def fillTabGeral():
     ui.checkBoxVideoRecording.setCheckState( True if statusConfig.data.get("isRecording") == "True" else False )
 
     if statusConfig.data.get("camSource") == "webcam":
-        ui.checkBoxWebCam.setCheckState(True)
         ui.txtUrlRstp.clear()
-        ui.txtUrlRstp.setEnabled(False)
     else:
         ui.txtUrlRstp.setText(statusConfig.data.get("camSource"))
-        ui.checkBoxWebCam.setEnabled(False)
 
     ui.txtDirRecording.setText(statusConfig.data.get("dirVideos"))
-
-
     ui.txtEmailName.setText(statusConfig.data["emailConfig"].get('name'))
     ui.txtEmailPort.setText(statusConfig.data["emailConfig"].get('port'))
     ui.txtEmailSmtp.setText(statusConfig.data["emailConfig"].get('smtp'))
@@ -439,17 +443,128 @@ def fillTabGeral():
     ui.txtEmailSubject.setText(statusConfig.data["emailConfig"].get('subject'))
     ui.txtEmailTo.setText(statusConfig.data["emailConfig"].get('to'))
 
-    ui.txtEmailName.setEnabled(False)
-    ui.txtEmailPort.setEnabled(False)
-    ui.txtEmailSmtp.setEnabled(False)
-    ui.txtEmailUser.setEnabled(False)
-    ui.txtEmailPassword.setEnabled(False)
-    ui.txtEmailSubject.setEnabled(False)
-    ui.txtEmailTo.setEnabled(False)
-    ui.txtDirRecording.setEnabled(False)
-    ui.txtUrlRstp.setEnabled(False)
-    ui.checkBoxWebCam.setEnabled(False)
-    ui.checkBoxVideoRecording.setEnabled(False)
+
+#---------------- gui tab modelos de deteccao -------------------
+
+def clearFieldsTabConfigDetection():
+    ui.txtModelName.clear()
+    ui.txtModelBin.clear()
+    ui.txtModelXml.clear()
+    ui.comboListModels.clear()
+
+
+def btnCancelOpenVino():
+    ui.btnCancelOpenVino.setEnabled(False)
+    ui.btnDeleteOpenVino.setEnabled(True)
+    clearFieldsTabConfigDetection()
+    comboListModelsUpdate(0)
+
+def btnDeleteOpenVino():
+
+    msg = QMessageBox()
+    msg.setIcon(QMessageBox.Information)
+    msg.setWindowTitle("Sem modelo ativo")
+    msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+
+    if len(statusConfig.data.get('openVinoModels')) > 0:
+        if not statusConfig.deleteModel(ui.comboListModels.currentText()):
+            msg.setText("Ao menos um modelo deve estar cadastrado e estar ativo. Adicione/altere algum modelo como 'Ativo' antes de delete-lo")
+            msg.exec()
+        else:
+            refreshStatusConfig()
+            comboListModelsUpdate(0)
+
+def btnNewModel():
+    clearFieldsTabConfigDetection()
+    ui.txtModelName.setFocus()
+    ui.btnCancelOpenVino.setEnabled(True)
+    ui.btnDeleteOpenVino.setEnabled(False)
+
+def btnSaveOpenVino():
+
+    statusFields = True
+    msg = QMessageBox()
+    msg.setIcon(QMessageBox.Information)
+    msg.setWindowTitle("Campo em branco")
+    msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+
+    #checando campos em branco
+
+    if len(ui.txtModelName.text()) == 0:
+        msg.setText("Campo 'Nome' em branco")
+        msg.exec()
+        ui.txtModelName.setFocus()
+        statusFields = False
+
+    elif len(ui.txtModelBin.text()) == 0:
+        msg.setText("Campo 'Arquivo .bin' em branco")
+        msg.exec()
+        ui.txtModelBin.setFocus()
+        statusFields = False
+
+    elif len(ui.txtModelXml.text()) == 0:
+        msg.setText("Campo 'Arquivo .xml' em branco")
+        msg.exec()
+        ui.txtModelXml.setFocus()
+        statusFields = False
+
+    elif not statusConfig.checkActiveModel() and len(statusConfig.data.get('openVinoModels')) == 1:
+        statusFields = False
+        msg.setText("Ao menos 1 modelo deve estar ativo. Marque a opção 'Ativo'")
+        msg.exec()
+
+    #elif statusConfig.checkActiveModel() and len(statusConfig.data.get('openVinoModels')) > 1 and ui.checkBoxActiveModel.isChecked():
+    #    statusFields = False
+    #    msg.setText("Já existe um modelo 'Ativo', desmarque a opção 'Ativo' antes de salvar")
+    #    msg.exec()
+
+    deviceTxt = "CPU"
+    if ui.comboListDevices.currentIndex() == 0:
+        deviceTxt = "CPU"
+    elif ui.comboListDevices.currentIndex() == 1:
+        deviceTxt = "GPU"
+    elif ui.comboListDevices.currentIndex() == 2:
+        deviceTxt = "MYRIAD"
+
+
+    if statusFields:
+
+        statusConfig.addOpenVinoModels("True" if ui.checkBoxActiveModel.isChecked() else "False",
+                                   ui.txtModelName.text(),
+                                   ui.txtModelXml.text(),
+                                   ui.txtModelBin.text(),
+                                   deviceTxt)
+        refreshStatusConfig()
+        comboListModelsUpdate(ui.comboListModels.currentIndex())
+        ui.btnCancelOpenVino.setEnabled(False)
+        ui.btnDeleteOpenVino.setEnabled(True)
+
+
+def comboListModelsUpdate(i):
+
+    clearFieldsTabConfigDetection()
+
+    if len(statusConfig.data.get('openVinoModels')) > 0:
+        for m in statusConfig.data.get('openVinoModels'):
+            ui.comboListModels.addItem(m.get('name'))
+
+        ui.comboListModels.setCurrentIndex(i)
+
+        m = statusConfig.data.get('openVinoModels')[i]
+
+        ui.checkBoxActiveModel.setCheckState(True if m.get('isActive') == "True" else False)
+        ui.txtModelName.setText(m.get('name'))
+        ui.txtModelBin.setText(m.get('openVinoModelBin'))
+        ui.txtModelXml.setText(m.get('openVinoModelXml'))
+
+        if m.get('openVinoDevice') == 'CPU':
+            ui.comboListDevices.setCurrentIndex(0)
+        elif m.get('openVinoDevice')  == 'GPU':
+            ui.comboListDevices.setCurrentIndex(1)
+        elif m.get('openVinoDevice') == 'MYRIAD':
+            ui.comboListDevices.setCurrentIndex(2)
+
+
 
 
 #---------------- gui  tab adicionar regiao -------------------
@@ -461,8 +576,6 @@ def refreshStatusConfig():
 
 
 def btnCancelRegion():
-    ui.btnSaveRegion.setEnabled(False)
-    ui.btnCancelRegion.setEnabled(False)
     if len(regions) > 0:
         ui.btnDeleteRegion.setEnabled(True)
     else:
@@ -470,11 +583,16 @@ def btnCancelRegion():
 
     ui.btnNewRegion.setEnabled(True)
     ui.btnNewAlarm.setEnabled(True)
+    #ui.btnSaveRegion.setEnabled(False)
+    ui.btnCancelRegion.setEnabled(False)
     clearFieldsTabRegiao()
     comboRegionsUpdate(0)
 
-    global portaoVirtualSelecionado
+    global portaoVirtualSelecionado, portaoVirtualSelecionado, cropPolygon
     portaoVirtualSelecionado = True
+    portaoVirtualSelecionado = True
+    ref_point_polygon.clear()
+    cropPolygon = False
 
 
 def clearFieldsTabRegiao():
@@ -500,8 +618,6 @@ def clearFieldsTabRegiao():
     ui.timeStart.clear()
 
 def btnCancelAlarm():
-    ui.btnSaveRegion.setEnabled(False)
-    ui.btnSaveAlarm.setEnabled(False)
     ui.btnDeleteAlarm.setEnabled(True)
     ui.btnCancelAlarm.setEnabled(False)
     ui.btnNewAlarm.setEnabled(True)
@@ -527,7 +643,6 @@ def btnNewRegion():
     ui.btnSaveAlarm.setEnabled(False)
 
 def btnSaveRegion():
-    print('botao btnSaveRegion')
     statusFields = True
     msg = QMessageBox()
     msg.setIcon(QMessageBox.Information)
@@ -555,49 +670,60 @@ def btnSaveRegion():
         ui.txtNameAlarm.setFocus()
         statusFields = False
 
-    elif len(ref_point_polygon) == 0:
+    elif len(ref_point_polygon) == 0 and not statusConfig.checkNameRegion(ui.txtRegionName.text()):
         msg.setText("Região não selecionada! manter tecla CTRL pressionada até selecionar todos os pontos desejados")
         msg.exec()
         portaoVirtualSelecionado = False
 
-    if statusFields and len(ref_point_polygon) > 0:
+    #print('statusFields: {}'.format(statusFields))
+    #print('campos: person: {}'.format(ui.checkPerson.isChecked()))
+    #print('campos: person: {}'.format(ui.checkCar.isChecked()))
+    #print('campos: person: {}'.format(ui.checkBike.isChecked()))
+    #print('campos: person: {}'.format(ui.checkDog.isChecked()))
 
-        t = {'start':{'hour':ui.timeStart.time().hour(), 'min':ui.timeStart.time().minute()},
-             'end':{'hour':ui.timeEnd.time().hour(), 'min':ui.timeEnd.time().minute()}}
-        days = {'mon':'True' if ui.checkMon.isChecked() else 'False',
-                'tue':'True' if ui.checkTue.isChecked() else 'False',
-                'wed':'True' if ui.checkWed.isChecked() else 'False',
-                'thu':'True' if ui.checkThur.isChecked() else 'False',
-                'fri':'True' if ui.checkFri.isChecked() else 'False',
-                'sat':'True' if ui.checkSat.isChecked() else 'False',
-                'sun':'True' if ui.checkSun.isChecked() else 'False'
-               }
-        newAlarm = [{"name":ui.txtNameAlarm.displayText(), 'time':t, 'days':days, 
-                     'isEmailAlert':'True' if ui.checkEmailAlert.isChecked() else 'False',
-                     'isSoundAlert':'True' if ui.checkAlertSound.isChecked() else 'False'
-                    }]
+    points = []
 
-        objectType = {'person':'True' if ui.checkPerson.isChecked() else 'False',
-                      'car':'True' if ui.checkCar.isChecked() else 'False',
-                      'bike':'True' if ui.checkBike.isChecked() else 'False',
-                      'dog':'True' if ui.checkBike.isChecked() else 'False'}
+    t = {'start':{'hour':ui.timeStart.time().hour(), 'min':ui.timeStart.time().minute()},
+         'end':{'hour':ui.timeEnd.time().hour(), 'min':ui.timeEnd.time().minute()}}
 
-        points = ref_point_polygon
+    days = {'mon':'True' if ui.checkMon.isChecked() else 'False',
+            'tue':'True' if ui.checkTue.isChecked() else 'False',
+            'wed':'True' if ui.checkWed.isChecked() else 'False',
+            'thu':'True' if ui.checkThur.isChecked() else 'False',
+            'fri':'True' if ui.checkFri.isChecked() else 'False',
+            'sat':'True' if ui.checkSat.isChecked() else 'False',
+            'sun':'True' if ui.checkSun.isChecked() else 'False'
+           }
+    newAlarm = [{"name":ui.txtNameAlarm.displayText(), 'time':t, 'days':days, 
+                 'isEmailAlert':'True' if ui.checkEmailAlert.isChecked() else 'False',
+                 'isSoundAlert':'True' if ui.checkAlertSound.isChecked() else 'False'
+                }]
 
-        #points = [[[15,15],[15,65],[65,15],[65,65]]]
+    objectType = {'person':'True' if ui.checkPerson.isChecked() else 'False',
+                  'car':'True' if ui.checkCar.isChecked() else 'False',
+                  'bike':'True' if ui.checkBike.isChecked() else 'False',
+                  'dog':'True' if ui.checkDog.isChecked() else 'False'}
+
+    #print('objectType: {}'.format(objectType))
+
+    if statusFields:
+
+        if len(ref_point_polygon) == 0 and statusConfig.checkNameRegion(ui.txtRegionName.text()):
+            points = statusConfig.getRegion(ui.txtRegionName.text()).get('pointsPolygon')
+
+        else:
+            points = ref_point_polygon
 
         statusConfig.addRegion(ui.txtRegionName.displayText(),
                                newAlarm, objectType, round(float(ui.txtThreshold.displayText()),2), points )
         refreshStatusConfig()
-        #print('count: {}'.format(len(regions)))
-        comboRegionsUpdate(len(regions)-1)
+        comboRegionsUpdate(ui.comboRegions.currentIndex())
         comboAlarmsUpdate(0)
-        ui.btnSaveRegion.setEnabled(False)
-        #ref_point_polygon.clear()
-
-
+        #ui.btnSaveRegion.setEnabled(False)
+        ui.btnCancelRegion.setEnabled(False)
 
         portaoVirtualSelecionado = True
+        ref_point_polygon.clear()
         cropPolygon = False
 
 def btnSaveAlarm():
@@ -617,7 +743,6 @@ def btnSaveAlarm():
 
     if statusFields:
 
-        print('botao btnSAveAlarm')
         t = {'start':{'hour':ui.timeStart.time().hour(), 'min':ui.timeStart.time().minute()},
              'end':{'hour':ui.timeEnd.time().hour(), 'min':ui.timeEnd.time().minute()}}
         days = {'mon':'True' if ui.checkMon.isChecked() else 'False',
@@ -632,12 +757,11 @@ def btnSaveAlarm():
                      'isEmailAlert':'True' if ui.checkEmailAlert.isChecked() else 'False',
                      'isSoundAlert':'True' if ui.checkAlertSound.isChecked() else 'False'
                     }
-        #a = {"name":ui.txtNameAlarm.displayText(), 'time':t, 'days':days}
         statusConfig.addAlarm(ui.comboRegions.currentIndex(), a)
         refreshStatusConfig()
 
         comboRegionsUpdate(ui.comboRegions.currentIndex())
-        ui.btnSaveAlarm.setEnabled(False)
+        ui.btnSaveAlarm.setEnabled(True)
         ui.btnDeleteAlarm.setEnabled(False)
         ui.btnCancelAlarm.setEnabled(False)
         ui.btnNewAlarm.setEnabled(True)
@@ -683,7 +807,7 @@ def comboRegionsUpdate(i):
 
         r = regions[i]
         ui.txtRegionName.insert(r.get('nameRegion'))
-        ui.txtThreshold.insert(str(r.get('prob_threshold')*100))
+        ui.txtThreshold.insert(str(r.get('prob_threshold')))
         #ui.checkEmailAlert.setCheckState(r.get('isEmailAlert')=="True")
         #ui.checkAlertSound.setCheckState(r.get('isSoundAlert')=="True")
         ui.checkPerson.setCheckState(r.get('objectType').get('person')=="True")
@@ -777,6 +901,7 @@ def callbackButtonResumeSound(self, ret):
     tSoundEnd = 0
     tSound = 0
     stopSound = False
+
 def checkBoxWebcamStateChanged(state):
     if state == 0:
        ui.txtUrlRstp.setEnabled(True)
@@ -787,21 +912,44 @@ def checkBoxWebcamStateChanged(state):
 
 def callbackButtonRegioes(self, ret):
 
+    # ----------- init tab modelos detecção --------------- 
+
+    ui.btnSaveOpenVino.setEnabled(True)
+    ui.btnNewModel.setEnabled(True)
+    ui.btnDeleteOpenVino.setEnabled(True)
+    ui.btnCancelOpenVino.setEnabled(False)
+
+    #mostrando o modelo atualmente em uso
+    currentIndex = 0
+
+    if len(statusConfig.data.get('openVinoModels')) > 0:
+        for m in statusConfig.data.get('openVinoModels'):
+            if m.get('isActive') == "False":
+                currentIndex = currentIndex + 1
+            else:
+                break
+    comboListModelsUpdate(currentIndex)
+
+    #slots
+    ui.comboListModels.activated['int'].connect(comboListModelsUpdate)
+    ui.btnNewModel.clicked.connect(btnNewModel)
+    ui.btnDeleteOpenVino.clicked.connect(btnDeleteOpenVino)
+    ui.btnSaveOpenVino.clicked.connect(btnSaveOpenVino)
+    ui.btnCancelOpenVino.clicked.connect(btnCancelOpenVino)
+    #windowConfig.destroyed.connect(tabClose)
+
     # ----------- init tab configuração geral --------------- 
 
-    ui.btnSaveEmail.setEnabled(False)
-    ui.btnCancelEmail.setEnabled(False)
-    ui.btnSaveEmail.setEnabled(False)
+    ui.btnSaveEmail.setEnabled(True)
 
 
     fillTabGeral()
 
 
     #slots
-    ui.btnEditEmail.clicked.connect(btnEmailEdit)
     ui.btnSaveEmail.clicked.connect(btnSaveEmail)
-    ui.btnCancelEmail.clicked.connect(btnCancelEmail)
-    ui.checkBoxWebCam.stateChanged.connect(checkBoxWebcamStateChanged)
+    #ui.checkBoxWebCam.stateChanged.connect(checkBoxWebcamStateChanged)
+
     refreshStatusConfig()
 
 
@@ -818,10 +966,10 @@ def callbackButtonRegioes(self, ret):
         ui.btnDeleteRegion.setEnabled(False)
         ui.btnDeleteAlarm.setEnabled(False)
 
-    ui.btnSaveAlarm.setEnabled(False)
+    ui.btnSaveAlarm.setEnabled(True)
     ui.btnCancelRegion.setEnabled(False)
     ui.btnCancelAlarm.setEnabled(False)
-    ui.btnSaveRegion.setEnabled(False)
+    #ui.btnSaveRegion.setEnabled(False)
     ui.btnNewAlarm.setEnabled(True)
     ui.comboAlarms.setEnabled(True)
 
@@ -838,6 +986,7 @@ def callbackButtonRegioes(self, ret):
     ui.btnNewRegion.clicked.connect(btnNewRegion)
     ui.btnNewAlarm.clicked.connect(btnNewAlarm)
     windowConfig.show()
+    
     #print('Button regioes')
 
 
@@ -853,7 +1002,9 @@ if isOpenVino:
 
     ret, frame = ipCam.read()
     ret, next_frame = ipCam.read()
-    nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, statusConfig.data["openVinoModelXml"], statusConfig.data["openVinoModelBin"])
+
+    #nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, statusConfig.data["openVinoModelXml"], statusConfig.data["openVinoModelBin"])
+    nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, openVinoModelXml, openVinoModelBin)
     cur_request_id = 0
     next_request_id = 1
     render_time = 0
@@ -1043,7 +1194,18 @@ while True:
                                                             #frame_no_label = frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
                                                             #saveImageBox(frame_no_label, str(box[6]))
 
-                                                            if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame_no_label_email, str(box[6]), r.get('nameRegion'))):
+                                                            #if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame_no_label_email, str(box[6]), r.get('nameRegion'))):
+                                                            #    log.info('Alerta enviado ID[' + str(objectID) + ']')
+                                                            if (sendMailAlert(emailConfig['name'],
+                                                                              emailConfig['to'],
+                                                                              emailConfig['subject'],
+                                                                              emailConfig['port'],
+                                                                              emailConfig['smtp'],
+                                                                              emailConfig['user'],
+                                                                              emailConfig['password'],
+                                                                              frame_no_label_email,
+                                                                              str(box[6]),
+                                                                              r.get('nameRegion'))):
                                                                 log.info('Alerta enviado ID[' + str(objectID) + ']')
 
                                                             listObjectMailAlerted.append(objectID)

@@ -7,6 +7,10 @@ from email.mime.multipart import MIMEMultipart
 import smtplib
 from smtplib import SMTPException
 import utilsCore as utils
+import logging as log
+import sys
+
+log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 
 def saveImageBox(frame, classe):
 
@@ -24,7 +28,7 @@ def saveImageBox(frame, classe):
 
 
 #envia alerta do portao virtual com imagem anexada ao email
-def sendMailAlert(sender, recipients, frame, tipoObjetoDetectado, region):
+def sendMailAlert(sender, recipients, subject, port, smtp, user, password, frame, tipoObjetoDetectado, region):
 
     status = False
 
@@ -44,40 +48,52 @@ def sendMailAlert(sender, recipients, frame, tipoObjetoDetectado, region):
         img_file = open(img_file, 'rb').read()
 
     except OSError as error:
-        print('Erro ao anexar foto no email: ' + str(error))
+        log.info('Erro ao anexar foto no email: ' + str(error))
         return status
     else:
-        print('Foto anexada')
-#
-#    ret, image = cv.imencode('.jpg', frame)
+        log.info('Foto anexada')
 
     data = utils.getDate()
     msg = MIMEMultipart()
-    msg['Subject'] = 'PV - ' + '"' + tipoObjetoDetectado + '"' + ' na ' + region + '-' + data['hour']
+
+    if tipoObjetoDetectado == 'person':
+        tipoObjetoDetectado = 'Pessoa'
+
+    elif tipoObjetoDetectado == 'dog':
+        tipoObjetoDetectado = 'Cachorro'
+
+    elif tipoObjetoDetectado == 'bike':
+        tipoObjetoDetectado = 'Moto'
+
+    elif tipoObjetoDetectado == 'car':
+        tipoObjetoDetectado = 'Carro'
+
+    msg['Subject'] = subject + ' - ' + '"' + tipoObjetoDetectado + '"' + ' na ' + region + '-' + data['hour']
     msg['From'] = sender
     msg['To'] = recipients
 
-    text = MIMEText('"' + tipoObjetoDetectado + '"' + ' detectado em ' + data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year'] )
+    text = MIMEText('"' + tipoObjetoDetectado + '"' + ' na ' + region + '-  Detectado em ' + data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year'] )
     msg.attach(text)
 
     img_file = MIMEImage(img_file)
     msg.attach(img_file)
 
 
-    smtpObj = smtplib.SMTP('smtp.gmail.com', 587)
+    #smtpObj = smtplib.SMTP('smtp.gmail.com', 587)
+    smtpObj = smtplib.SMTP(smtp, int(port))
     try:
         smtpObj.ehlo()
         smtpObj.starttls()
         smtpObj.ehlo()
-        smtpObj.login(sender,'caraio3098')
+        smtpObj.login(sender,password)
         smtpObj.send_message(msg)
         smtpObj.quit()
 
     except SMTPException as e:
-        print("Error: unable to send email" + str(e))
+        log.info("Error: unable to send email" + str(e))
 
     else:
-        print('Email de alerta enviado')
+        log.info('Email de alerta enviado')
         status = True
 
     return status

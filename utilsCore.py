@@ -104,28 +104,74 @@ class StatusConfig:
     regions = list()
     listEmails = list()
 
+    def getActiveDevice(self):
+
+        for m in self.data.get('openVinoModels'):
+            if m.get('isActive') == "True":
+                return m.get('openVinoDevice'), m.get('openVinoModelXml'), m.get('openVinoModelBin'), m.get('name')
+
+
     def getEmailConfig(self):
         return self.data["emailConfig"]
 
     def getRegions(self):
         return self.regions
 
+    def getRegion(self, name):
+        region = None
+        for r in self.regions:
+            if r.get("nameRegion") == name:
+                region = r
+
+        return region
+
     def isRegionsEmpty(self):
         return True if (len(self.regions) == 0) else False
 
     def isAlarmEmpty(self, regionName):
         status = False 
-
         #print('regionName : {}'.format(regionName))
-
         for r in self.regions:
             #print('nameRegion {}'.format(r.get("nameRegion")))
             if r.get("nameRegion") == regionName:
                 status = (len(r.get('alarm')) == 0)
 
-
         return status
-    
+
+    def checkNameRegion(self, name):
+        status = False
+        for m in self.regions:
+            if m.get('nameRegion') == name:
+                status = True
+        return status
+   
+    def addOpenVinoModels(self, isActive, name, openVinoModelXml, openVinoModelBin, openVinoDevice):
+        model = {
+                    "isActive":isActive,
+                    "name":name,
+                    "openVinoModelXml":openVinoModelXml,
+                    "openVinoModelBin":openVinoModelBin,
+                    "openVinoDevice":openVinoDevice
+        }
+        #se ja existe, apenas edita os dados
+        edit = False
+        i = 0
+        for m in self.data.get('openVinoModels'):
+            if m.get('name') == name:
+                self.data.get('openVinoModels')[i] = model
+                edit = True
+                break
+            else:
+                i = i+1
+
+        if not edit:
+            print('append')
+            self.data.get('openVinoModels').append(model)
+
+        self.saveConfigFile()
+
+
+
     def addConfigGeral(self, name, port, smtp, user, password, subject, to, isRecording, dirVideos, camSource):
         email = {'name':name,
                  'port':port,
@@ -164,7 +210,6 @@ class StatusConfig:
 
     def addRegion(self, nameRegion, alarm, objectType, prob_threshold, pointsPolygon):
 
-
         region = {
             "nameRegion"     : nameRegion,
             "alarm"          : alarm,
@@ -173,16 +218,41 @@ class StatusConfig:
             "pointsPolygon"  : pointsPolygon
         }
 
-        self.regions.append(region)
+        edit = False
+        i = 0
+        for r in self.regions:
+            #salvar apenas as informações da regiao, e não do alarme
+            if r.get('nameRegion') == nameRegion:
+                self.regions[i]['objectType']       = objectType
+                self.regions[i]['prob_threshold']   = prob_threshold 
+                edit = True
+                break
+            else:
+                i = i+1
+
+        if not edit:
+            self.regions.append(region)
 
         self.saveRegionFile()
         #self.printRegions()
 
     def addAlarm(self, idRegion, alarm):
-        self.regions[idRegion].get('alarm').append(alarm)
+
+        edit = False
+        i = 0
+        for a in self.regions[idRegion].get('alarm'):
+            if a.get('name') == alarm['name']:
+                self.regions[idRegion].get('alarm')[i] = alarm
+                edit = True
+                break
+            else:
+                i = i+1
+
+        if not edit:
+            self.regions[idRegion].get('alarm').append(alarm)
+
         self.saveRegionFile()
         #self.printRegions()
-        print('Alarme inserido com sucesso')
         #TO-DO try catch toleranca a falhas
 
 
@@ -230,6 +300,49 @@ class StatusConfig:
         print("Alarm '{}' removido com sucesso".format(alarmName))
         #self.saveConfigFile()
         self.saveRegionFile()
+
+    def checkDuplicatedActiveModels(self):
+        i = 0
+        status = True
+        for m in self.data.get('openVinoModels'):
+            if m.get('isActive') == "True":
+                i = i + 1
+
+        if i > 1:
+            status = False
+
+        return status
+
+    def checkActiveModel(self):
+
+        status = False
+
+        for m in self.data.get('openVinoModels'):
+            if m.get('isActive') == "True":
+                status = True
+                break
+
+        return status
+
+
+    def deleteModel(self, modelName):
+
+        i = 0
+
+        if self.checkActiveModel():
+
+            if len(self.data.get('openVinoModels')) == 1:
+                print('WARNING: deve haver ao menos 1 modelo ativo')
+                return False
+            else:
+                for m in self.data.get('openVinoModels'):
+                    if m.get('name') == modelName:
+                        del self.data.get('openVinoModels')[i]
+                        return True
+                    else:
+                        i = i+1
+        else:
+            return False
 
 
     def deleteRegion(self, nameRegion='regions1'):
