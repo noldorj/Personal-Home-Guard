@@ -988,7 +988,10 @@ def callbackButtonRegioes(self, ret):
     ui.btnCancelRegion.clicked.connect(btnCancelRegion)
     ui.btnNewRegion.clicked.connect(btnNewRegion)
     ui.btnNewAlarm.clicked.connect(btnNewAlarm)
-    windowConfig.show()
+
+    threadWindow = Thread(target=windowConfig.show())
+    threadWindows.start()
+    #windowConfig.show()
     
     #print('Button regioes')
 
