@@ -200,37 +200,21 @@ from matplotlib.path import Path
 def isIdInsideRegion(centroid, ref_point_polygon):
 
     path = Path(ref_point_polygon)
-    #print('centroid[0]: {}'.format(centroid[0]))
-    #print('centroid[1]: {}'.format(centroid[1]))
     mask = path.contains_points([(centroid[0], centroid[1])])
-    #print('mask: {}'.format(mask))
     return mask
 
 
 def polygonSelection(event, x, y, flags, param):
 
     global ref_point_polygon, cropPolygon, portaoVirtualSelecionado
-    #print('polygonSelection')
-    #print('flags: {}'.format(flags))
-    #print('event: {}'.format(event))
 
     if event == cv.EVENT_LBUTTONDOWN and not portaoVirtualSelecionado and flags == cv.EVENT_FLAG_CTRLKEY+1:
 
         ref_point_polygon.append([x, y])
-        #print(' ')
-        #print('cv.EVENT_FLAG_CTRLKEY on')
-        #print('size of ref_point_polygon: {}'.format(len(ref_point_polygon)))
         cropPolygon = True
 
-    #elif not portaoVirtualSelecionado and event == cv.EVENT_LBUTTONUP and flags == cv.EVENT_FLAG_SHIFTKEY+1 and cropPolygon:
-    #elif not portaoVirtualSelecionado and flags == 0 and cropPolygon:
     elif not portaoVirtualSelecionado and flags == 0:
 
-        #ref_point_polygon.append((x, y))
-        #print(' ')
-        print('cv.EVENT_FLAG_ALTKEY off')
-        #print('size of ref_point_polygon: {}'.format(len(ref_point_polygon)))
-        #cropPolygon = False
         portaoVirtualSelecionado = True
 
 
@@ -241,7 +225,6 @@ objDetectado = False
 
 hora = utils.getDate()['hour'].replace(':','-')
 
-#TO-DO: tem que pegar do arquivo de texto
 current_data_dir = utils.getDate()
 current_data_dir = [current_data_dir.get('day'), current_data_dir.get('month')]
 
@@ -990,7 +973,7 @@ def callbackButtonRegioes(self, ret):
     ui.btnNewAlarm.clicked.connect(btnNewAlarm)
 
     threadWindow = Thread(target=windowConfig.show())
-    threadWindows.start()
+    threadWindow.start()
     #windowConfig.show()
     
     #print('Button regioes')
@@ -1117,6 +1100,9 @@ while True:
                     for (objectID, centroid) in objectsTracking.items():
 
                         #desenhando o box e label
+                        #centroid[0] = int(box[2]) - ((int(box[2])-int(box[0]))/2)
+                        centroid[1] = centroid[1] + (int(box[3])-int(box[1]))/2
+
                         cv.rectangle(frame_screen, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
                         top = int (box[1])
                         y = top - 15 if top - 15 > 15 else top + 15
@@ -1283,7 +1269,7 @@ while True:
         #print('FPS: {:10.2f} ms'.format(FPS))
 
         listObjects.clear()
-        listObjectsTracking.clear()
+        #listObjectsTracking.clear()
         objects.update()
 
         if cv.waitKey(1) & 0xFF == ord('q'):

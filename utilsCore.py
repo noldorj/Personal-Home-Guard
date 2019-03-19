@@ -326,24 +326,23 @@ class StatusConfig:
 
 
     def deleteModel(self, modelName):
-
+        status = False
         i = 0
 
-        if self.checkActiveModel():
-
-            if len(self.data.get('openVinoModels')) == 1:
+        if self.checkActiveModel() and len(self.data.get('openVinoModels')) == 1:
                 print('WARNING: deve haver ao menos 1 modelo ativo')
-                return False
-            else:
-                for m in self.data.get('openVinoModels'):
-                    if m.get('name') == modelName:
-                        del self.data.get('openVinoModels')[i]
-                        return True
-                    else:
-                        i = i+1
+                status = False
         else:
-            return False
+            for m in self.data.get('openVinoModels'):
+                if m.get('name') == modelName:
+                    print('deletando {}'.format(self.data.get('openVinoModels')[i].get('name')))
+                    del self.data.get('openVinoModels')[i]
+                    status = True
+                else:
+                    i = i+1
 
+        self.saveConfigFile()
+        return status
 
     def deleteRegion(self, nameRegion='regions1'):
         i = 0
