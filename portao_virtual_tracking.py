@@ -79,8 +79,8 @@ status_dir_criado, dir_video_trigger = utils.createDirectory(statusConfig.data["
 #origem do stream do video
 source = statusConfig.data["camSource"]
 log.info('source: {}'.format(source))
-ipCam = cv.VideoCapture('teste.avi')
-#ipCam = utils.camSource(source)
+#ipCam = cv.VideoCapture('teste.avi')
+ipCam = utils.camSource(source)
 
 prob_threshold = float(statusConfig.data["prob_threshold"])
 
