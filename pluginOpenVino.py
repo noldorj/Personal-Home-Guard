@@ -105,42 +105,25 @@ def initOpenVino(device, model_xml, model_bin):
     exec_net = plugin.load(network=net, num_requests=2)
     n, c, h, w = net.inputs[input_blob].shape
     nchw = [n,c,h,w]
-    #print('nchw: {}'.format(nchw))
     del net
 
-    log.info("Starting inference in async mode...")
-    log.info("To switch between sync and async modes press Tab button")
-    log.info("To stop the demo execution press Esc button")
     is_async_mode = True
     log.info("Init Openvino done")
-    #print('nchw from pOpenVino.init: {}, {}, {}, {}'.format(nchw[0], nchw[1], nchw[2], nchw[3]))
 
     return nchw, exec_net, input_blob, out_blob
 
 
 def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, prob_threshold):
 
- # Read and pre-process input image
-    #if args.input == 'cam':
-    #    input_stream = 0
-    #else:
-    #    input_stream = args.input
-    #    assert os.path.isfile(args.input), "Specified input file doesn't exist"
-    #if labels:
-    #    with open(labels, 'r') as f:
-    #        labels_map = [x.strip() for x in f]
-    #else:
-    #    labels_map = None
 
     prob_threshold_returned, xmin, xmax, ymin, ymax, det_label, class_id, label  = 0,0, 0, 0, 0, ' ', 0, ' '
+
+    listObjectsTracking.clear()
+    listRectanglesDetected.clear()
 
     n, c, h, w = nchw[0], nchw[1], nchw[2], nchw[3]
 
     cap = ipCam
-    #cap = cv2.VideoCapture(input_stream)
-
-    #ret, frame = cap.read()
-    #while cap.isOpened():
 
     ret, next_frame = cap.read()
     if next_frame is None or ret is False:
@@ -148,35 +131,18 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
 
     else:
 
-        #while(ret is False):
-        #    log.error('Error capturing next_frame - capturing again...')
-        #ret, next_frame = cap.read()
-
-        #if not ret:
-        #    break
-
-
         initial_w = cap.get(3)
         initial_h = cap.get(4)
-        # Main sync point:
-        # in the truly Async mode we start the NEXT infer request, while waiting for the CURRENT to complete
-        # in the regular mode we start the CURRENT request and immediately wait for it's completion
-        #inf_start = time.time()
         in_frame = cv2.resize(next_frame, (w, h))
         in_frame = in_frame.transpose((2, 0, 1))  # Change data layout from HWC to CHW
         in_frame = in_frame.reshape((n, c, h, w))
         exec_net.start_async(request_id=next_request_id, inputs={input_blob: in_frame})
 
         if exec_net.requests[cur_request_id].wait(-1) == 0:
-            #inf_end = time.time()
-            #det_time = inf_end - inf_start
 
             # Parse detection results of the current request
             res = exec_net.requests[cur_request_id].outputs[out_blob]
-            #prob_threshold = 0.80
-            #print('shape of res : ' + str(res.shape))
-            #print('size res[0]0] : ' + str(len(res[0][0])))
-            #print('size res : ' + str(res.size))
+
             for obj in res[0][0]:
                 # Draw only objects when probability more than specified threshold
                 if obj[2] > prob_threshold:
@@ -188,40 +154,27 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
                     det_label = labels_map[class_id] if labels_map else str(class_id)
                     prob_threshold_returned = round(obj[2] * 100, 1)
                     label = det_label + ' ' + str(prob_threshold_returned) + ' %'
-                    #print('obj[2] {}'.format(obj[2]))
-                    #print('Threshold: {}'.format(obj[2]))
-                    #print(' ')
-                    #print('class_id : ' + str(class_id))
-                    # Draw box and label\class_id
-                    #color = (min(class_id * 12.5, 255), min(class_id * 7, 255), min(class_id * 5, 255))
-                    #color = (0,0,255)
-                    #cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), color, 2)
-                    #cv2.putText(frame, det_label + ' ' + str(round(obj[2] * 100, 1)) + ' %', (xmin, ymin - 7), cv2.FONT_HERSHEY_COMPLEX, 0.6, color, 1)
+
+                    #teste para mais de um ID
+                    box = (xmin, ymin, xmax, ymax, label, class_id, det_label)
+                    if det_label is 'person' or \
+                                det_label is 'cat' or \
+                                det_label is 'car' or \
+                                det_label is 'dog':
+                        boxTracking = (xmin, ymin, xmax, ymax)
+                        listObjectsTracking.append(boxTracking)
+                        listRectanglesDetected.append(box)
 
 
-            # Draw performance stats
-            #inf_time_message = "Inference time: N\A for async mode" 
-            #render_time_message = "OpenCV rendering time: {:.3f} ms".format(render_time * 1000)
-            #async_mode_message = "Async mode is on. Processing request {}".format(cur_request_id)
 
-            #cv2.putText(frame, inf_time_message, (15, 15), cv2.FONT_HERSHEY_COMPLEX, 0.5, (200, 10, 10), 1)
-            #cv2.putText(frame, render_time_message, (15, 30), cv2.FONT_HERSHEY_COMPLEX, 0.5, (10, 10, 200), 1)
-            #cv2.putText(frame, async_mode_message, (10, int(initial_h - 20)), cv2.FONT_HERSHEY_COMPLEX, 0.5, (10, 10, 200), 1)
+            #if det_label is 'person' or \
+            #            det_label is 'cat' or \
+            #            det_label is 'car' or \
+            #            det_label is 'dog':
 
-            #print('label: {}'.format(label))
-
-            box = (xmin, ymin, xmax, ymax, label, class_id, det_label)
-            #print('box from plugin: {}'.format(box))
-
-
-            if det_label is 'person' or \
-                        det_label is 'cat' or \
-                        det_label is 'car' or \
-                        det_label is 'dog':
-
-                boxTracking = (xmin, ymin, xmax, ymax)
-                listObjectsTracking.append(boxTracking)
-                listRectanglesDetected.append(box)
+                #boxTracking = (xmin, ymin, xmax, ymax)
+                #listObjectsTracking.append(boxTracking)
+                #listRectanglesDetected.append(box)
 
     listReturn = [frame, next_frame, cur_request_id, next_request_id, listRectanglesDetected, listObjectsTracking, prob_threshold_returned]
 

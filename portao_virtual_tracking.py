@@ -79,7 +79,8 @@ status_dir_criado, dir_video_trigger = utils.createDirectory(statusConfig.data["
 #origem do stream do video
 source = statusConfig.data["camSource"]
 log.info('source: {}'.format(source))
-ipCam = utils.camSource(source)
+ipCam = cv.VideoCapture('teste.avi')
+#ipCam = utils.camSource(source)
 
 prob_threshold = float(statusConfig.data["prob_threshold"])
 
@@ -235,7 +236,7 @@ nameVideo  = 'firstVideo'
 gravando = False
 newVideo = True
 releaseVideo = False 
-objects = None
+#objects = None
 #FPS = ipCam.get(cv.CAP_PROP_FPS) #30.0 #frames per second
 FPS = 4  #de acordo com o manual da mibo ic5 intelbras
 
@@ -1027,7 +1028,7 @@ while True:
         frame_screen = frame.copy()
         frame_no_label_email = frame.copy()
 
-        objects = ct.update(rects = listObjectsTracking)
+        #objects = ct.update(rects = listObjectsTracking)
 
         currentData = utils.getDate()
         currentData = [currentData.get('day'), currentData.get('month')]
@@ -1072,9 +1073,9 @@ while True:
         if len(listObjects) == 0 and portaoVirtualSelecionado:
 
 
-            listObjects.clear()
-            listObjectsTracking.clear()
-            objects = ct.update(listObjectsTracking)
+            #listObjects.clear()
+            #listObjectsTracking.clear()
+            #objects = ct.update(listObjectsTracking)
 
             tEmptyEnd = time.time()
             tEmpty = tEmptyEnd- tEmptyStart
@@ -1090,6 +1091,8 @@ while True:
         #se tem objetos detectados pela CNN
         else:
 
+            #objectsTracking = ct.update(listObjectsTracking)
+
             for box in listObjects:
 
                 if portaoVirtualSelecionado:
@@ -1099,10 +1102,9 @@ while True:
 
                     for (objectID, centroid) in objectsTracking.items():
 
-                        #desenhando o box e label
-                        #centroid[0] = int(box[2]) - ((int(box[2])-int(box[0]))/2)
-                        centroid[1] = centroid[1] + (int(box[3])-int(box[1]))/2
+                        # ajustando posicao do centroid 
 
+                        #desenhando o box e label
                         cv.rectangle(frame_screen, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
                         top = int (box[1])
                         y = top - 15 if top - 15 > 15 else top + 15
@@ -1110,6 +1112,8 @@ while True:
                         text = "ID {}".format(objectID)
                         cv.putText(frame_screen, text, (centroid[0] - 10, centroid[1] - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                         cv.circle(frame_screen, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+                        centroid = (0,0)
+
 
                         #checando para varias regioes
                         for r in regions:
@@ -1119,18 +1123,13 @@ while True:
 
                             if r.get('objectType').get(typeObject) == "True":
 
-                                #print('prob_threshold_returned: {}'.format(prob_threshold_returned))
-                                #print('prob_threshold config: {}'.format(r.get('prob_threshold')))
 
                                 if prob_threshold_returned >= int(r.get('prob_threshold')):
-                                    #print(' ')
-                                    #print('in')
 
                                     if isIdInsideRegion(centroid, r.get('pointsPolygon')):
 
                                         tEmptyEnd = time.time()
                                         tEmpty = tEmptyEnd- tEmptyStart
-                                        #print('tEmpty {}:'.format(tEmpty))
 
                                         tEmptyStart = time.time()
 
@@ -1270,7 +1269,6 @@ while True:
 
         listObjects.clear()
         #listObjectsTracking.clear()
-        objects.update()
 
         if cv.waitKey(1) & 0xFF == ord('q'):
             break

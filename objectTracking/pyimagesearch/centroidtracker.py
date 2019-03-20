@@ -4,6 +4,7 @@ from collections import OrderedDict
 import numpy as np
 
 class CentroidTracker():
+    #estava 50 .. colocando 90 para dar 3 segundos considerando 30 FPS
     def __init__(self, maxDisappeared=50):
         # initialize the next unique object ID along with two ordered
         # dictionaries used to keep track of mapping a given object
@@ -59,7 +60,9 @@ class CentroidTracker():
         for (i, (startX, startY, endX, endY)) in enumerate(rects):
             # use the bounding box coordinates to derive the centroid
             cX = int((startX + endX) / 2.0)
-            cY = int((startY + endY) / 2.0)
+            #cY = int((startY + endY) / 2.0)
+            #Colocando o ID na parte de baixo do box
+            cY = int(endY)-10
             inputCentroids[i] = (cX, cY)
 
         # if we are currently not tracking any objects take the input
