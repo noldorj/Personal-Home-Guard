@@ -35,24 +35,24 @@ classes = ["background", "pessoa", "bicileta", "carro", "moto", "airplane", "bus
 
 #tie, suitecase (= carro)
 
-import subprocess
-import ewmh
+#import subprocess
+#import ewmh
 
-active_id = hex(ewmh.EWMH().getActiveWindow().id)
-
-def suspend_screensaver():
-    print('suspend')
-    #window_id = subprocess.Popen('xwininfo -root | grep xwininfo | cut -d" " -f4', stdout=subprocess.PIPE, shell=True).stdout.read().strip()
-    #run xdg-screensaver on root window
-    subprocess.call('xdg-screensaver', 'suspend')
-
-def resume_screensaver():
-    print('resume')
-    subprocess.Popen('xdg-screensaver resume ')
-
-def activate_screensaver():
-    subprocess.Popen('xdg-screensaver activate')
-
+#active_id = hex(ewmh.EWMH().getActiveWindow().id)
+#
+#def suspend_screensaver():
+#    print('suspend')
+#    #window_id = subprocess.Popen('xwininfo -root | grep xwininfo | cut -d" " -f4', stdout=subprocess.PIPE, shell=True).stdout.read().strip()
+#    #run xdg-screensaver on root window
+#    subprocess.call('xdg-screensaver', 'suspend')
+#
+#def resume_screensaver():
+#    print('resume')
+#    subprocess.Popen('xdg-screensaver resume ')
+#
+#def activate_screensaver():
+#    subprocess.Popen('xdg-screensaver activate')
+#
 
 
 #statusConfig = utils.StatusConfig(configFile='config.json.gpu.webcam')
@@ -1112,7 +1112,6 @@ while True:
                         text = "ID {}".format(objectID)
                         cv.putText(frame_screen, text, (centroid[0] - 10, centroid[1] - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                         cv.circle(frame_screen, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
-                        centroid = (0,0)
 
 
                         #checando para varias regioes

@@ -5,7 +5,7 @@ import numpy as np
 
 class CentroidTracker():
     #estava 50 .. colocando 90 para dar 3 segundos considerando 30 FPS
-    def __init__(self, maxDisappeared=50):
+    def __init__(self, maxDisappeared=30):
         # initialize the next unique object ID along with two ordered
         # dictionaries used to keep track of mapping a given object
         # ID to its centroid and number of consecutive frames it has
