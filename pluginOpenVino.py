@@ -27,7 +27,8 @@ from  openvino.inference_engine import IENetwork, IEPlugin
 #def main():
 log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 #labels_map = ["background", "pessoa", "carro", "bicileta"]
-labels_map = ["background", "car", "person", "bike"]
+#labels_map = ["background", "car", "person", "bike"]
+labels_map = ["background", "person", "car", "bike"]
 
 #lista de boxes detectados
 listRectanglesDetected = []
