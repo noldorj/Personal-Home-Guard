@@ -262,12 +262,20 @@ device, openVinoModelXml, openVinoModelBin, openVinoModelName  = statusConfig.ge
 
 posConfigPv = 255
 
+def initInterface():
+    cv.createButton('Configurar ', callbackButtonRegioes, None,cv.QT_PUSH_BUTTON)
+    cv.createButton('+1 min pausar campainha', callbackButton1min, None,cv.QT_PUSH_BUTTON)
+    cv.createButton('+30 min pausar campainha', callbackButton30min, None,cv.QT_PUSH_BUTTON)
+    cv.createButton('Voltar campainha', callbackButtonResumeSound, None,cv.QT_PUSH_BUTTON)
+
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QWidget
 import sys
 from mainForm import *
 from PyQt5.QtWidgets import QMainWindow, QApplication, QErrorMessage, QMessageBox, QPushButton
 from PyQt5.QtCore import QTime, QThread
+
+app = QApplication (sys.argv)
 
 class FormProc(QWidget):
     def __init__(self, parent=None):
@@ -300,11 +308,6 @@ ui.setupUi(windowConfig)
 #windowConfig = QWidget()
 #ui.setupUi(windowConfig)
 
-def initInterface():
-    cv.createButton('Configurar ', callbackButtonRegioes, None,cv.QT_PUSH_BUTTON)
-    cv.createButton('+1 min pausar campainha', callbackButton1min, None,cv.QT_PUSH_BUTTON)
-    cv.createButton('+30 min pausar campainha', callbackButton30min, None,cv.QT_PUSH_BUTTON)
-    cv.createButton('Voltar campainha', callbackButtonResumeSound, None,cv.QT_PUSH_BUTTON)
 
 
 
