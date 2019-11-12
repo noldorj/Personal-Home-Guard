@@ -262,11 +262,13 @@ device, openVinoModelXml, openVinoModelBin, openVinoModelName  = statusConfig.ge
 
 posConfigPv = 255
 
-def initInterface():
-    cv.createButton('Configurar ', callbackButtonRegioes, None,cv.QT_PUSH_BUTTON)
-    cv.createButton('+1 min pausar campainha', callbackButton1min, None,cv.QT_PUSH_BUTTON)
-    cv.createButton('+30 min pausar campainha', callbackButton30min, None,cv.QT_PUSH_BUTTON)
-    cv.createButton('Voltar campainha', callbackButtonResumeSound, None,cv.QT_PUSH_BUTTON)
+#removendo dependencia da lib Gtk para interface
+
+#def initInterface():
+#    cv.createButton('Configurar ', callbackButtonRegioes, None,cv.QT_PUSH_BUTTON)
+#    cv.createButton('+1 min pausar campainha', callbackButton1min, None,cv.QT_PUSH_BUTTON)
+#    cv.createButton('+30 min pausar campainha', callbackButton30min, None,cv.QT_PUSH_BUTTON)
+#    cv.createButton('Voltar campainha', callbackButtonResumeSound, None,cv.QT_PUSH_BUTTON)
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QWidget
@@ -983,7 +985,7 @@ def callbackButtonRegioes(self, ret):
     #print('Button regioes')
 
 
-initInterface()
+#initInterface()
 counter = 0
 tEmpty = 0
 tEmptyEnd = 0
@@ -1272,6 +1274,10 @@ while True:
         listObjects.clear()
         #listObjectsTracking.clear()
 
+        #chamando callbackButtonRegioes  
+        if cv.waitKey(1) & 0xFF == ord('c'):
+            callbackButtonRegioes(None, ret)
+        
         if cv.waitKey(1) & 0xFF == ord('q'):
             break
 

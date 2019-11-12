@@ -37,9 +37,9 @@ listObjectsTracking = []
 
 def initOpenVino(device, model_xml, model_bin):
 
-    cpu_extension = '/opt/intel/computer_vision_sdk/deployment_tools/inference_engine/lib/ubuntu_16.04/intel64/libcpu_extension_avx2.so'
+    cpu_extension = '/opt/intel/computer_vision_sdk/deployment_tools/inference_engine/lib/ubuntu_18.04/intel64/libcpu_extension_avx2.so'
 
-    plugin_dir = '/opt/intel/computer_vision_sdk/deployment_tools/inference_engine/lib/ubuntu_16.04/intel64/'
+    plugin_dir = '/opt/intel/computer_vision_sdk/deployment_tools/inference_engine/lib/ubuntu_18.04/intel64/'
 
 
     if device == 'MYRIAD':
