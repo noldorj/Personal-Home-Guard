@@ -108,7 +108,7 @@ class StatusConfig:
 
         for m in self.data.get('openVinoModels'):
             if m.get('isActive') == "True":
-                return m.get('openVinoDevice'), m.get('openVinoModelXml'), m.get('openVinoModelBin'), m.get('name')
+                return m.get('openVinoDevice'), m.get('openVinoModelXml'), m.get('openVinoModelBin'), m.get('openVinoCpuExtension'), m.get('openVinoPlugirDir'), m.get('name')
 
 
     def getEmailConfig(self):
@@ -145,12 +145,14 @@ class StatusConfig:
                 status = True
         return status
    
-    def addOpenVinoModels(self, isActive, name, openVinoModelXml, openVinoModelBin, openVinoDevice):
+    def addOpenVinoModels(self, isActive, name, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPlugirDir, openVinoDevice):
         model = {
                     "isActive":isActive,
                     "name":name,
                     "openVinoModelXml":openVinoModelXml,
                     "openVinoModelBin":openVinoModelBin,
+                    "openVinoCpuExtension":openVinoCpuExtension,
+                    "openVinoPlugirDir":openVinoPlugirDir,
                     "openVinoDevice":openVinoDevice
         }
         #se ja existe, apenas edita os dados
@@ -359,22 +361,24 @@ class StatusConfig:
 
     def printConfig(self):
         print('--- Config status  ---')
-        print('isRecording:       {}'.format(self.data.get('isRecording')))
-        print('isEmailAlert:      {}'.format(self.data.get('isEmailAlert')))
-        print('isGateSelected:    {}'.format(self.data.get('isGateSelected')))
-        print('isSoundAlert:      {}'.format(self.data.get('isSoundAlert')))
-        print('prob_threshold:    {}'.format(self.data.get('prob_threshold')))
-        print('camSource:         {}'.format(self.data.get('camSource')))
-        print('isOpenVino:        {}'.format(self.data.get('isOpenVino')))
-        print('dnnModelPb:        {}'.format(self.data.get('dnnModelPb')))
-        print('dnnModelPbTxt:     {}'.format(self.data.get('dnnModelPbTxt')))
-        print('openVinoModelXml:  {}'.format(self.data.get('openVinoModelXml')))
-        print('openVinoModelBin:  {}'.format(self.data.get('openVinoModelBin')))
+        print('isRecording:             {}'.format(self.data.get('isRecording')))
+        print('isEmailAlert:            {}'.format(self.data.get('isEmailAlert')))
+        print('isGateSelected:          {}'.format(self.data.get('isGateSelected')))
+        print('isSoundAlert:            {}'.format(self.data.get('isSoundAlert')))
+        print('prob_threshold:          {}'.format(self.data.get('prob_threshold')))
+        print('camSource:               {}'.format(self.data.get('camSource')))
+        print('isOpenVino:              {}'.format(self.data.get('isOpenVino')))
+        print('dnnModelPb:              {}'.format(self.data.get('dnnModelPb')))
+        print('dnnModelPbTxt:           {}'.format(self.data.get('dnnModelPbTxt')))
+        print('openVinoModelXml:        {}'.format(self.data.get('openVinoModelXml')))
+        print('openVinoModelBin:        {}'.format(self.data.get('openVinoModelBin')))
+        print('openVinoCpuExtension:    {}'.format(self.data.get('openVinoCpuExtension')))
+        print('openVinoPlugirDir:       {}'.format(self.data.get('openVinoPlugirDir')))
         #TODO printar lista de emails
-        print('emailConfig/user:  {}'.format(self.data.get('emailConfig').get('user')))
-        print('emailConfig/smtp:  {}'.format(self.data.get('emailConfig').get('smtp')))
-        print('emailConfig/port:  {}'.format(self.data.get('emailConfig').get('port')))
-        print('dirVideos:         {}'.format(self.data.get('dirVideos')))
+        print('emailConfig/user:        {}'.format(self.data.get('emailConfig').get('user')))
+        print('emailConfig/smtp:        {}'.format(self.data.get('emailConfig').get('smtp')))
+        print('emailConfig/port:        {}'.format(self.data.get('emailConfig').get('port')))
+        print('dirVideos:               {}'.format(self.data.get('dirVideos')))
 
 
     def printRegions(self):

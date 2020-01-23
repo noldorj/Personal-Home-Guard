@@ -26,20 +26,19 @@ from  openvino.inference_engine import IENetwork, IEPlugin
 
 #def main():
 log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
-#labels_map = ["background", "pessoa", "carro", "bicileta"]
-#labels_map = ["background", "car", "person", "bike"]
-labels_map = ["background", "person", "car", "bike"]
+labels_map = ["background", "car", "person", "bike"]
+#labels_map = ["background", "person", "car", "bike"]
 
 #lista de boxes detectados
 listRectanglesDetected = []
 listObjectsTracking = []
 
 
-def initOpenVino(device, model_xml, model_bin):
+def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
 
-    cpu_extension = '/opt/intel/computer_vision_sdk/deployment_tools/inference_engine/lib/ubuntu_18.04/intel64/libcpu_extension_avx2.so'
+    cpu_extension = '/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_avx2.so'
 
-    plugin_dir = '/opt/intel/computer_vision_sdk/deployment_tools/inference_engine/lib/ubuntu_18.04/intel64/'
+    plugin_dir = '/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64'
 
 
     if device == 'MYRIAD':

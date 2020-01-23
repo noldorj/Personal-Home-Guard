@@ -57,8 +57,8 @@ classes = ["background", "pessoa", "bicileta", "carro", "moto", "airplane", "bus
 
 #statusConfig = utils.StatusConfig(configFile='config.json.gpu.webcam')
 #statusConfig = utils.StatusConfig(configFile='config.json.gpu')
-#statusConfig = utils.StatusConfig(configFile='config.json')
-statusConfig = utils.StatusConfig()
+statusConfig = utils.StatusConfig(configFile='config-brinquedoteca.json')
+#statusConfig = utils.StatusConfig()
 
 # dnnMOdel for TensorFlow Object Detection API
 pb = statusConfig.data["dnnModelPb"] 
@@ -258,7 +258,7 @@ if isOpenVino:
 
 
 #device = statusConfig.data["openVinoDevice"]
-device, openVinoModelXml, openVinoModelBin, openVinoModelName  = statusConfig.getActiveDevice()
+device, openVinoModelXml, openVinoModelBin, openVinoModelName, openVinoCpuExtension, openVinoPlugirDir  = statusConfig.getActiveDevice()
 
 posConfigPv = 255
 
@@ -524,6 +524,8 @@ def btnSaveOpenVino():
                                    ui.txtModelName.text(),
                                    ui.txtModelXml.text(),
                                    ui.txtModelBin.text(),
+                                   ui.txtCpuExtension.text(),
+                                   ui.txtPluginDir.text(),
                                    deviceTxt)
         refreshStatusConfig()
         comboListModelsUpdate(ui.comboListModels.currentIndex())
@@ -547,6 +549,8 @@ def comboListModelsUpdate(i):
         ui.txtModelName.setText(m.get('name'))
         ui.txtModelBin.setText(m.get('openVinoModelBin'))
         ui.txtModelXml.setText(m.get('openVinoModelXml'))
+        ui.txtModelXml.setText(m.get('openVinoCpuExtension'))
+        ui.txtModelXml.setText(m.get('openVinoPlugirDir'))
 
         if m.get('openVinoDevice') == 'CPU':
             ui.comboListDevices.setCurrentIndex(0)
@@ -999,7 +1003,7 @@ if isOpenVino:
     ret, next_frame = ipCam.read()
 
     #nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, statusConfig.data["openVinoModelXml"], statusConfig.data["openVinoModelBin"])
-    nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, openVinoModelXml, openVinoModelBin)
+    nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPlugirDir)
     cur_request_id = 0
     next_request_id = 1
     render_time = 0

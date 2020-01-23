@@ -22,14 +22,14 @@
   <widget class="QTabWidget" name="tabConfig">
    <property name="geometry">
     <rect>
-     <x>0</x>
-     <y>0</y>
+     <x>10</x>
+     <y>10</y>
      <width>891</width>
      <height>521</height>
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>2</number>
    </property>
    <property name="tabsClosable">
     <bool>true</bool>
@@ -604,13 +604,22 @@
     <widget class="QWidget" name="gridLayoutWidget_2">
      <property name="geometry">
       <rect>
-       <x>0</x>
+       <x>40</x>
        <y>10</y>
        <width>741</width>
-       <height>298</height>
+       <height>321</height>
       </rect>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
+      <property name="horizontalSpacing">
+       <number>7</number>
+      </property>
+      <property name="verticalSpacing">
+       <number>8</number>
+      </property>
+      <item row="7" column="2">
+       <widget class="QLineEdit" name="txtCpuExtension"/>
+      </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_28">
         <property name="text">
@@ -718,13 +727,34 @@
         </property>
        </widget>
       </item>
+      <item row="8" column="2">
+       <widget class="QLineEdit" name="txtPluginDir">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="0">
+       <widget class="QLabel" name="label_26">
+        <property name="text">
+         <string>CPU Extension</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="0">
+       <widget class="QLabel" name="label_27">
+        <property name="text">
+         <string>Plugin Dir</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
     <widget class="QWidget" name="horizontalLayoutWidget_5">
      <property name="geometry">
       <rect>
-       <x>50</x>
-       <y>310</y>
+       <x>100</x>
+       <y>380</y>
        <width>641</width>
        <height>41</height>
       </rect>

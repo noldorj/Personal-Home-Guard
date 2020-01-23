@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'mainForm.ui'
 #
-# Created by: PyQt5 UI code generator 5.6
+# Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -15,7 +15,7 @@ class Ui_formConfig(object):
         formConfig.resize(909, 521)
         formConfig.setFocusPolicy(QtCore.Qt.TabFocus)
         self.tabConfig = QtWidgets.QTabWidget(formConfig)
-        self.tabConfig.setGeometry(QtCore.QRect(0, 0, 891, 521))
+        self.tabConfig.setGeometry(QtCore.QRect(10, 10, 891, 521))
         self.tabConfig.setTabsClosable(True)
         self.tabConfig.setObjectName("tabConfig")
         self.tabRegion = QtWidgets.QWidget()
@@ -285,11 +285,16 @@ class Ui_formConfig(object):
         self.tabConfigDetection = QtWidgets.QWidget()
         self.tabConfigDetection.setObjectName("tabConfigDetection")
         self.gridLayoutWidget_2 = QtWidgets.QWidget(self.tabConfigDetection)
-        self.gridLayoutWidget_2.setGeometry(QtCore.QRect(0, 10, 741, 298))
+        self.gridLayoutWidget_2.setGeometry(QtCore.QRect(40, 10, 741, 321))
         self.gridLayoutWidget_2.setObjectName("gridLayoutWidget_2")
         self.gridLayout_2 = QtWidgets.QGridLayout(self.gridLayoutWidget_2)
         self.gridLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout_2.setHorizontalSpacing(7)
+        self.gridLayout_2.setVerticalSpacing(8)
         self.gridLayout_2.setObjectName("gridLayout_2")
+        self.txtCpuExtension = QtWidgets.QLineEdit(self.gridLayoutWidget_2)
+        self.txtCpuExtension.setObjectName("txtCpuExtension")
+        self.gridLayout_2.addWidget(self.txtCpuExtension, 7, 2, 1, 1)
         self.label_28 = QtWidgets.QLabel(self.gridLayoutWidget_2)
         self.label_28.setObjectName("label_28")
         self.gridLayout_2.addWidget(self.label_28, 1, 0, 1, 1)
@@ -342,8 +347,18 @@ class Ui_formConfig(object):
         self.checkBoxActiveModel = QtWidgets.QCheckBox(self.gridLayoutWidget_2)
         self.checkBoxActiveModel.setObjectName("checkBoxActiveModel")
         self.gridLayout_2.addWidget(self.checkBoxActiveModel, 2, 3, 1, 1)
+        self.txtPluginDir = QtWidgets.QLineEdit(self.gridLayoutWidget_2)
+        self.txtPluginDir.setText("")
+        self.txtPluginDir.setObjectName("txtPluginDir")
+        self.gridLayout_2.addWidget(self.txtPluginDir, 8, 2, 1, 1)
+        self.label_26 = QtWidgets.QLabel(self.gridLayoutWidget_2)
+        self.label_26.setObjectName("label_26")
+        self.gridLayout_2.addWidget(self.label_26, 7, 0, 1, 1)
+        self.label_27 = QtWidgets.QLabel(self.gridLayoutWidget_2)
+        self.label_27.setObjectName("label_27")
+        self.gridLayout_2.addWidget(self.label_27, 8, 0, 1, 1)
         self.horizontalLayoutWidget_5 = QtWidgets.QWidget(self.tabConfigDetection)
-        self.horizontalLayoutWidget_5.setGeometry(QtCore.QRect(50, 310, 641, 41))
+        self.horizontalLayoutWidget_5.setGeometry(QtCore.QRect(100, 380, 641, 41))
         self.horizontalLayoutWidget_5.setObjectName("horizontalLayoutWidget_5")
         self.horizontalLayout_6 = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget_5)
         self.horizontalLayout_6.setContentsMargins(0, 0, 0, 0)
@@ -360,7 +375,7 @@ class Ui_formConfig(object):
         self.tabConfig.addTab(self.tabConfigDetection, "")
 
         self.retranslateUi(formConfig)
-        self.tabConfig.setCurrentIndex(1)
+        self.tabConfig.setCurrentIndex(2)
         self.comboAlarms.setCurrentIndex(-1)
         QtCore.QMetaObject.connectSlotsByName(formConfig)
         formConfig.setTabOrder(self.tabConfig, self.comboRegions)
@@ -476,8 +491,20 @@ class Ui_formConfig(object):
         self.comboListDevices.setItemText(1, _translate("formConfig", "Placa Gráfica (GPU)"))
         self.comboListDevices.setItemText(2, _translate("formConfig", "VPU (Movidius)"))
         self.checkBoxActiveModel.setText(_translate("formConfig", "Ativo"))
+        self.label_26.setText(_translate("formConfig", "CPU Extension"))
+        self.label_27.setText(_translate("formConfig", "Plugin Dir"))
         self.btnSaveOpenVino.setText(_translate("formConfig", "Salvar"))
         self.btnDeleteOpenVino.setText(_translate("formConfig", "Deletar"))
         self.btnCancelOpenVino.setText(_translate("formConfig", "Cancelar"))
         self.tabConfig.setTabText(self.tabConfig.indexOf(self.tabConfigDetection), _translate("formConfig", "Configuração OpenVINO "))
+
+
+if __name__ == "__main__":
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    formConfig = QtWidgets.QWidget()
+    ui = Ui_formConfig()
+    ui.setupUi(formConfig)
+    formConfig.show()
+    sys.exit(app.exec_())
 
