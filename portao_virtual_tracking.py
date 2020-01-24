@@ -258,7 +258,7 @@ if isOpenVino:
 
 
 #device = statusConfig.data["openVinoDevice"]
-device, openVinoModelXml, openVinoModelBin, openVinoModelName, openVinoCpuExtension, openVinoPlugirDir  = statusConfig.getActiveDevice()
+device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir, openVinoModelName  = statusConfig.getActiveDevice()
 
 posConfigPv = 255
 
@@ -549,8 +549,9 @@ def comboListModelsUpdate(i):
         ui.txtModelName.setText(m.get('name'))
         ui.txtModelBin.setText(m.get('openVinoModelBin'))
         ui.txtModelXml.setText(m.get('openVinoModelXml'))
-        ui.txtModelXml.setText(m.get('openVinoCpuExtension'))
-        ui.txtModelXml.setText(m.get('openVinoPlugirDir'))
+        ui.txtCpuExtension.setText(statusConfig.getCpuExtension())
+        ui.txtPluginDir.setText(statusConfig.getPluginDir())
+        ui.txtModelName.setText(m.get('name'))
 
         if m.get('openVinoDevice') == 'CPU':
             ui.comboListDevices.setCurrentIndex(0)
@@ -1003,7 +1004,10 @@ if isOpenVino:
     ret, next_frame = ipCam.read()
 
     #nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, statusConfig.data["openVinoModelXml"], statusConfig.data["openVinoModelBin"])
-    nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPlugirDir)
+    #log.info('CPU Extension    : {}'.format(openVinoCpuExtension))
+    #log.info('Plugin Diretorio : {}'.format(openVinoPluginDir))
+
+    nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir)
     cur_request_id = 0
     next_request_id = 1
     render_time = 0

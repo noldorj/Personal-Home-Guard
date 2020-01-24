@@ -108,9 +108,15 @@ class StatusConfig:
 
         for m in self.data.get('openVinoModels'):
             if m.get('isActive') == "True":
-                return m.get('openVinoDevice'), m.get('openVinoModelXml'), m.get('openVinoModelBin'), m.get('openVinoCpuExtension'), m.get('openVinoPlugirDir'), m.get('name')
+                return m.get('openVinoDevice'), m.get('openVinoModelXml'), m.get('openVinoModelBin'), self.data["openVinoCpuExtension"], self.data["openVinoPluginDir"], m.get('name')
 
 
+    def getCpuExtension(self):
+        return self.data["openVinoCpuExtension"]
+    
+    def getPluginDir(self):
+        return self.data["openVinoPluginDir"]
+    
     def getEmailConfig(self):
         return self.data["emailConfig"]
 
