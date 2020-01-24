@@ -57,8 +57,8 @@ classes = ["background", "pessoa", "bicileta", "carro", "moto", "airplane", "bus
 
 #statusConfig = utils.StatusConfig(configFile='config.json.gpu.webcam')
 #statusConfig = utils.StatusConfig(configFile='config.json.gpu')
-statusConfig = utils.StatusConfig(configFile='config-brinquedoteca.json')
-#statusConfig = utils.StatusConfig()
+#statusConfig = utils.StatusConfig(configFile='config-brinquedoteca.json')
+statusConfig = utils.StatusConfig()
 
 # dnnMOdel for TensorFlow Object Detection API
 pb = statusConfig.data["dnnModelPb"] 
