@@ -2,9 +2,10 @@
 
 # Form implementation generated from reading ui file 'mainForm.ui'
 #
-# Created by: PyQt5 UI code generator 5.9.2
+# Created by: PyQt5 UI code generator 5.10.1
 #
 # WARNING! All changes made in this file will be lost!
+from fbs_runtime.application_context.PyQt5 import ApplicationContext
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
@@ -191,7 +192,7 @@ class Ui_formConfig(object):
         self.tabConfigGeneral = QtWidgets.QWidget()
         self.tabConfigGeneral.setObjectName("tabConfigGeneral")
         self.gridLayoutWidget = QtWidgets.QWidget(self.tabConfigGeneral)
-        self.gridLayoutWidget.setGeometry(QtCore.QRect(2, 19, 561, 408))
+        self.gridLayoutWidget.setGeometry(QtCore.QRect(2, 19, 671, 408))
         self.gridLayoutWidget.setObjectName("gridLayoutWidget")
         self.gridLayout = QtWidgets.QGridLayout(self.gridLayoutWidget)
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
@@ -214,9 +215,6 @@ class Ui_formConfig(object):
         self.label_13 = QtWidgets.QLabel(self.gridLayoutWidget)
         self.label_13.setObjectName("label_13")
         self.gridLayout.addWidget(self.label_13, 1, 0, 1, 1)
-        self.txtUrlRstp = QtWidgets.QLineEdit(self.gridLayoutWidget)
-        self.txtUrlRstp.setObjectName("txtUrlRstp")
-        self.gridLayout.addWidget(self.txtUrlRstp, 3, 1, 1, 1)
         self.checkBoxVideoRecording = QtWidgets.QCheckBox(self.gridLayoutWidget)
         self.checkBoxVideoRecording.setObjectName("checkBoxVideoRecording")
         self.gridLayout.addWidget(self.checkBoxVideoRecording, 0, 0, 1, 1)
@@ -260,15 +258,16 @@ class Ui_formConfig(object):
         self.label_18.setObjectName("label_18")
         self.gridLayout.addWidget(self.label_18, 9, 0, 1, 1)
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.gridLayout.addItem(spacerItem, 4, 0, 1, 1)
-        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.gridLayout.addItem(spacerItem1, 4, 1, 1, 1)
+        self.gridLayout.addItem(spacerItem, 4, 1, 1, 1)
         self.label_29 = QtWidgets.QLabel(self.gridLayoutWidget)
         self.label_29.setObjectName("label_29")
         self.gridLayout.addWidget(self.label_29, 6, 0, 1, 1)
         self.txtEmailName = QtWidgets.QLineEdit(self.gridLayoutWidget)
         self.txtEmailName.setObjectName("txtEmailName")
         self.gridLayout.addWidget(self.txtEmailName, 6, 1, 1, 1)
+        self.txtUrlRstp = QtWidgets.QLineEdit(self.gridLayoutWidget)
+        self.txtUrlRstp.setObjectName("txtUrlRstp")
+        self.gridLayout.addWidget(self.txtUrlRstp, 3, 1, 1, 1)
         self.label_12 = QtWidgets.QLabel(self.tabConfigGeneral)
         self.label_12.setGeometry(QtCore.QRect(0, 0, 187, 16))
         self.label_12.setObjectName("label_12")
@@ -501,10 +500,13 @@ class Ui_formConfig(object):
 
 if __name__ == "__main__":
     import sys
+    #appctxt = ApplicationContext()
+
     app = QtWidgets.QApplication(sys.argv)
+    
     formConfig = QtWidgets.QWidget()
     ui = Ui_formConfig()
-    ui.setupUi(formConfig)
+    ui.setupUi(UformConfig)
     formConfig.show()
     sys.exit(app.exec_())
 

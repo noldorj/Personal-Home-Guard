@@ -69,6 +69,8 @@ class StatusConfig:
             "dnnModelPb"        : "./dlModels/ssd-mobilenet/frozen_inference_graph_v1_coco_2017_11_17.pb",
             "dnnModelPbTxt"     : "./dlModels/ssd-mobilenet/ssd_mobilenet_v1_coco_2017_11_17.pbtxt",
             "openVinoModelXml"  : "./computer_vision_sdk/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP32/person-vehicle-bike-detection-crossroad-0078.xml",
+            "openVinoCpuExtension" : "/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_avx2.so",
+            "openVinoPluginDir" : "/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64",
             "openVinoModelBin"  : "./computer_vision_sdk/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP32/person-vehicle-bike-detection-crossroad-0078.bin",
             "openVinoDevice"    : "CPU",
             "emailConfig"    : [ {'port':'587', 
@@ -151,16 +153,18 @@ class StatusConfig:
                 status = True
         return status
    
-    def addOpenVinoModels(self, isActive, name, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPlugirDir, openVinoDevice):
+    def addOpenVinoModels(self, isActive, name, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir, openVinoDevice):
         model = {
-                    "isActive":isActive,
-                    "name":name,
-                    "openVinoModelXml":openVinoModelXml,
-                    "openVinoModelBin":openVinoModelBin,
-                    "openVinoCpuExtension":openVinoCpuExtension,
-                    "openVinoPlugirDir":openVinoPlugirDir,
-                    "openVinoDevice":openVinoDevice
+                    "isActive"         :isActive,
+                    "name"             :name,
+                    "openVinoModelXml" :openVinoModelXml,
+                    "openVinoModelBin" :openVinoModelBin,
+                    "openVinoDevice"   :openVinoDevice
         }
+
+        self.data["openVinoCpuExtension"] = openVinoCpuExtension
+        self.data["openVinoPluginDir"] = openVinoPluginDir
+        
         #se ja existe, apenas edita os dados
         edit = False
         i = 0
@@ -194,6 +198,9 @@ class StatusConfig:
         self.data["dirVideos"] = dirVideos
         self.data["camSource"] = camSource
         self.data["emailConfig"] = email
+        self.data["openVinoCpuExtension"] = openVinoCpuExtension 
+        self.data["openVinoPluginDir"] = openVinoPluginDir 
+
         self.saveConfigFile()
 
     def setConfig(self, isRecording, isOpenVino,
@@ -206,6 +213,8 @@ class StatusConfig:
         self.data["dnnModelPbTxt"]            = dnnModelPbTxt
         self.data["openVinoDevice"]           = openVinoDevice
         self.data["openVinoModel"]            = openVinoModel
+        self.data["openVinoCpuExtension"]     = openVinoCpuExtension
+        self.data["openVinoPluginDir"]        = openVinoPluginDir
         self.data["dirVideos"]                = dirVideos
         self.data["emailConfig"]              = emailConfig #list of emails
 
@@ -379,7 +388,7 @@ class StatusConfig:
         print('openVinoModelXml:        {}'.format(self.data.get('openVinoModelXml')))
         print('openVinoModelBin:        {}'.format(self.data.get('openVinoModelBin')))
         print('openVinoCpuExtension:    {}'.format(self.data.get('openVinoCpuExtension')))
-        print('openVinoPlugirDir:       {}'.format(self.data.get('openVinoPlugirDir')))
+        print('openVinoPluginDir:       {}'.format(self.data.get('openVinoPluginDir')))
         #TODO printar lista de emails
         print('emailConfig/user:        {}'.format(self.data.get('emailConfig').get('user')))
         print('emailConfig/smtp:        {}'.format(self.data.get('emailConfig').get('smtp')))

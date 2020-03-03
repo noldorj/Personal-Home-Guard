@@ -39,8 +39,8 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
     #cpu_extension = '/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_avx2.so'
 
     #plugin_dir = '/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64'
-    #log.info('CPU Extension    : {}'.format(cpu_extension))
-    #log.info('Plugin Diretorio : {}'.format(plugin_dir))
+    log.info('CPU Extension    : {}'.format(cpu_extension))
+    log.info('Plugin Diretorio : {}'.format(plugin_dir))
     log.info(' ')
 
     if device == 'MYRIAD':
