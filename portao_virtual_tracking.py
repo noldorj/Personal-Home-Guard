@@ -277,11 +277,11 @@ from mainForm import *
 from PyQt5.QtWidgets import QMainWindow, QApplication, QErrorMessage, QMessageBox, QPushButton
 from PyQt5.QtCore import QTime, QThread
 
-from fbs_runtime.application_context.PyQt5 import ApplicationContext
+#from fbs_runtime.application_context.PyQt5 import ApplicationContext
 
-app = ApplicationContext()
+#app = ApplicationContext()
 
-#app = QApplication (sys.argv)
+app = QApplication (sys.argv)
 
 class FormProc(QWidget):
     def __init__(self, parent=None):
