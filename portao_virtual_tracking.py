@@ -1,14 +1,13 @@
+
 import cv2 as cv
 import numpy as np
 #from datetime import date
 import time
 from objectTracking.pyimagesearch.centroidtracker import CentroidTracker
-#from imutils.video import VideoStream
-#import imutils
-#import os
 from Utils_tracking import sendMailAlert
 from Utils_tracking import saveImageBox
 import utilsCore as utils
+
 #import pluginOpenVino as pOpenVino
 import logging as log
 #import mainFormSlots
@@ -107,7 +106,6 @@ prob_threshold_returned = 0
 
 tSound, tSoundEnd, tSoundLimit, tSoundStart = 0, 0, 0, 0
 
-#cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
 # initialize our centroid tracker and frame dimensions
 ct = CentroidTracker()
 (H, W) = (None, None)
@@ -209,7 +207,9 @@ def polygonSelection(event, x, y, flags, param):
 
     global ref_point_polygon, cropPolygon, portaoVirtualSelecionado
 
-    if event == cv.EVENT_LBUTTONDOWN and not portaoVirtualSelecionado and flags == cv.EVENT_FLAG_CTRLKEY+1:
+    # dependendo da versao do opencv, precisa colocar +1
+    #if event == cv.EVENT_LBUTTONDOWN and not portaoVirtualSelecionado and flags == cv.EVENT_FLAG_CTRLKEY+1:
+    if event == cv.EVENT_LBUTTONDBLCLK and not portaoVirtualSelecionado:  
 
         ref_point_polygon.append([x, y])
         cropPolygon = True
@@ -277,7 +277,11 @@ from mainForm import *
 from PyQt5.QtWidgets import QMainWindow, QApplication, QErrorMessage, QMessageBox, QPushButton
 from PyQt5.QtCore import QTime, QThread
 
-app = QApplication (sys.argv)
+from fbs_runtime.application_context.PyQt5 import ApplicationContext
+
+app = ApplicationContext()
+
+#app = QApplication (sys.argv)
 
 class FormProc(QWidget):
     def __init__(self, parent=None):
@@ -498,6 +502,18 @@ def btnSaveOpenVino():
         msg.exec()
         ui.txtModelXml.setFocus()
         statusFields = False
+    
+    elif len(ui.txtCpuExtension.text()) == 0:
+        msg.setText("Campo 'CPU Extensions' em branco")
+        msg.exec()
+        ui.txtCpuExtension.setFocus()
+        statusFields = False
+    
+    elif len(ui.txtPluginDir.text()) == 0:
+        msg.setText("Campo 'Plugin Diretorio' em branco")
+        msg.exec()
+        ui.txtPluginDir.setFocus()
+        statusFields = False
 
     elif not statusConfig.checkActiveModel() and len(statusConfig.data.get('openVinoModels')) == 1:
         statusFields = False
@@ -622,12 +638,10 @@ def btnCancelAlarm():
     comboRegionsUpdate(ui.comboRegions.currentIndex())
 
 def btnNewRegion():
-    print('botao btnNewRegion')
     global portaoVirtualSelecionado, ref_point_polygon
 
     portaoVirtualSelecionado = False
     ref_point_polygon.clear()
-    print('Selecione novo portao com a tecla CTLR pressionada')
 
     #clear fields
     clearFieldsTabRegiao()
@@ -996,6 +1010,7 @@ tEmpty = 0
 tEmptyEnd = 0
 tEmptyStart = 0
 stopSound = False
+initOpenVinoStatus = True
 
 ### ---------------  OpenVino Init ----------------- ###
 if isOpenVino:
@@ -1006,13 +1021,32 @@ if isOpenVino:
     #nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, statusConfig.data["openVinoModelXml"], statusConfig.data["openVinoModelBin"])
     #log.info('CPU Extension    : {}'.format(openVinoCpuExtension))
     #log.info('Plugin Diretorio : {}'.format(openVinoPluginDir))
+    cvNet = None
 
-    nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir)
-    cur_request_id = 0
-    next_request_id = 1
-    render_time = 0
+    try:
+        nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir)
+
+    except:
+        log.critical('Erro ao iniciar OpenVino - checar arquivo de configuracao')
+        #abrindo janela de configuracao"
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setWindowTitle("Erro ao abrir mómodulo OpenVino - checar aba de configurações")
+        callbackButtonRegioes(None, ret)
+        initOpenVinoStatus = False
+    else:
+        cur_request_id = 0
+        next_request_id = 1
+        render_time = 0
+
+
+        
+        
 ### ---------------  OpenVino Init ----------------- ###
+
 else:
+    log.info("TensorFlow on")
+    cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
     cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
 
 conectado, frame = ipCam.read()
@@ -1055,18 +1089,19 @@ while True:
         for r in regions:
              pts = np.array(r.get("pointsPolygon"), np.int32)
              pts = pts.reshape((-1,1,2))
-             cv.polylines(frame_screen,[pts],True,(0,255,255))
+             cv.polylines(frame_screen,[pts],True,(0,0,255), 2)
 
         if cropPolygon:
             pts = np.array(ref_point_polygon, np.int32)
             pts = pts.reshape((-1,1,2))
-            cv.polylines(frame_screen,[pts],True,(0,255,255))
+            cv.polylines(frame_screen,[pts],True,(0,0,255), 2)
 
 
         #passando o Frame selecionado do portao para deteccao somente se o portao virtual estiver selecionado
         if portaoVirtualSelecionado:
 
-            if isOpenVino:
+            #se eh openVino e este foi inicializado corretamente 
+            if isOpenVino and initOpenVinoStatus:
             ### ---------------  OpenVino Get Objects ----------------- ###
 
                 ret, listReturn  = pOpenVino.getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, prob_threshold)
@@ -1291,12 +1326,12 @@ while True:
 
     else:
         if not conectado:
-            print('Reconectando em 3 segundos...')
-            time.sleep(3)
+            log.warning('Reconectando em 5 segundos...')
+            time.sleep(5)
             ipCam = utils.camSource(source)
 
 if out_video is not None:
-    print('video release fora do loop')
+    log.warning('Fim da captura de video')
     out_video.release()
 
 ipCam.release()
