@@ -1,13 +1,17 @@
-import pyodbc
+#import pyodbc
 import json
 import time
 from datetime import datetime
 
-server = 'pv-server.database.windows.net'
-database = 'pv-users'
-username = 'igor'
-password = 'Cacete33'
-driver= '{ODBC Driver 17 for SQL Server}'
+import pymysql
+
+host="dbpv.c3jzryxr6fxw.sa-east-1.rds.amazonaws.com"
+port=3306
+dbname="pv_users"
+user="igorddf"
+password="cacete33"
+
+#conn = pymysql.connect(host, user=user,port=port, passwd=password, db=dbname)
 
 
 def getDate():
@@ -22,56 +26,69 @@ def getDate():
 
 def newUser(userName, userPassword, userEmail):
 
+    conn = pymysql.connect(host, user=user,port=port, passwd=password, db=dbname)
+    
     status = True
     userId = None
 
-    cnxn = pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password)
-    cursor = cnxn.cursor()
+    #cnxn = pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password)
+    #cursor = cnxn.cursor()
 
     #checar se usuário já existe
-    cursor.execute("SELECT userName FROM dbo.users WHERE dbo.users.userName= '"+ userName + "'")
-    dbUserName = cursor.fetchone()
+    try:
+        with conn.cursor() as cursor:
 
-    if (dbUserName is not None and dbUserName[0] == userName):
-        status = False
-        print('Usuário existente')
+            cursor.execute("SELECT userName FROM users WHERE users.userName= '"+ userName + "'")
+            dbUserName = cursor.fetchone()
 
-    else:
-
-        cursor.execute("INSERT INTO dbo.users VALUES ('" + userName + "', '" + userPassword + "', '" + userEmail + "' )")
-        cnxn.commit()
-
-        cursor.execute("SELECT userId FROM dbo.users WHERE dbo.users.userName= '"+ userName + "'")
-        userId = cursor.fetchone()[0]
-
-        if userId == None:
-            print('Erro ao cadastrar novo usuario')
-            status = False
-        else:
-            print('Usuário cadastrado no banco de dados - userID: {}'.format(userId))
-
-            #criando arquivo de sessao baseado no ID
-            session = {
-                'userId':userId,
-                'userName':userName,
-                'userPassword':userPassword,
-                'userToken':'0',
-                'lastLogin':'0',
-                'lastSession':'0',
-                'loginStatus':'off',
-                'sessionStatus':'off'
-            }
-            file = 'sessions/' + str(userName) + '.json'
-            try:
-                json.dump(session, open(file, 'w'),indent=3)
-            except OSError as ex:
-                print('Erro ao salvar o arquivo de sessao do Usuario: {}'.format(userName))
+            if (dbUserName is not None and dbUserName[0] == userName):
                 status = False
+                print('Usuário existente')
+
             else:
-                print('Arquivo de sessão salvo - Usuario: {}'.format(userName))
+
+                sql =  "INSERT INTO `users` (`userName`, `userPassword`, `userEmail`) VALUES (%s, %s, %s)"
+                values = (userName, userPassword, userEmail) 
+                cursor.execute(sql, values)
+                conn.commit()
+
+                cursor.execute("SELECT userId FROM users WHERE users.userName= '"+ userName + "'")
+                userId = cursor.fetchone()[0]
+
+                if userId == None:
+                    print('Erro ao cadastrar novo usuario')
+                    status = False
+                else:
+                    print('Usuário cadastrado no banco de dados - userID: {}'.format(userId))
+
+                    #criando arquivo de sessao baseado no ID
+                    session = {
+                        'userId':userId,
+                        'userName':userName,
+                        'userPassword':userPassword,
+                        'userToken':'0',
+                        'lastLogin':'0',
+                        'lastSession':'0',
+                        'loginStatus':'off',
+                        'sessionStatus':'off'
+                    }
+                    file = 'sessions/' + str(userName) + '.json'
+                    try:
+                        json.dump(session, open(file, 'w'),indent=3)
+                    except OSError as ex:
+                        print('Erro ao salvar o arquivo de sessao do Usuario: {}'.format(userName))
+                        status = False
+                    else:
+                        print('Arquivo de sessão salvo - Usuario: {}'.format(userName))
+
+    except Error as error:
+        print(error)
+
+    finally:
+        cursor.close()
+        conn.close()
 
     return status
-
 
 
 def checkLogin(userName, userPassword, userToken):
@@ -207,11 +224,11 @@ def checkSession(userName, userToken):
     return status
 
 
-newUser('igor14', 'senha', 'igor2@mail.com')
+newUser('igor2', 'senha', 'igor2@mail.com')
 
-checkLogin('igor14', 'senha', 'aaa')
+#checkLogin('igor14', 'senha', 'aaa')
 
-checkSession('igor14','aaa')
+#checkSession('igor14','aaa')
 
 
 
