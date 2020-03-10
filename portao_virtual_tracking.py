@@ -32,32 +32,13 @@ classes = ["background", "pessoa", "bicileta", "carro", "moto", "airplane", "bus
     "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "unknown",
 "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush" ]
 
-#tie, suitecase (= carro)
-
-#import subprocess
-#import ewmh
-
-#active_id = hex(ewmh.EWMH().getActiveWindow().id)
-#
-#def suspend_screensaver():
-#    print('suspend')
-#    #window_id = subprocess.Popen('xwininfo -root | grep xwininfo | cut -d" " -f4', stdout=subprocess.PIPE, shell=True).stdout.read().strip()
-#    #run xdg-screensaver on root window
-#    subprocess.call('xdg-screensaver', 'suspend')
-#
-#def resume_screensaver():
-#    print('resume')
-#    subprocess.Popen('xdg-screensaver resume ')
-#
-#def activate_screensaver():
-#    subprocess.Popen('xdg-screensaver activate')
-#
-
 
 #statusConfig = utils.StatusConfig(configFile='config.json.gpu.webcam')
 #statusConfig = utils.StatusConfig(configFile='config.json.gpu')
 #statusConfig = utils.StatusConfig(configFile='config-brinquedoteca.json')
 statusConfig = utils.StatusConfig()
+
+
 
 # dnnMOdel for TensorFlow Object Detection API
 pb = statusConfig.data["dnnModelPb"] 
@@ -68,6 +49,24 @@ regions = statusConfig.getRegions()
 emailConfig = statusConfig.getEmailConfig()
 
 portaoVirtualSelecionado = False
+
+#checando usuario
+from checkLicence.pvLicenceChecker import pvLicenceChecker as pvLicence
+
+statusLicence = pvLicence.checkLogin({'igor2', 'senha', 'aaa'}) 
+
+if not statusLIcence:
+    log.warning("Usuario invalido")
+    init_video = False
+else:
+    log.warning("Usuario logado")
+
+
+
+
+
+
+
 #se existirem regioes ja selecionadas, o portao virtual é mostrado
 if len(regions) > 0:
     portaoVirtualSelecionado = True
@@ -117,6 +116,8 @@ ct = CentroidTracker()
 listObjectDetected = list()
 
 idObjeto = 0
+
+init_video = True
 
 
 def objectDetection(img):
@@ -262,13 +263,6 @@ device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPlugin
 
 posConfigPv = 255
 
-#removendo dependencia da lib Gtk para interface
-
-#def initInterface():
-#    cv.createButton('Configurar ', callbackButtonRegioes, None,cv.QT_PUSH_BUTTON)
-#    cv.createButton('+1 min pausar campainha', callbackButton1min, None,cv.QT_PUSH_BUTTON)
-#    cv.createButton('+30 min pausar campainha', callbackButton30min, None,cv.QT_PUSH_BUTTON)
-#    cv.createButton('Voltar campainha', callbackButtonResumeSound, None,cv.QT_PUSH_BUTTON)
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QWidget
@@ -921,6 +915,7 @@ def checkBoxWebcamStateChanged(state):
         ui.txtUrlRstp.clear()
         ui.txtUrlRstp.setEnabled(False)
 
+
 def callbackButtonRegioes(self, ret):
 
     # ----------- init tab modelos detecção --------------- 
@@ -1004,6 +999,7 @@ def callbackButtonRegioes(self, ret):
     #print('Button regioes')
 
 
+
 #initInterface()
 counter = 0
 tEmpty = 0
@@ -1032,8 +1028,10 @@ if isOpenVino:
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
         msg.setWindowTitle("Erro ao abrir mómodulo OpenVino - checar aba de configurações")
+        msg.exec()
         callbackButtonRegioes(None, ret)
         initOpenVinoStatus = False
+        init_video = False
     else:
         cur_request_id = 0
         next_request_id = 1
@@ -1058,7 +1056,7 @@ if frame is not None:
 #tempo sem objetos detectados
 tEmptyStart = time.time()
 
-while True:
+while init_video:
 
     #if counter == 0:
     #    startFps = time.time()

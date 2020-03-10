@@ -2,8 +2,14 @@
 import json
 import time
 from datetime import datetime
-
+import logging as log
 import pymysql
+import sys
+
+log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+
+#tempo de expiracao da sessao em minutos
+TIME_SESSION = 1
 
 host="dbpv.c3jzryxr6fxw.sa-east-1.rds.amazonaws.com"
 port=3306
@@ -76,10 +82,10 @@ def newUser(userName, userPassword, userEmail):
                     try:
                         json.dump(session, open(file, 'w'),indent=3)
                     except OSError as ex:
-                        print('Erro ao salvar o arquivo de sessao do Usuario: {}'.format(userName))
+                        log.critical('Erro ao salvar o arquivo de sessao do Usuario: {}'.format(userName))
                         status = False
                     else:
-                        print('Arquivo de sessão salvo - Usuario: {}'.format(userName))
+                        log.info('Arquivo de sessão salvo - Usuario: {}'.format(userName))
 
     except Error as error:
         print(error)
@@ -90,69 +96,109 @@ def newUser(userName, userPassword, userEmail):
 
     return status
 
+def checkFileSession(file):
+    
+    try:
+        with open(file) as f:
+
+            log.info('Arquivo de sessao: {}  enconrado'.format(file))
+            return True
+
+    except IOError:
+
+        log.critical('Arquivo de sessao: ' + file + ' nao existente')
+        return False
+
+
 
 def checkLogin(userName, userPassword, userToken):
 
     status = True
     #checar se existe arquivo de sesson 'userName.json'
+    log.info('Checando arquivo de sessao do userName: ' + userName)
     file = 'sessions/'+ userName + '.json'
+    
+
     session = None
     date = getDate()
     lastLogin = date.get('year') + '-' + date.get('month') + '-' + date.get('day') + ' ' + date.get('hourOnly') + ':' + date.get('minute')
 
-    try:
+    status = checkFileSession(file)
 
-        session = json.load(open(file, 'r'))
+    if status:
 
-    except OSError as ex:
+        try:
 
-        print('Arquivo de sessao: {} não encontrado'.format(file))
-        print('Error: {}'.format(str(ex.errno)))
-        status = False
+            session = json.load(open(file, 'r'))
+
+        except OSError as ex:
+
+            log.critical('Arquivo de sessao: {} não encontrado'.format(file))
+            log.critical('Error: {}'.format(str(ex.errno)))
+            status = False
+
+        else:
+
+            log.info('Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))
+
+            #checar login
+            if userName == session['userName'] and userPassword == session['userPassword']:
+
+                #checando userToken para garantir logins apenas em uma maquina por vez
+                #se userToken = '0' entao este é o primeiro login com este token gerado pelo PV-Client
+                log.info('Username: : ' + userName)
+                log.info('Token cliente: ' + userToken)
+                log.info('Token servidor: ' + session['userToken'])
+                
+                if session['userToken'] == '0':
+                    #gravo o userToken na sessao
+                    log.info('Primeiro login - sessao on')
+                    
+                    session['userToken'] = userToken
+                    session['loginStatus'] = 'on'
+                    session['sessionStatus'] = 'on'
+                    session['lastLogin'] = lastLogin
+                    session['lastSession'] = lastLogin
+
+                #se for um segundo login, valida o userToken e ativa a sessao
+                elif session['userToken'] == userToken:
+                    log.info('Validando login - userToken existent')
+                    
+                    session['loginStatus'] = 'on'
+                    session['sessionStatus'] = 'on'
+                    session['lastLogin'] = lastLogin
+                    session['lastSession'] = lastLogin
+
+                #se for um login devido a perda de sessao anterior
+                elif session['sessionStatus'] == 'off' or session['loginStatus']=='off':
+                    log.info('Validando perda de sessao')
+                    log.info('Atribuindo novo Token')
+
+                    session['userToken'] = userToken
+                    session['loginStatus'] = 'on'
+                    session['sessionStatus'] = 'on'
+                    session['lastLogin'] = lastLogin
+                    session['lastSession'] = lastLogin
+                else:
+                    log.info('Login invalido')
+                    status = False
+
+        try:
+            log.info('Atualizando arquivo de sessao: ' + file)
+            json.dump(session, open(file,'w'),indent=3)
+
+        except OSError as ex:
+            log.critical('Erro ao gravar arquivo de sessao')
+
+        else:
+            log.info('Sessao: {} atualizada'.format(userName))
 
     else:
-
-        print('Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))
-
-        #checar login
-        if userName == session['userName'] and userPassword == session['userPassword']:
-
-            #checando userToken para garantir logins apenas em uma maquina por vez
-            #se userToken = '0' entao este é o primeiro login com este token gerado pelo PV-Client
-            if session['userToken'] == '0':
-                #gravo o userToken na sessao
-                session['userToken'] = userToken
-                session['loginStatus'] = 'on'
-                session['sessionStatus'] = 'on'
-                session['lastLogin'] = lastLogin
-                session['lastSession'] = lastLogin
-
-            #se for um segundo login, valida o userToken e ativa a sessao
-            elif session['userToken'] == userToken:
-                session['loginStatus'] = 'on'
-                session['sessionStatus'] = 'on'
-                session['lastLogin'] = lastLogin
-                session['lastSession'] = lastLogin
-
-            #se for um login devido a perda de sessao anterior
-            elif session['sessionStatus'] == 'off' or session['loginStatus']=='off':
-                session['userToken'] = userToken
-                session['loginStatus'] = 'on'
-                session['sessionStatus'] = 'on'
-                session['lastLogin'] = lastLogin
-                session['lastSession'] = lastLogin
-            else:
-                status = False
-
-    try:
-        json.dump(session, open(file,'w'),indent=3)
-
-    except OSError as ex:
-        print('Erro ao gravar arquivo de sessao')
-    else:
-        print('Sessao atualizada')
-
+        log.critical('Arquivo de sessao: {} não encontrado'.format(file))
+    
     return status
+
+
 
 def saveSession(session, file):
     file = 'sessions/'+file+'.json'
@@ -160,82 +206,73 @@ def saveSession(session, file):
         json.dump(session, open(file,'w'),indent=3)
 
     except OSError as ex:
-        print('Erro ao gravar arquivo de sessao')
+        log.critical('Erro ao gravar arquivo de sessao')
     else:
-        print('Sessao gravada')
+        log.info('Sessao gravada')
 
 def checkSession(userName, userToken):
     status = True
-    expireTime = 1 #em minutos
+    expireTime = TIME_SESSION #em minutos
+
     #checar se existe arquivo de sesson 'userName.json'
     file = 'sessions/'+ userName + '.json'
-    session = None
-    date = getDate()
-    currentDate = date.get('year') + '-' + date.get('month') + '-' + date.get('day') + ' ' + date.get('hourOnly') + ':' + date.get('minute')
-    currentDate = datetime.strptime(currentDate, '%Y-%b-%d %H:%M')
+    
+    status = checkFileSession(file) 
 
-    try:
+    if status: 
+    
+        session = None
+        date = getDate()
+        currentDate = date.get('year') + '-' + date.get('month') + '-' + date.get('day') + ' ' + date.get('hourOnly') + ':' + date.get('minute')
+        currentDate = datetime.strptime(currentDate, '%Y-%b-%d %H:%M')
 
-        session = json.load(open(file, 'r'))
+        try:
 
-    except OSError as ex:
+            session = json.load(open(file, 'r'))
 
-        print('Arquivo de sessao: {} não encontrado'.format(file))
-        print('Error: {}'.format(str(ex.errno)))
-        status = False
+        except OSError as ex:
 
-    else:
-
-        print('Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))
-
-        #session = json.load(open('sessions/igor14.json', 'r'))
-
-        lastSession = datetime.strptime(session['lastSession'], '%Y-%b-%d %H:%M')
-
-        deltaSession = currentDate - lastSession
-
-        minutes =  deltaSession.__str__().split(',')
-
-        if (len(minutes)>1):
+            print('Arquivo de sessao: {} não encontrado'.format(file))
+            print('Error: {}'.format(str(ex.errno)))
             status = False
-            print('Sessão expirou')
-           #expirou o tempo , dias já se passaram
-        else:
-            minutes = minutes[0].split(':')
-            minutes = int(minutes[1])
 
-            if userName == session['userName'] and userToken == session['userToken']:
-                if minutes < expireTime:
-                    
-                    session['lastSession'] = currentDate.__str__()
-                    session['sessionStatus'] = 'on'
-                    saveSession(session, userName)
-                else:
-                    #sessao expirou ou token errado
-                    print('Sessão expirada')
-                    session['sessionStatus'] = 'off'
-                    session['loginStatus'] = 'off'
-                    saveSession(session, userName)
-                    status = False
+        else:
+
+            print('Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))
+
+            #session = json.load(open('sessions/igor14.json', 'r'))
+
+            lastSession = datetime.strptime(session['lastSession'], '%Y-%b-%d %H:%M')
+
+            deltaSession = currentDate - lastSession
+
+            minutes =  deltaSession.__str__().split(',')
+
+            if (len(minutes)>1):
+                status = False
+                print('Sessão expirou')
+               #expirou o tempo , dias já se passaram
             else:
-                #usuario invalido
-                print('Usuario ou Token inválidos')
+                minutes = minutes[0].split(':')
+                minutes = int(minutes[1])
+
+                if userName == session['userName'] and userToken == session['userToken']:
+                    if minutes < expireTime:
+                        
+                        session['lastSession'] = currentDate.__str__()
+                        session['sessionStatus'] = 'on'
+                        saveSession(session, userName)
+                    else:
+                        #sessao expirou ou token errado
+                        print('Sessão expirada')
+                        session['sessionStatus'] = 'off'
+                        session['loginStatus'] = 'off'
+                        saveSession(session, userName)
+                        status = False
+                else:
+                    #usuario invalido
+                    print('Usuario ou Token inválidos')
+    else:
+        log.critical('Arquivo de sessao: {} não encontrado'.format(file))
 
     return status
-
-
-newUser('igor2', 'senha', 'igor2@mail.com')
-
-#checkLogin('igor14', 'senha', 'aaa')
-
-#checkSession('igor14','aaa')
-
-
-
-
-
-
-
-
-#checkLogin('igorddf@gmail.com', 'senha', 'aaa')
-#checkLogin('jose@gmail.com', 'senha', 'aaa')
