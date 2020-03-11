@@ -47,30 +47,11 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
         log.info('loading MYRIAD plugins...')
         log.info('Model XML: {}'.format(model_xml))
         log.info('Model Bin: {}'.format(model_bin))
-        #model_xml = os.getcwd() + '/dlModels/openvino/pedestrian-and-vehicle-detector-adas-0001/FP16/pedestrian-and-vehicle-detector-adas-0001.xml'
-        #model_bin = os.getcwd() + '/dlModels/openvino/pedestrian-and-vehicle-detector-adas-0001/FP16/pedestrian-and-vehicle-detector-adas-0001.bin'
-
-        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP16/pedestrian-detection-adas-0002.xml'
-        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP16/pedestrian-detection-adas-0002.bin'
 
     elif device == 'CPU':
         log.info('loading CPU plugins...')
         log.info('Model XML: {}'.format(model_xml))
         log.info('Model Bin: {}'.format(model_bin))
-        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP32/pedestrian-detection-adas-0002.xml'
-        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP32/pedestrian-detection-adas-0002.bin'
-
-        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-and-vehicle-detector-adas-0001/FP32/pedestrian-and-vehicle-detector-adas-0001.bin'
-        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-and-vehicle-detector-adas-0001/FP32/pedestrian-and-vehicle-detector-adas-0001.xml'
-
-        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0002/FP32/person-detection-retail-0002.bin'
-        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0002/FP32/person-detection-retail-0002.xml'
-
-        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP32/person-vehicle-bike-detection-crossroad-0078.bin'
-        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP32/person-vehicle-bike-detection-crossroad-0078.xml'
-
-        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0013/FP32/person-detection-retail-0013.bin'
-        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0013/FP32/person-detection-retail-0013.xml'
 
     elif device == 'GPU':
         log.info('loading GPU plugins...')
@@ -167,16 +148,6 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
                         listObjectsTracking.append(boxTracking)
                         listRectanglesDetected.append(box)
 
-
-
-            #if det_label is 'person' or \
-            #            det_label is 'cat' or \
-            #            det_label is 'car' or \
-            #            det_label is 'dog':
-
-                #boxTracking = (xmin, ymin, xmax, ymax)
-                #listObjectsTracking.append(boxTracking)
-                #listRectanglesDetected.append(box)
 
     listReturn = [frame, next_frame, cur_request_id, next_request_id, listRectanglesDetected, listObjectsTracking, prob_threshold_returned]
 

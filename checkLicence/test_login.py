@@ -1,9 +1,13 @@
-from sendingData import all
+from sendingData import * 
 import time
 
 login1 = {'user':'igor10', 'passwd':'senha','token':'1'}
 login2 = {'user':'igor10', 'passwd':'senha','token':'2'}
 login3 = {'user':'igor10', 'passwd':'senha','token':'3'}
+
+sio = socketio.Client()
+#ip fixo instancia AWS
+host = "http://ec2-18-230-53-22.sa-east-1.compute.amazonaws.com:5000"
 
 print('novo usuario - token 1')
 sio.connect(host)

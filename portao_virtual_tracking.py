@@ -1,4 +1,3 @@
-
 import cv2 as cv
 import numpy as np
 #from datetime import date
@@ -7,81 +6,31 @@ from objectTracking.pyimagesearch.centroidtracker import CentroidTracker
 from Utils_tracking import sendMailAlert
 from Utils_tracking import saveImageBox
 import utilsCore as utils
-
-#import pluginOpenVino as pOpenVino
 import logging as log
-#import mainFormSlots
 import sys
-#import mainFormSlots
-
 from threading import Thread
+from checkLicence.sendingData import checkLoginPv 
+from objectDetectionTensorFlow import objectDetection 
+from matplotlib.path import Path
 
 #import tensorflow as tf
 
 log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 
-classes = ["background", "pessoa", "bicileta", "carro", "moto", "airplane", "bus", "train", "truck", "boat", "traffic light", "fire hydrant",
-    "unknown", "stop sign", "parking meter", "bench", "bird", "gato", "cachorro", "horse",
-    "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "unknown", "backpack",
-    "umbrella", "unknown", "unknown", "handbag", "tie", "suitecase", "frisbee", "skis",
-    "snowboard", "sports ball", "kite", "baseball bat", "baseball glove", "skateboard",
-    "surfboard", "tennis racket", "bottle", "unknown", "wine glass", "cup", "fork", "knife",
-    "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli", "carrot", "hot dog",
-    "pizza", "donut", "cake", "chair", "couch", "potted plant", "bed", "unknown", "dining table",
-    "unknown", "unknown", "toilet", "unknown", "tv", "laptop", "mouse", "remote", "keyboard",
-    "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "unknown",
-"book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush" ]
 
+#variaveis globais
 
-#statusConfig = utils.StatusConfig(configFile='config.json.gpu.webcam')
-#statusConfig = utils.StatusConfig(configFile='config.json.gpu')
-#statusConfig = utils.StatusConfig(configFile='config-brinquedoteca.json')
-statusConfig = utils.StatusConfig()
-
-
-
-# dnnMOdel for TensorFlow Object Detection API
-pb = statusConfig.data["dnnModelPb"] 
-pbtxt = statusConfig.data["dnnModelPbTxt"] 
-
-#Carregando regioes salvas
-regions = statusConfig.getRegions()
-emailConfig = statusConfig.getEmailConfig()
-
-portaoVirtualSelecionado = False
-
-#checando usuario
-from checkLicence.pvLicenceChecker import pvLicenceChecker as pvLicence
-
-statusLicence = pvLicence.checkLogin({'igor2', 'senha', 'aaa'}) 
-
-if not statusLIcence:
-    log.warning("Usuario invalido")
-    init_video = False
-else:
-    log.warning("Usuario logado")
-
-
-
-
-
-
-
-#se existirem regioes ja selecionadas, o portao virtual é mostrado
-if len(regions) > 0:
-    portaoVirtualSelecionado = True
-
-#Criando diretorio para salvar videos de alarmes
-status_dir_criado, dir_video_trigger = utils.createDirectory(statusConfig.data["dirVideos"])
-
-#origem do stream do video
-source = statusConfig.data["camSource"]
-log.info('source: {}'.format(source))
-#ipCam = cv.VideoCapture('teste.avi')
-ipCam = utils.camSource(source)
-
-prob_threshold = float(statusConfig.data["prob_threshold"])
-
+statusConfig = None
+pb = None
+pbtxt = None
+regions = None
+emailConfig = None
+portaoVirtualSelecionado = False 
+status_dir_criado = None
+dir_video_trigger = None
+source = None
+ipCam = None
+prob_threshold = 60.0 
 #list de objetos identificados pela CNN
 listObjects = []
 #lista de objetos detectados da rede neural
@@ -100,102 +49,65 @@ out_blob = None
 input_blob = None
 cur_request_id, next_request_id, render_time = 0, 0, 0
 prob_threshold_returned = 0
-
 #colors = np.random.uniform(0, 255, size=(len(classes), 3))
-
 tSound, tSoundEnd, tSoundLimit, tSoundStart = 0, 0, 0, 0
-
 # initialize our centroid tracker and frame dimensions
 ct = CentroidTracker()
 (H, W) = (None, None)
-
-#diretorio dos videos dos alarmes
-#dir_video_trigger = './'
-
-
 listObjectDetected = list()
-
 idObjeto = 0
-
-init_video = True
-
-
-def objectDetection(img):
-    global idObjeto
-    global listObjectDetected
-    global detection
-    global listRectanglesDetected
-    global rows, cols
-    box = []
-
-    #img = cv.imread(img)
-    if img is not None:
-        rows = img.shape[0]
-        cols = img.shape[1]
-        resized = cv.resize(img, (300,300)) 
-        cvNet.setInput(cv.dnn.blobFromImage(resized, 1.0/127.5, (300, 300), (127.5, 127.5, 127.5), swapRB=True, crop=False))
-        cvOut = cvNet.forward()
-
-
-        for detection in cvOut[0,0,:,:]:
-
-            score = float(detection[2])
-
-            if score > 0.35:
-
-                left = int(detection[3] * cols)
-                top = int(detection[4] * rows)
-                right = int(detection[5] * cols)
-                bottom = int(detection[6] * rows)
-
-                idx = int(detection[1]) #indice da classe identificada
-                label = "{}: {:.2f}%".format(classes[idx],score*100)
-                classe = classes[idx]
-
-                box = (left, top, right, bottom, label, idx, classe)
-
-
-                if classes[idx] is 'pessoa' or \
-                    classes[idx] is 'gato' or \
-                    classes[idx] is 'cachorro':
-#                    classes[idx] is 'carro' or \
-#                    classes[idx] is 'moto' or \
-
-#                    print('Objeto: ' + classes[idx])
-
-#                    log.log(log.DEBUG, "Objeto: {}".format(classe))
-
-#                    log.info("Objeto: {}".format(classe))
-                    #print('Objeto: {} '.format(label))
-
-                    boxTracking = (left, top, right, bottom)
-
-                    listObjectsTracking.append(boxTracking)
-
-                    listRectanglesDetected.append(box)
-
-#                else:
-#                    print('Objecto desconhecido: ' + classes[idx])
-
-#	else:
-        # print('\n frame lost')
-
-    return listRectanglesDetected
-
-
-
 drawing = False     # true if mouse is pressed
 mode = True         # if True, draw rectangle.
 ix, iy = -1, -1
-
-ref_point = []
+#ref_point = []
 ref_point_polygon = list()
-crop = False
+#crop = False
 cropPolygon = False
-showGate = False
-regiaoPortao = None
+#showGate = False
+#regiaoPortao = None
+hora = None
+current_data_dir = None
+isOpenVino = True
 
-from matplotlib.path import Path
+#inicializa configuracoes do sistema
+
+def initConfig():
+
+    global statusConfig, pb, pbtxt, regions, emailConfig, portaoVirtualSelecionado
+    global status_dir_criado, dir_video_trigger, source, ipCam, prob_threshold, hora, current_data_dir, isOpenVino
+
+    
+    current_data_dir = utils.getDate()
+    current_data_dir = [current_data_dir.get('day'), current_data_dir.get('month')]
+    hora = utils.getDate()['hour'].replace(':','-')
+    
+    statusConfig = utils.StatusConfig()
+    
+    isOpenVino = statusConfig.data["isOpenVino"] == 'True'
+    
+    # dnnMOdel for TensorFlow Object Detection API
+    pb = statusConfig.data["dnnModelPb"] 
+    pbtxt = statusConfig.data["dnnModelPbTxt"] 
+    
+    #Carregando regioes salvas
+    regions = statusConfig.getRegions()
+    emailConfig = statusConfig.getEmailConfig()
+    
+    #se existirem regioes ja selecionadas, o portao virtual é mostrado
+    if len(regions) > 0:
+        portaoVirtualSelecionado = True
+    
+    #Criando diretorio para salvar videos de alarmes
+    status_dir_criado, dir_video_trigger = utils.createDirectory(statusConfig.data["dirVideos"])
+    
+    #origem do stream do video
+    source = statusConfig.data["camSource"]
+    log.info('source: {}'.format(source))
+    ipCam = utils.camSource(source)
+
+    prob_threshold = float(statusConfig.data["prob_threshold"])
+
+
 
 def isIdInsideRegion(centroid, ref_point_polygon):
 
@@ -208,8 +120,6 @@ def polygonSelection(event, x, y, flags, param):
 
     global ref_point_polygon, cropPolygon, portaoVirtualSelecionado
 
-    # dependendo da versao do opencv, precisa colocar +1
-    #if event == cv.EVENT_LBUTTONDOWN and not portaoVirtualSelecionado and flags == cv.EVENT_FLAG_CTRLKEY+1:
     if event == cv.EVENT_LBUTTONDBLCLK and not portaoVirtualSelecionado:  
 
         ref_point_polygon.append([x, y])
@@ -220,18 +130,27 @@ def polygonSelection(event, x, y, flags, param):
         portaoVirtualSelecionado = True
 
 
+#checando licenca de usuario no servidor
+init_video = True
+log.info('Checando licença no servidor')
+login1 = {'user':'igor10', 'passwd':'senha','token':'2'}
+
+statusLicence = checkLoginPv(login1) 
+
+if statusLicence:
+    
+    log.warning("Usuario logado")
+    initConfig()
+
+else:
+    log.warning("Usuario invalido")
+    init_video = False
+
+
+
 cv.namedWindow('frame')
 cv.setMouseCallback('frame', polygonSelection)
 
-objDetectado = False
-
-hora = utils.getDate()['hour'].replace(':','-')
-
-current_data_dir = utils.getDate()
-current_data_dir = [current_data_dir.get('day'), current_data_dir.get('month')]
-
-timer_without_object = 0
-start_time = 0
 #gravando = statusConfig.data["isRecording"] == 'True'
 nameVideo  = 'firstVideo'
 gravando = False
@@ -253,7 +172,6 @@ fourcc = cv.VideoWriter_fourcc(*'XVID')
 #fourcc = cv.VideoWriter_fourcc('M','J','P','G')
 #cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
 
-isOpenVino = statusConfig.data["isOpenVino"] == 'True'
 if isOpenVino:
     import pluginOpenVino as pOpenVino
 
@@ -1113,7 +1031,7 @@ while init_video:
             else:
                 #chamada para a CNN do OpenCV - TensorFlow Object Detection API 
                 log.info("CNN via TF Object Detection API")
-                listObjects = objectDetection(frame)
+                listObjects, listObjectTradking  = objectDetection(frame, idObjeto, listRectanglesDetected, detection, rows, cols)
 
 
         if len(listObjects) == 0 and portaoVirtualSelecionado:
