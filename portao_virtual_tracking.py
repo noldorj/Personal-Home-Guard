@@ -12,6 +12,17 @@ from threading import Thread
 from checkLicence.sendingData import checkLoginPv 
 from objectDetectionTensorFlow import objectDetection 
 from matplotlib.path import Path
+import pluginOpenVino as pOpenVino
+
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QWidget
+import sys
+from mainForm import *
+from formLogin import *
+from PyQt5.QtWidgets import QMainWindow, QApplication, QErrorMessage, QMessageBox, QPushButton
+from PyQt5.QtCore import QTime, QThread
+
 
 #import tensorflow as tf
 
@@ -20,6 +31,35 @@ log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=s
 
 #variaveis globais
 
+conectado = None
+frame = None
+
+#tempo sem objetos detectados
+tEmptyStart = time.time()
+
+counter = 0
+tEmpty = 0
+tEmptyEnd = 0
+tEmptyStart = 0
+stopSound = False
+initOpenVinoStatus = True
+
+#gravando = statusConfig.data["isRecording"] == 'True'
+nameVideo  = 'firstVideo'
+gravando = False
+newVideo = True
+releaseVideo = False 
+#objects = None
+#FPS = ipCam.get(cv.CAP_PROP_FPS) #30.0 #frames per second
+FPS = 4  #de acordo com o manual da mibo ic5 intelbras
+
+#primeiro objeto é enviado
+listObjectMailAlerted = []
+listObjectSoundAlerted = []
+listObjectVideoRecorded = []
+out_video = None
+init_video = False 
+statusLicence = False
 statusConfig = None
 pb = None
 pbtxt = None
@@ -68,6 +108,14 @@ cropPolygon = False
 hora = None
 current_data_dir = None
 isOpenVino = True
+device = 'CPU'
+openVinoModelXml = None 
+openVinoModelBin = None
+openVinoCpuExtension = None 
+openVinoPluginDir = None 
+openVinoModelName = None
+
+
 
 #inicializa configuracoes do sistema
 
@@ -75,7 +123,7 @@ def initConfig():
 
     global statusConfig, pb, pbtxt, regions, emailConfig, portaoVirtualSelecionado
     global status_dir_criado, dir_video_trigger, source, ipCam, prob_threshold, hora, current_data_dir, isOpenVino
-
+    global device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir, openVinoModelName  
     
     current_data_dir = utils.getDate()
     current_data_dir = [current_data_dir.get('day'), current_data_dir.get('month')]
@@ -84,6 +132,13 @@ def initConfig():
     statusConfig = utils.StatusConfig()
     
     isOpenVino = statusConfig.data["isOpenVino"] == 'True'
+    
+    #if isOpenVino:
+    #    import pluginOpenVino as pOpenVino
+
+    #device = statusConfig.data["openVinoDevice"]
+    device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir, openVinoModelName  = statusConfig.getActiveDevice()
+
     
     # dnnMOdel for TensorFlow Object Detection API
     pb = statusConfig.data["dnnModelPb"] 
@@ -130,70 +185,32 @@ def polygonSelection(event, x, y, flags, param):
         portaoVirtualSelecionado = True
 
 
-#checando licenca de usuario no servidor
-init_video = True
-log.info('Checando licença no servidor')
-login1 = {'user':'igor10', 'passwd':'senha','token':'2'}
-
-statusLicence = checkLoginPv(login1) 
-
-if statusLicence:
-    
-    log.warning("Usuario logado")
-    initConfig()
-
-else:
-    log.warning("Usuario invalido")
-    init_video = False
-
-
-
-cv.namedWindow('frame')
-cv.setMouseCallback('frame', polygonSelection)
-
-#gravando = statusConfig.data["isRecording"] == 'True'
-nameVideo  = 'firstVideo'
-gravando = False
-newVideo = True
-releaseVideo = False 
-#objects = None
-#FPS = ipCam.get(cv.CAP_PROP_FPS) #30.0 #frames per second
-FPS = 4  #de acordo com o manual da mibo ic5 intelbras
-
-#primeiro objeto é enviado
-listObjectMailAlerted = []
-listObjectSoundAlerted = []
-listObjectVideoRecorded = []
-out_video = None
-
-#fourcc = cv.VideoWriter_fourcc(*'X264')
-#for linux x264 need to recompile opencv mannually
-fourcc = cv.VideoWriter_fourcc(*'XVID')
-#fourcc = cv.VideoWriter_fourcc('M','J','P','G')
-#cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
-
-if isOpenVino:
-    import pluginOpenVino as pOpenVino
-
-
-#device = statusConfig.data["openVinoDevice"]
-device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir, openVinoModelName  = statusConfig.getActiveDevice()
-
-posConfigPv = 255
-
-
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QWidget
-import sys
-from mainForm import *
-from PyQt5.QtWidgets import QMainWindow, QApplication, QErrorMessage, QMessageBox, QPushButton
-from PyQt5.QtCore import QTime, QThread
-
 #from fbs_runtime.application_context.PyQt5 import ApplicationContext
 
 #app = ApplicationContext()
 
 app = QApplication (sys.argv)
+
+
+class FormLogin(QWidget):
+    def __init__(self, parent=None):
+        super(FormLogin, self).__init__(parent)
+        self.ui = Ui_formLogin()
+        self.ui.setupUi(self)
+
+    def closeEvent(self, event):
+        log.info('close formLogin')
+
+
+
+#uiLogin = Ui_formLogin()
+#windowLogin = FormLogin()
+#uiLogin.setupUi(windowLogin)
+
+uiLogin = Ui_formLogin()
+windowLogin = FormLogin()
+uiLogin.setupUi(windowLogin)
+
 
 class FormProc(QWidget):
     def __init__(self, parent=None):
@@ -223,10 +240,62 @@ class FormProc(QWidget):
 ui = Ui_formConfig()
 windowConfig = FormProc()
 ui.setupUi(windowConfig)
-#windowConfig = QWidget()
-#ui.setupUi(windowConfig)
 
 
+
+#cv.namedWindow('frame')
+#cv.setMouseCallback('frame', polygonSelection)
+
+
+#fourcc = cv.VideoWriter_fourcc(*'X264')
+#for linux x264 need to recompile opencv mannually
+fourcc = cv.VideoWriter_fourcc(*'XVID')
+#fourcc = cv.VideoWriter_fourcc('M','J','P','G')
+#cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
+
+posConfigPv = 255
+
+
+
+#---------------- gui Form Login -------------------
+def btnExit():
+    global statusLicence, init_video
+
+    log.info('Login Cancelado')
+    statusLicence = False
+    init_video = False
+    windowLogin.close()
+
+    
+def btnLogin():
+    #checando licenca de usuario no servidor
+    global init_video, statusLicence, uiLogin
+    
+    log.info('Checando licença no servidor - Por favor aguarde')
+    uiLogin.lblStatus.setText("Conectando com o servidor")
+    
+    #login1 = {'user':'igor10', 'passwd':'senha','token':'2'}
+    login = {'user':uiLogin.txtEmail.text(), 'passwd':uiLogin.txtPasswd.text(), 'token':'2'}
+    
+    statusLicence, error  = checkLoginPv(login) 
+    
+    if statusLicence:
+        
+        log.warning("Usuario logado")
+        init_video = True 
+        windowLogin.close()
+    
+    else:
+
+        init_video = False
+        
+        if error == "conexao":
+            log.warning("Erro de conexão")
+            uiLogin.lblStatus.setText("Erro de conexão. Tente novamente")
+
+        elif error == "login":
+            log.warning("Usuario invalido")
+            uiLogin.lblStatus.setText("Usuário ou senha inválida. Tente novamente")
 
 
 #---------------- gui  tab configuração geral -------------------
@@ -834,6 +903,21 @@ def checkBoxWebcamStateChanged(state):
         ui.txtUrlRstp.setEnabled(False)
 
 
+
+def initFormLogin(self, ret):
+
+    global uiLogin, formLogin 
+
+    log.info('Iniciando tela de login')
+
+    uiLogin.btnLogin.clicked.connect(btnLogin)
+    uiLogin.btnExit.clicked.connect(btnExit)
+
+    windowLogin.show()
+    app.exec_()
+
+
+
 def callbackButtonRegioes(self, ret):
 
     # ----------- init tab modelos detecção --------------- 
@@ -914,65 +998,63 @@ def callbackButtonRegioes(self, ret):
     threadWindow.start()
     #windowConfig.show()
     
-    #print('Button regioes')
+ret = 1
+initFormLogin(None, ret)
 
+cv.namedWindow('frame')
+cv.setMouseCallback('frame', polygonSelection)
 
+if statusLicence:
 
-#initInterface()
-counter = 0
-tEmpty = 0
-tEmptyEnd = 0
-tEmptyStart = 0
-stopSound = False
-initOpenVinoStatus = True
+    #global conectado, frame
 
-### ---------------  OpenVino Init ----------------- ###
-if isOpenVino:
+    log.info('statusLicence on')
+    
+    initConfig()
 
-    ret, frame = ipCam.read()
-    ret, next_frame = ipCam.read()
+    ### ---------------  OpenVino Init ----------------- ###
+    if isOpenVino:
 
-    #nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, statusConfig.data["openVinoModelXml"], statusConfig.data["openVinoModelBin"])
-    #log.info('CPU Extension    : {}'.format(openVinoCpuExtension))
-    #log.info('Plugin Diretorio : {}'.format(openVinoPluginDir))
-    cvNet = None
-
-    try:
-        nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir)
-
-    except:
-        log.critical('Erro ao iniciar OpenVino - checar arquivo de configuracao')
-        #abrindo janela de configuracao"
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Information)
-        msg.setWindowTitle("Erro ao abrir mómodulo OpenVino - checar aba de configurações")
-        msg.exec()
-        callbackButtonRegioes(None, ret)
-        initOpenVinoStatus = False
-        init_video = False
+        log.info('isOpenVino in')
+    
+        ret, frame = ipCam.read()
+        ret, next_frame = ipCam.read()
+    
+        #nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, statusConfig.data["openVinoModelXml"], statusConfig.data["openVinoModelBin"])
+        #log.info('CPU Extension    : {}'.format(openVinoCpuExtension))
+        #log.info('Plugin Diretorio : {}'.format(openVinoPluginDir))
+        cvNet = None
+    
+        try:
+            nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir)
+    
+        except:
+            log.critical('Erro ao iniciar OpenVino - checar arquivo de configuracao')
+            #abrindo janela de configuracao"
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setWindowTitle("Erro ao abrir mómodulo OpenVino - checar aba de configurações")
+            msg.exec()
+            callbackButtonRegioes(None, ret)
+            initOpenVinoStatus = False
+            init_video = False
+        else:
+            cur_request_id = 0
+            next_request_id = 1
+            render_time = 0
+    
     else:
-        cur_request_id = 0
-        next_request_id = 1
-        render_time = 0
+        log.info("TensorFlow on")
+        cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
+        cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
+    
+    
+    
+    conectado, frame = ipCam.read()
+    if frame is not None:
+        (h,w) = frame.shape[:2]
 
 
-        
-        
-### ---------------  OpenVino Init ----------------- ###
-
-else:
-    log.info("TensorFlow on")
-    cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
-    cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
-
-conectado, frame = ipCam.read()
-if frame is not None:
-    (h,w) = frame.shape[:2]
-
-#print('w,h {}'.format((w,h)))
-
-#tempo sem objetos detectados
-tEmptyStart = time.time()
 
 while init_video:
 
@@ -983,7 +1065,6 @@ while init_video:
 
     conectado, frame = ipCam.read()
 
-    #print('w,h {}'.format((w,h)))
 
     if (conectado and frame is not None and next_frame is not None):
 

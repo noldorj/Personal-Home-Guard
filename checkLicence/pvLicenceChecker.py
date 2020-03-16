@@ -11,7 +11,8 @@ log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=s
 #tempo de expiracao da sessao em minutos
 TIME_SESSION = 1
 
-host="dbpv.c3jzryxr6fxw.sa-east-1.rds.amazonaws.com"
+#host="dbpv.c3jzryxr6fxw.sa-east-1.rds.amazonaws.com"
+host="db-pv.cswsskc4btjh.sa-east-1.rds.amazonaws.com"  
 port=3306
 dbname="pv_users"
 user="igorddf"
