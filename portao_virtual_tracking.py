@@ -32,6 +32,7 @@ log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=s
 #variaveis globais
 
 conectado = None
+conexao = False
 frame = None
 
 #tempo sem objetos detectados
@@ -266,36 +267,74 @@ def btnExit():
     init_video = False
     windowLogin.close()
 
-    
+
+
+#import httplib
+import http.client as httplib
+
+def checkInternetAccess():
+
+    conn = httplib.HTTPConnection("www.google.com", timeout=5)
+    try:
+        log.info('Checando conexao...')
+        conn.request("HEAD", "/")
+        conn.close()
+        return True
+    except:
+        log.info('Falha na conexao')
+        conn.close()
+        return False
+
+
+
 def btnLogin():
     #checando licenca de usuario no servidor
-    global init_video, statusLicence, uiLogin
+    global init_video, statusLicence, uiLogin, conexao 
+
+    log.info('Checando conexão com a Internet')
+    uiLogin.lblStatus.setText("Checando conexão com a Internet")
+
+    conexao = checkInternetAccess()
+
+    if conexao:    
     
-    log.info('Checando licença no servidor - Por favor aguarde')
-    uiLogin.lblStatus.setText("Conectando com o servidor")
-    
-    #login1 = {'user':'igor10', 'passwd':'senha','token':'2'}
-    login = {'user':uiLogin.txtEmail.text(), 'passwd':uiLogin.txtPasswd.text(), 'token':'2'}
-    
-    statusLicence, error  = checkLoginPv(login) 
-    
-    if statusLicence:
+        log.info('Checando licença no servidor - Por favor aguarde')
+        uiLogin.lblStatus.setText("Conectando com o servidor")
         
-        log.warning("Usuario logado")
-        init_video = True 
-        windowLogin.close()
-    
+        login = {'user':uiLogin.txtEmail.text(), 'passwd':uiLogin.txtPasswd.text(), 'token':'2'}
+        
+        statusLicence, error  = checkLoginPv(login) 
+        
+        if statusLicence:
+            
+            log.warning("Usuario logado")
+            init_video = True 
+            windowLogin.close()
+        
+        else:
+
+            #se o servidor estiver fora do ar - libera acesso ao sistema 
+            if error == "conexao":
+                log.warning("Erro de conexão com o servidor")
+
+                init_video = True
+                statusLicence = True
+                log.warning("Liberando acesso")
+                windowLogin.close()
+
+            elif error == "login":
+
+                init_video = False
+                log.warning("Usuario invalido")
+                uiLogin.lblStatus.setText("Usuário ou senha inválida. Tente novamente")
+
     else:
 
+        log.info("Erro de conexao com a Internet")
+        uiLogin.lblStatus.setText("Cheque sua conexão com a Internet por favor e tente mais tarde")
+        conexao = False
+        statusLicence = False
         init_video = False
-        
-        if error == "conexao":
-            log.warning("Erro de conexão")
-            uiLogin.lblStatus.setText("Erro de conexão. Tente novamente")
-
-        elif error == "login":
-            log.warning("Usuario invalido")
-            uiLogin.lblStatus.setText("Usuário ou senha inválida. Tente novamente")
 
 
 #---------------- gui  tab configuração geral -------------------
@@ -1004,7 +1043,7 @@ initFormLogin(None, ret)
 cv.namedWindow('frame')
 cv.setMouseCallback('frame', polygonSelection)
 
-if statusLicence:
+if statusLicence and conexao:
 
     #global conectado, frame
 
@@ -1331,8 +1370,9 @@ if out_video is not None:
     log.warning('Fim da captura de video')
     out_video.release()
 
-ipCam.release()
-cv.destroyAllWindows()
+if ipCam and cv is not None:
+    ipCam.release()
+    cv.destroyAllWindows()
 
 
 
