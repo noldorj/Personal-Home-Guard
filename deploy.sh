@@ -11,6 +11,6 @@ pyinstaller portao_virtual_tracking.py -F -y -p openvino:. --hidden-import numpy
 
 echo "executavel done"
 
-echo "apagando arquivos"
-rm *.py
-rm -rf objectTracking
+#echo "apagando arquivos"
+rm ../deploy/.*.py
+rm -rf ../deploy/objectTracking

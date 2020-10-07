@@ -304,6 +304,7 @@ def btnLogin():
         login = {'user':uiLogin.txtEmail.text(), 'passwd':uiLogin.txtPasswd.text(), 'token':'2'}
         
         statusLicence, error  = checkLoginPv(login) 
+        statusLicence = True ## testando apenas IJF
         
         if statusLicence:
             

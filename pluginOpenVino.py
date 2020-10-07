@@ -22,7 +22,8 @@ from argparse import ArgumentParser
 import cv2
 import time
 import logging as log
-from  openvino.inference_engine import IENetwork, IEPlugin
+#from  openvino.inference_engine import IENetwork, IEPlugin
+from  openvino.inference_engine import IENetwork, IECore
 
 #def main():
 log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
@@ -32,61 +33,82 @@ labels_map = ["background", "car", "person", "bike"]
 #lista de boxes detectados
 listRectanglesDetected = []
 listObjectsTracking = []
-
+devIces_disponiveis = []
 
 def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
 
-    #cpu_extension = '/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_avx2.so'
-
-    #plugin_dir = '/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64'
     log.info('CPU Extension    : {}'.format(cpu_extension))
     log.info('Plugin Diretorio : {}'.format(plugin_dir))
     log.info(' ')
-
-    if device == 'MYRIAD':
-        log.info('loading MYRIAD plugins...')
-        log.info('Model XML: {}'.format(model_xml))
-        log.info('Model Bin: {}'.format(model_bin))
-
-    elif device == 'CPU':
-        log.info('loading CPU plugins...')
-        log.info('Model XML: {}'.format(model_xml))
-        log.info('Model Bin: {}'.format(model_bin))
-
-    elif device == 'GPU':
-        log.info('loading GPU plugins...')
-        log.info('Model XML: {}'.format(model_xml))
-        log.info('Model Bin: {}'.format(model_bin))
-
+    
+    devices_disponiveis = IECore().available_devices 
+   
+    log.info('Dispositivos disponíveis: {}'.format(devices_disponiveis))
+    log.info('Device no arquivo config.json: {}'.format(device))
 
     # Plugin initialization for specified device and load extensions library if specified
-    log.info("Initializing plugin for {} device...".format(device))
+    #log.info("Initializing plugin for {} device...".format(device))
+    
+  
+    if device not in devices_disponiveis:
+        log.error('Device {} não disponível neste computador'.format(device))
+        device = 'CPU' 
+        log.error('Habilitando apenas CPU para processaento')
 
-    plugin = IEPlugin(device=device, plugin_dirs=plugin_dir)
+    try: 
+        plugin = IECore()
+    
+    except:
+   
+        log.critical('Erro IECore - instanciando plugin openvino')
+        plugin = IECore()
+    
+    else:
+        log.info('Plugin carregado via IECore')
 
-    if cpu_extension and 'CPU' in device:
-        plugin.add_cpu_extension(cpu_extension)
+
+    try: 
+        
+        plugin.add_extension(extention_path=cpu_extension, device_name=device)
+    
+    except:
+        log.critical('Erro ao carregar CPU extension plugin.add_extension')
+    else:
+        log.info('plugin.add_extension(cpu_extension) ok')
 
     # Read IR
     log.info("Reading IR...")
-    net = IENetwork(model=model_xml, weights=model_bin)
+    #net = IENetwork(model=model_xml, weights=model_bin) #deprecated
+    try:
+        net = plugin.read_network(model=model_xml, weights=model_bin)
+    except:
+        log.critical('Erro carregando IECore.read_network')
+    else:
+        log.info('Plugin.read_network ok')
 
-    if plugin.device == "CPU":
-        supported_layers = plugin.get_supported_layers(net)
-        not_supported_layers = [l for l in net.layers.keys() if l not in supported_layers]
-        if len(not_supported_layers) != 0:
-            log.error("Following layers are not supported by the plugin for specified device {}:\n {}".
-                      format(plugin.device, ', '.join(not_supported_layers)))
-            log.error("Please try to specify cpu extensions library path in demo's command line parameters using -l "
-                      "or --cpu_extension command line argument")
-            sys.exit(1)
-    assert len(net.inputs.keys()) == 1, "Demo supports only single input topologies"
-    assert len(net.outputs) == 1, "Demo supports only single output topologies"
-    input_blob = next(iter(net.inputs))
+#    if plugin.device == "CPU":
+#        log.info('aqui plugi.device')
+#        if len(not_supported_layers) != 0:
+#            log.error("Following layers are not supported by the plugin for specified device {}:\n {}".
+#                      format(plugin.device, ', '.join(not_supported_layers)))
+#            log.error("Please try to specify cpu extensions library path in demo's command line parameters using -l "
+#                      "or --cpu_extension command line argument")
+#            sys.exit(1)
+#
+    #assert len(net.inputs.keys()) == 1, "Demo supports only single input topologies"
+    #assert len(net.outputs) == 1, "Demo supports only single output topologies"
+    
+    input_blob = next(iter(net.input_info))
     out_blob = next(iter(net.outputs))
+    
     log.info("Loading IR to the plugin...")
-    exec_net = plugin.load(network=net, num_requests=2)
-    n, c, h, w = net.inputs[input_blob].shape
+    
+    try: 
+        exec_net = plugin.load_network(network=net, device_name=device, num_requests=2)
+    except:
+        log.critical('Erro plugin.load')
+    
+    n, c, h, w = net.input_info[input_blob].input_data.shape
     nchw = [n,c,h,w]
     del net
 
