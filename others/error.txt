@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "portao_virtual_tracking.py", line 283, in <module>
+    frame, next_frame, cur_request_id, next_request_id, listObjects, listObjectsTracking  = pOpenVino.getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, prob_threshold)
+  File "/home/igor/Dropbox/portao-virtual.git/pluginOpenVino.py", line 147, in getListBoxDetected
+    in_frame = cv2.resize(next_frame, (w, h))
+cv2.error: OpenCV(3.4.3) /home/conda/feedstock_root/build_artifacts/opencv_1538471116690/work/modules/imgproc/src/resize.cpp:4044: error: (-215:Assertion failed) !ssize.empty() in function 'resize'

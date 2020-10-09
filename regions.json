@@ -24,7 +24,7 @@
                     "sun": "True"
                 },
                 "isEmailAlert": "True",
-                "isSoundAlert": "True"
+                "isSoundAlert": "False"
             }
         ],
         "objectType": {

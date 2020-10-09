@@ -1,0 +1,6 @@
+sudo apt-get update
+sudo apt install python3-pip
+sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.6 9
+pip install PyMySql
+pip install python-mysql
+pip install eventlet

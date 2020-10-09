@@ -14,7 +14,6 @@ from objectDetectionTensorFlow import objectDetection
 from matplotlib.path import Path
 import pluginOpenVino as pOpenVino
 
-
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QWidget
 import sys

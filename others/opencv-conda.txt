@@ -1,0 +1,2 @@
+#conda install -c loopbio -c conda-forge -c pkgw-forge ffmpeg-feature (nao tem) ffmpeg gtk2 opencv
+conda install -c loopbio -c conda-forge -c pkgw-forge ffmpeg gtk2 opencv

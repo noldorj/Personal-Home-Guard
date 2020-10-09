@@ -1,0 +1,4 @@
+conda install python 
+conda install numpy
+pip install pygame
+

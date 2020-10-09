@@ -1,0 +1,9 @@
+https://gist.github.com/ujjwal96/1dcd57542bdaf3c9d1b0dd526ccd44ff
+
+
+pip3 install --user pyqt5  
+sudo apt-get install python3-pyqt5  
+sudo apt-get install pyqt5-dev-tools
+sudo apt-get install qttools5-dev-tools
+
+qtchooser -run-tool=designer -qt=5
