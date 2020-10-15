@@ -1,0 +1,11 @@
+from UBUNTU
+
+RUN apt-get update
+
+RUN apt install python3.6
+
+RUN apt install python-socketio
+
+RUN apt install python-matplotlib
+
+ENTRYPOINT[~/init-pv.sh]

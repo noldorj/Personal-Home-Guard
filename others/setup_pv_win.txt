@@ -1,0 +1,26 @@
+1. Erro matplotlib com pyinstaller:
+
+https://stackoverflow.com/questions/63163027/how-to-use-pyinstaller-with-matplotlib-in-use
+
+Editar o arquivo abaixo:
+C:\Users\pv\Anaconda3\envs\pv\Lib\site-packages\PyInstaller\hooks\hook-matplotlib.py
+
+datas = [
+    (mpl_data_dir, "matplotlib/mpl-data"),
+]
+
+pyinstaller portao_virtual_tracking.py -y --onefile --distpath ..\deploy-win --add-data openvino_deploy_package_win_2020-4\deployment_tools\inference_engine\bin\intel64\Release\plugins.xml;. --noconfirm --hidden-import matplotlib
+
+2. Erro openvino IECore
+
+Traceback (most recent call last):
+  File "portao_virtual_tracking.py", line 18, in <module>
+  File "c:\users\pv\anaconda3\envs\pv\lib\site-packages\PyInstaller\loader\pyimod03_importers.py", line 493, in exec_module
+    exec(bytecode, module.__dict__)
+  File "pluginOpenVino.py", line 26, in <module>
+  File "c:\users\pv\anaconda3\envs\pv\lib\site-packages\PyInstaller\loader\pyimod03_importers.py", line 493, in exec_module
+    exec(bytecode, module.__dict__)
+  File "openvino\inference_engine\__init__.py", line 1, in <module>
+  File "ie_api.pyx", line 24, in init openvino.inference_engine.ie_api
+ModuleNotFoundError: No module named 'openvino.inference_engine.constants'
+[2904] Failed to execute script portao_virtual_tracking

@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "portao_virtual_tracking.py", line 1349, in <module>
+    FPS = 1000/renderTime
+ZeroDivisionError: float division by zero

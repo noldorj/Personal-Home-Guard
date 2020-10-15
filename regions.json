@@ -3,15 +3,15 @@
         "nameRegion": "garagem",
         "alarm": [
             {
-                "name": "dia",
+                "name": "dia-noite",
                 "time": {
                     "start": {
-                        "hour": 6,
+                        "hour": 0,
                         "min": 0
                     },
                     "end": {
-                        "hour": 22,
-                        "min": 0
+                        "hour": 23,
+                        "min": 59
                     }
                 },
                 "days": {
@@ -33,7 +33,7 @@
             "bike": "True",
             "dog": "True"
         },
-        "prob_threshold": 65.0,
+        "prob_threshold": 60.0,
         "pointsPolygon": [
             [
                 528,
@@ -60,12 +60,12 @@
                 "name": "dia",
                 "time": {
                     "start": {
-                        "hour": 6,
+                        "hour": 0,
                         "min": 0
                     },
                     "end": {
-                        "hour": 22,
-                        "min": 0
+                        "hour": 23,
+                        "min": 59
                     }
                 },
                 "days": {
@@ -87,7 +87,7 @@
             "bike": "True",
             "dog": "True"
         },
-        "prob_threshold": 65.0,
+        "prob_threshold": 60.0,
         "pointsPolygon": [
             [
                 488,
@@ -115,15 +115,63 @@
         "nameRegion": "rua",
         "alarm": [
             {
-                "name": "dia-noite",
+                "name": "madruga",
                 "time": {
                     "start": {
                         "hour": 0,
                         "min": 0
                     },
                     "end": {
+                        "hour": 8,
+                        "min": 0
+                    }
+                },
+                "days": {
+                    "mon": "True",
+                    "tue": "True",
+                    "wed": "True",
+                    "thu": "True",
+                    "fri": "True",
+                    "sat": "True",
+                    "sun": "True"
+                },
+                "isEmailAlert": "True",
+                "isSoundAlert": "False"
+            },
+            {
+                "name": "noite",
+                "time": {
+                    "start": {
+                        "hour": 20,
+                        "min": 0
+                    },
+                    "end": {
                         "hour": 23,
                         "min": 59
+                    }
+                },
+                "days": {
+                    "mon": "True",
+                    "tue": "True",
+                    "wed": "True",
+                    "thu": "True",
+                    "fri": "True",
+                    "sat": "True",
+                    "sun": "True"
+                },
+                "isEmailAlert": "True",
+                "isSoundAlert": "False"
+            },
+            {
+                "name": "dia",
+                "time": {
+                    "start": {
+                        "hour": 0,
+                        "min": 0
+                    },
+                    "end": {
+                        "hour": 20,
+                        "min": 0
                     }
                 },
                 "days": {

@@ -4,30 +4,29 @@
     "camSource": "rtsp://admin:WWYZRL@192.168.5.101/live/mpeg4:554",
     "dnnModelPb": "dlModels/ssd-mobilenet/frozen_inference_graph_v1_coco_2017_11_17.pb",
     "dnnModelPbTxt": "dlModels/ssd-mobilenet/ssd_mobilenet_v1_coco_2017_11_17.pbtxt",
-    "openVinoCpuExtension": "/home/igor/intel/openvino/deployment_tools/inference_engine/lib/intel64/libMKLDNNPlugin.so",
-    "openVinoPluginDir": "/home/igor/intel/openvino/deployment_tools/inference_engine/lib/intel64",
+	
+    "openVinoCpuExtension": "openvino_deploy_package_win/deployment_tools/inference_engine/bin/intel64/Release/MKLDNNPlugin.dll",
+    "openVinoPluginDir": "openvino_deploy_package_win/deployment_tools/inference_engine/bin/intel64/Release",
     "openVinoModels": [
         {
             "isActive": "False",
             "name": "pedestre-veiculo-adas-001-GPU",
-            "openVinoModelXml": "dlModels/openvino/pedestrian-and-vehicle-detector-adas-0001/FP16/pedestrian-and-vehicle-detector-adas-0001.xml",
-            "openVinoModelBin": "dlModels/openvino/pedestrian-and-vehicle-detector-adas-0001/FP16/pedestrian-and-vehicle-detector-adas-0001.bin",
+            "openVinoModelXml": "dlModels/intel/pedestrian-and-vehicle-detector-adas-0001/FP16/pedestrian-and-vehicle-detector-adas-0001.xml",
+            "openVinoModelBin": "dlModels/intel/pedestrian-and-vehicle-detector-adas-0001/FP16/pedestrian-and-vehicle-detector-adas-0001.bin",
             "openVinoDevice": "GPU"
         },
         {
             "isActive": "True",
             "name": "pedestre-veiculo-adas-001-CPU",
-            "openVinoModelXml": "dlModels/openvino/pedestrian-and-vehicle-detector-adas-0001/FP32/pedestrian-and-vehicle-detector-adas-0001.xml",
-            "openVinoModelBin": "dlModels/openvino/pedestrian-and-vehicle-detector-adas-0001/FP32/pedestrian-and-vehicle-detector-adas-0001.bin",
+            "openVinoModelXml": "dlModels/intel/pedestrian-and-vehicle-detector-adas-0001/FP32/pedestrian-and-vehicle-detector-adas-0001.xml",
+            "openVinoModelBin": "dlModels/intel/pedestrian-and-vehicle-detector-adas-0001/FP32/pedestrian-and-vehicle-detector-adas-0001.bin",
             "openVinoDevice": "CPU"
         },
         {
             "isActive": "False",
             "name": "person-vehicle-bike-FP16-GPU",
-            "openVinoModelXml": "openvino/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP16/person-vehicle-bike-detection-crossroad-0078.xml",
-            "openVinoModelBin": "openvino/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP16/person-vehicle-bike-detection-crossroad-0078.bin",
-            "openVinoCpuExtension": "openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_avx2.so",
-            "openVinoPlugirDir": "openvino/deployment_tools/inference_engine/lib/intel64",
+            "openVinoModelXml": "dlModels/intel/person-vehicle-bike-detection-crossroad-0078/FP16/person-vehicle-bike-detection-crossroad-0078.xml",
+            "openVinoModelBin": "dlModels/intel/person-vehicle-bike-detection-crossroad-0078/FP16/person-vehicle-bike-detection-crossroad-0078.bin",                        
             "openVinoDevice": "GPU"
         }
     ],
@@ -42,5 +41,5 @@
         "to": "igorddf@gmail.com"
     },
     "dirVideos": "video_alarmes",
-    "openVinoPlugirDir": "openvino/deployment_tools/inference_engine/lib/intel64"
+    "openVinoPlugirDir": "openvino_deploy_package_win/deployment_tools/inference_engine/bin/intel64/Release"
 }
