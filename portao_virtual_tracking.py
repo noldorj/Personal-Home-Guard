@@ -11,6 +11,9 @@ import sys
 from threading import Thread
 from checkLicence.sendingData import checkLoginPv 
 from objectDetectionTensorFlow import objectDetection 
+
+import tkinter
+
 from matplotlib.path import Path
 import pluginOpenVino as pOpenVino
 
@@ -249,8 +252,8 @@ ui.setupUi(windowConfig)
 
 #fourcc = cv.VideoWriter_fourcc(*'X264')
 #for linux x264 need to recompile opencv mannually
-fourcc = cv.VideoWriter_fourcc(*'XVID')
-#fourcc = cv.VideoWriter_fourcc('M','J','P','G')
+#fourcc = cv.VideoWriter_fourcc(*'XVID') #IJF
+fourcc = cv.VideoWriter_fourcc('M','J','P','G')
 #cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
 
 posConfigPv = 255
@@ -1103,7 +1106,7 @@ while init_video:
     start = time.time()
 
     conectado, frame = ipCam.read()
-
+    
 
     if (conectado and frame is not None and next_frame is not None):
 
