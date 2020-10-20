@@ -31,9 +31,73 @@ def getDate():
     return data
 
 
+def changePasswd(userName, userPassword, userToken):
+
+    log.info("pvLicenceChecker-server::  Alterando senha do usuario")
+    
+    file = 'sessions/'+ userName + '.json'
+    
+    #status = checkLogin(userName, userPassword, userToken)
+    
+    status = checkFileSession(file)
+
+    if status:
+
+        try:
+
+            session = json.load(open(file, 'r'))
+
+        except OSError as ex:
+
+            log.critical('Arquivo de sessao: {} não encontrado'.format(file))
+            log.critical('Error: {}'.format(str(ex.errno)))
+            status = False
+
+        else:
+
+            log.info('Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))
+            
+            log.info("changePasswd:: Usuario ok - alterando a senha no banco de dados...")
+
+            conn = pymysql.connect(host, user=user,port=port, passwd=password, db=dbname)
+    
+            status = True
+
+            try:
+                with conn.cursor() as cursor:
+
+                    cursor.execute("ALTER USER '" + userName + "' IDENTIFIED BY '" + userPassword + "'")
+                    
+            except Error as error:
+                    print(error)
+
+            finally:
+                cursor.close()
+                conn.close()
+            
+            #altera password da sessao 
+
+            session['userPasswd'] = userPassword
+
+            try:
+                log.info('Atualizando senha no arquivo de sessao: ' + file)
+                json.dump(session, open(file,'w'),indent=3)
+
+            except OSError as ex:
+                log.critical('Erro ao gravar arquivo de sessao')
+
+            else:
+                log.info('Sessao: {} atualizada'.format(userName))
+
+    else:
+        log.critical('Arquivo de sessao: {} não encontrado'.format(file))
+        return False
+
+
+
 def newUser(userName, userPassword, userEmail):
 
-    log.info("Criando novo usuario")
+    log.info("pvLicenceChecker-server:: Criando novo usuario")
 
     conn = pymysql.connect(host, user=user,port=port, passwd=password, db=dbname)
     
@@ -52,7 +116,7 @@ def newUser(userName, userPassword, userEmail):
 
             if (dbUserName is not None and dbUserName[0] == userName):
                 status = False
-                log.info('Usuário existente')
+                log.info('pvLicenceChecker-server::newUsers::  Usuário existente')
 
             else:
 

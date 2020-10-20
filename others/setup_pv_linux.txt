@@ -4,7 +4,7 @@ pip instll socketio
 conda install matplotlib - installou 3.1.0
 conda install opencv - instalou 3.4.2 - erro de GTK 
 conda install -c loopbio -c conda-forge -c pkgw-forge ffmpeg gtk2 opencv -
-
+pip install websocket-client
 conda install scipy - instalou 1.2.1
 pip install pygame - instalou 1.9.6
 pip install pyqt5

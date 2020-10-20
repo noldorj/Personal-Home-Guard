@@ -10,9 +10,10 @@ import logging as log
 import sys
 from threading import Thread
 from checkLicence.sendingData import checkLoginPv 
+from checkLicence.sendingData import changePasswd 
 from objectDetectionTensorFlow import objectDetection 
 
-import tkinter
+#import tkinter
 
 from matplotlib.path import Path
 import pluginOpenVino as pOpenVino
@@ -62,7 +63,10 @@ listObjectSoundAlerted = []
 listObjectVideoRecorded = []
 out_video = None
 init_video = False 
+
+statusPasswd = False
 statusLicence = False
+
 statusConfig = None
 pb = None
 pbtxt = None
@@ -287,6 +291,42 @@ def checkInternetAccess():
         conn.close()
         return False
 
+def btnAlterarSenha():
+    global uiLogin, statusPasswd
+
+    log.info("Alterando a senha")
+    
+    conexao = checkInternetAccess()
+
+    if conexao:    
+
+        if (uiLogin.txtNovaSenha.text() == uiLogin.txtNovaSenha2.text()):
+        
+            login = {'user':uiLogin.txtEmail_minhaConta.text(), 'passwd':uiLogin.txtNovaSenha.text(), 'token':'2'} #IJF checar valor do token
+
+            statusPasswd, error = changePasswd(login)
+            
+            if statusPasswd:
+                
+                log.warning("Senha alterada com sucesso")
+                uiLogin.lblStatus.setText("Senha alterada com sucesso")
+            
+            else:
+
+                #se o servidor estiver fora do ar - libera acesso ao sistema 
+                if error == "conexao":
+                    log.warning("Erro de conexão com o servidor")
+
+                elif error == "login":
+
+                    log.warning("Usuario invalido")
+                    uiLogin.lblStatus.setText("Usuário ou senha inválida. Tente novamente")
+    
+    else:
+
+        log.info("Erro de conexao com a Internet")
+        uiLogin.lblStatus.setText("Cheque sua conexão com a Internet por favor e tente mais tarde")
+        conexao = False
 
 
 def btnLogin():
@@ -306,7 +346,7 @@ def btnLogin():
         login = {'user':uiLogin.txtEmail.text(), 'passwd':uiLogin.txtPasswd.text(), 'token':'2'}
         
         statusLicence, error  = checkLoginPv(login) 
-        statusLicence = True ## testando apenas IJF
+        #statusLicence = True ## testando apenas IJF
         
         if statusLicence:
             
@@ -954,6 +994,8 @@ def initFormLogin(self, ret):
 
     uiLogin.btnLogin.clicked.connect(btnLogin)
     uiLogin.btnExit.clicked.connect(btnExit)
+    
+    uiLogin.btnAlterarSenha.clicked.connect(btnAlterarSenha)
 
     windowLogin.show()
     app.exec_()

@@ -12,11 +12,11 @@ log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=s
 TIME_SESSION = 1
 
 #host="dbpv.c3jzryxr6fxw.sa-east-1.rds.amazonaws.com"
-host="db-pv.cswsskc4btjh.sa-east-1.rds.amazonaws.com"  
-port=3306
-dbname="pv_users"
-user="igorddf"
-password="cacete33"
+host = "dbpv.cswsskc4btjh.sa-east-1.rds.amazonaws.com"  
+port = 3306
+dbname = "pv_users"
+user = "igorddf"
+password = "cacete33"
 
 #conn = pymysql.connect(host, user=user,port=port, passwd=password, db=dbname)
 
@@ -31,7 +31,78 @@ def getDate():
     return data
 
 
+def changePasswd(userName, userPassword, userToken):
+
+    status = True
+    
+    log.info("pvLicenceChecker-server::  Alterando senha do usuario")
+    
+    file = 'sessions/'+ userName + '.json'
+    
+    status = checkFileSession(file)
+
+    if status:
+
+        try:
+
+            session = json.load(open(file, 'r'))
+
+        except OSError as ex:
+
+            log.critical('Arquivo de sessao: {} não encontrado'.format(file))
+            log.critical('Error: {}'.format(str(ex.errno)))
+            status = False
+
+        else:
+
+            log.info('Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))
+            
+            log.info("changePasswd:: Usuario ok - alterando a senha no banco de dados...")
+
+            conn = pymysql.connect(host, user=user,port=port, passwd=password, db=dbname)
+    
+
+            try:
+                with conn.cursor() as cursor:
+                    #cursor.execute("SET PASSWORD FOR '" + userName + "'@dbpv = PASSWORD('" + userPassword + "'")
+                    #cursor.execute("ALTER USER '" + userName + "'@dbpv IDENTIFIED BY '" + userPassword + "'")
+                    cursor.execute("UPDATE users set userPassword = '" + userPassword + "' where userName = '" + userName + "'")
+                    
+            except OSError as error:
+                status = False
+                log.critical(error)
+
+            finally:
+                
+                log.info("senha alterada com sucesso no banco de dados")
+                cursor.close()
+                conn.close()
+            
+            #altera password da sessao 
+
+            session['userPassword'] = userPassword
+
+            try:
+                log.info('Atualizando senha no arquivo de sessao: ' + file)
+                json.dump(session, open(file,'w'),indent=3)
+
+            except OSError as ex:
+                status = False
+                log.critical('Erro ao gravar arquivo de sessao')
+
+            else:
+                log.info('Sessao: {} atualizada'.format(userName))
+
+    else:
+        status = False 
+        log.critical('Arquivo de sessao: {} não encontrado'.format(file))
+        return status
+
+    return status
+
 def newUser(userName, userPassword, userEmail):
+
+    log.info("pvLicenceChecker-server:: Criando novo usuario")
 
     conn = pymysql.connect(host, user=user,port=port, passwd=password, db=dbname)
     
@@ -50,7 +121,7 @@ def newUser(userName, userPassword, userEmail):
 
             if (dbUserName is not None and dbUserName[0] == userName):
                 status = False
-                print('Usuário existente')
+                log.info('pvLicenceChecker-server::newUsers::  Usuário existente')
 
             else:
 
@@ -63,10 +134,10 @@ def newUser(userName, userPassword, userEmail):
                 userId = cursor.fetchone()[0]
 
                 if userId == None:
-                    print('Erro ao cadastrar novo usuario')
+                    log.critical('Erro ao cadastrar novo usuario')
                     status = False
                 else:
-                    print('Usuário cadastrado no banco de dados - userID: {}'.format(userId))
+                    log.info('Usuário cadastrado no banco de dados - userID: {}'.format(userId))
 
                     #criando arquivo de sessao baseado no ID
                     session = {
@@ -141,6 +212,8 @@ def checkLogin(userName, userPassword, userToken):
         else:
 
             log.info('Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))
+            log.info('userPassword: {}'.format(userPassword))
+            log.info('userPassword session: {}'.format(session['userPassword']))
 
             #checar login
             if userName == session['userName'] and userPassword == session['userPassword']:
@@ -180,19 +253,20 @@ def checkLogin(userName, userPassword, userToken):
                     session['sessionStatus'] = 'on'
                     session['lastLogin'] = lastLogin
                     session['lastSession'] = lastLogin
+
+                try:
+                    log.info('Atualizando arquivo de sessao: ' + file)
+                    json.dump(session, open(file,'w'),indent=3)
+
+                except OSError as ex:
+                    log.critical('Erro ao gravar arquivo de sessao')
+
                 else:
-                    log.info('Login invalido')
-                    status = False
+                    log.info('Sessao: {} atualizada'.format(userName))
 
-        try:
-            log.info('Atualizando arquivo de sessao: ' + file)
-            json.dump(session, open(file,'w'),indent=3)
-
-        except OSError as ex:
-            log.critical('Erro ao gravar arquivo de sessao')
-
-        else:
-            log.info('Sessao: {} atualizada'.format(userName))
+            else:
+                log.info('Login invalido')
+                status = False
 
     else:
         log.critical('Arquivo de sessao: {} não encontrado'.format(file))
