@@ -10,7 +10,7 @@ sio = socketio.Client()
 host = "http://ec2-18-230-50-38.sa-east-1.compute.amazonaws.com:5000"
 
 loginStatus = False
-sessaoStatus = False
+sessionStatus = False
 error = ''
 changePasswdStatus = False
 
@@ -64,6 +64,30 @@ def changePasswd(login):
         #sio.disconnect()
     
     return changePasswd, error
+
+
+def checkSessionPv(session):
+    global sessionStatus, error
+
+    sessionStatus = True
+
+    try: 
+        sio.connect(host)
+
+    except socketio.exceptions.ConnectionError as  err:
+
+        log.info('Erro na conexao: ' + str(err))
+        error = 'conexao' 
+        sessionStatus = False
+
+    else:
+        log.info('Conexao efetuada')
+        checkSession(session)
+        sio.wait()
+        log.info('checkSessionPv: ' + str(sessionStatus))
+    
+    return sessionStatus, error
+
 
 
 def checkLoginPv(login):
@@ -124,7 +148,10 @@ def replyNewUser(status):
 
 @sio.event 
 def replyCheckSession(status):
+    global sessionStatus
+
     print ('Check Session status: ' + str(status))
+    sessionStatus = status 
     sio.disconnect()
 
 @sio.event 

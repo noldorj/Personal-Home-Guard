@@ -9,7 +9,7 @@ import sys
 log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 
 #tempo de expiracao da sessao em minutos
-TIME_SESSION = 1
+TIME_SESSION = 5
 
 #host="dbpv.c3jzryxr6fxw.sa-east-1.rds.amazonaws.com"
 host = "dbpv.cswsskc4btjh.sa-east-1.rds.amazonaws.com"  
@@ -224,7 +224,7 @@ def checkLogin(userName, userPassword, userToken):
                 log.info('Token cliente: ' + userToken)
                 log.info('Token servidor: ' + session['userToken'])
                 
-                if session['userToken'] == '0':
+                if session['userToken'] != userToken:
                     #gravo o userToken na sessao
                     log.info('Primeiro login - sessao on')
                     
@@ -236,15 +236,16 @@ def checkLogin(userName, userPassword, userToken):
 
                 #se for um segundo login, valida o userToken e ativa a sessao
                 elif session['userToken'] == userToken:
-                    log.info('Validando login - userToken existent')
+                    log.info('Validando login - userToken existente')
                     
                     session['loginStatus'] = 'on'
                     session['sessionStatus'] = 'on'
                     session['lastLogin'] = lastLogin
                     session['lastSession'] = lastLogin
 
-                #se for um login devido a perda de sessao anterior
+                #se for um login devido a perda de sessao anterior ou login em outra maquina
                 elif session['sessionStatus'] == 'off' or session['loginStatus']=='off':
+                    
                     log.info('Validando perda de sessao')
                     log.info('Atribuindo novo Token')
 
@@ -307,13 +308,13 @@ def checkSession(userName, userToken):
 
         except OSError as ex:
 
-            print('Arquivo de sessao: {} não encontrado'.format(file))
-            print('Error: {}'.format(str(ex.errno)))
+            log.critical('Arquivo de sessao: {} não encontrado'.format(file))
+            log.critical('Error: {}'.format(str(ex.errno)))
             status = False
 
         else:
 
-            print('Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))
+            log.info('Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))
 
             #session = json.load(open('sessions/igor14.json', 'r'))
 
@@ -325,29 +326,34 @@ def checkSession(userName, userToken):
 
             if (len(minutes)>1):
                 status = False
-                print('Sessão expirou')
+                log.critical('Sessão expirou')
                #expirou o tempo , dias já se passaram
             else:
                 minutes = minutes[0].split(':')
                 minutes = int(minutes[1])
 
                 if userName == session['userName'] and userToken == session['userToken']:
+                    
                     if minutes < expireTime:
                         
                         session['lastSession'] = currentDate.__str__()
                         session['sessionStatus'] = 'on'
                         saveSession(session, userName)
+                        log.info('Sessao validada')
+
                     else:
                         #sessao expirou ou token errado
-                        print('Sessão expirada')
                         session['sessionStatus'] = 'off'
                         session['loginStatus'] = 'off'
                         saveSession(session, userName)
                         status = False
+                        log.critical('Sessao expirou ou Token inválidos')
                 else:
                     #usuario invalido
-                    print('Usuario ou Token inválidos')
+                    status = False
+                    log.critical('Usuario ou Token inválidos')
     else:
         log.critical('Arquivo de sessao: {} não encontrado'.format(file))
+        status = False
 
     return status

@@ -11,7 +11,11 @@ import sys
 from threading import Thread
 from checkLicence.sendingData import checkLoginPv 
 from checkLicence.sendingData import changePasswd 
+from checkLicence.sendingData import checkSessionPv
+
 from objectDetectionTensorFlow import objectDetection 
+
+import secrets
 
 #import tkinter
 
@@ -37,6 +41,9 @@ log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=s
 conectado = None
 conexao = False
 frame = None
+
+token = secrets.token_urlsafe(20)
+
 
 #tempo sem objetos detectados
 tEmptyStart = time.time()
@@ -122,7 +129,8 @@ openVinoCpuExtension = None
 openVinoPluginDir = None 
 openVinoModelName = None
 
-
+login = None 
+sessionStatus = True
 
 #inicializa configuracoes do sistema
 
@@ -302,7 +310,9 @@ def btnAlterarSenha():
 
         if (uiLogin.txtNovaSenha.text() == uiLogin.txtNovaSenha2.text()):
         
-            login = {'user':uiLogin.txtEmail_minhaConta.text(), 'passwd':uiLogin.txtNovaSenha.text(), 'token':'2'} #IJF checar valor do token
+            #login = {'user':uiLogin.txtEmail_minhaConta.text(), 'passwd':uiLogin.txtNovaSenha.text(), 'token':'2'} #IJF checar valor do token
+            login = {'user':uiLogin.txtEmail_minhaConta.text(), 'passwd':uiLogin.txtNovaSenha.text(), 'token':token} #IJF checar valor do token
+            log.info('token: {}'.format(token))
 
             statusPasswd, error = changePasswd(login)
             
@@ -331,7 +341,7 @@ def btnAlterarSenha():
 
 def btnLogin():
     #checando licenca de usuario no servidor
-    global init_video, statusLicence, uiLogin, conexao 
+    global init_video, statusLicence, uiLogin, conexao, login 
 
     log.info('Checando conexão com a Internet')
     uiLogin.lblStatus.setText("Checando conexão com a Internet")
@@ -343,7 +353,9 @@ def btnLogin():
         log.info('Checando licença no servidor - Por favor aguarde')
         uiLogin.lblStatus.setText("Conectando com o servidor")
         
-        login = {'user':uiLogin.txtEmail.text(), 'passwd':uiLogin.txtPasswd.text(), 'token':'2'}
+        #login = {'user':uiLogin.txtEmail.text(), 'passwd':uiLogin.txtPasswd.text(), 'token':'2'}
+        login = {'user':uiLogin.txtEmail.text(), 'passwd':uiLogin.txtPasswd.text(), 'token':token}
+        log.info('token: {}'.format(token))
         
         statusLicence, error  = checkLoginPv(login) 
         #statusLicence = True ## testando apenas IJF
@@ -1139,13 +1151,16 @@ if statusLicence and conexao:
         (h,w) = frame.shape[:2]
 
 
+timeSessionInit = time.time()
 
-while init_video:
+while init_video and sessionStatus:
 
     #if counter == 0:
     #    startFps = time.time()
 
     start = time.time()
+
+    
 
     conectado, frame = ipCam.read()
     
@@ -1202,14 +1217,9 @@ while init_video:
         if len(listObjects) == 0 and portaoVirtualSelecionado:
 
 
-            #listObjects.clear()
-            #listObjectsTracking.clear()
-            #objects = ct.update(listObjectsTracking)
 
             tEmptyEnd = time.time()
-            tEmpty = tEmptyEnd- tEmptyStart
-            #print('sem objetos')
-            #print('empty: {}'.format(tEmpty))
+            tEmpty = tEmptyEnd - tEmptyStart
 
             if tEmpty > 10:
                 #print('tempty > 10')
@@ -1257,7 +1267,7 @@ while init_video:
                                     if isIdInsideRegion(centroid, r.get('pointsPolygon')):
 
                                         tEmptyEnd = time.time()
-                                        tEmpty = tEmptyEnd- tEmptyStart
+                                        tEmpty = tEmptyEnd - tEmptyStart
 
                                         tEmptyStart = time.time()
 
@@ -1327,17 +1337,6 @@ while init_video:
                                                                                                                r.get('nameRegion')))
                                                             threadEmail.start()
 
-                                                            #if (sendMailAlert(emailConfig['name'],
-                                                            #                  emailConfig['to'],
-                                                            #                  emailConfig['subject'],
-                                                            #                  emailConfig['port'],
-                                                            #                  emailConfig['smtp'],
-                                                            #                  emailConfig['user'],
-                                                            #                  emailConfig['password'],
-                                                            #                  frame_no_label_email,
-                                                            #                  str(box[6]),
-                                                            #                  r.get('nameRegion'))):
-                                                            #    log.info('Alerta enviado ID[' + str(objectID) + ']')
 
                                                             listObjectMailAlerted.append(objectID)
                                         #end loop alarms
@@ -1394,6 +1393,17 @@ while init_video:
         FPS = 1000/renderTime
         #print('render time: {:10.2f} ms'.format(renderTime))
         #print('FPS: {:10.2f} ms'.format(FPS))
+
+        timeSessionEnd = time.time() 
+        timeSession = timeSessionEnd - timeSessionInit
+        
+        #log.info('timeSession: {}'.format(timeSession))
+
+        if timeSession >= 20:
+            sessionStatus, error = checkSessionPv(login)
+            log.info('sessionStatus: {}'.format(sessionStatus))
+            timeSessionInit = time.time()
+
 
         listObjects.clear()
         #listObjectsTracking.clear()
