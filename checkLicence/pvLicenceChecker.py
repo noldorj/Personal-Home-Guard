@@ -187,7 +187,7 @@ def checkLogin(userName, userPassword, userToken):
 
     status = True
     #checar se existe arquivo de sesson 'userName.json'
-    log.info('Checando arquivo de sessao do userName: ' + userName)
+    log.info('checkLogin:: Checando arquivo de sessao do userName: ' + userName)
     file = 'sessions/'+ userName + '.json'
     
 
@@ -205,15 +205,15 @@ def checkLogin(userName, userPassword, userToken):
 
         except OSError as ex:
 
-            log.critical('Arquivo de sessao: {} não encontrado'.format(file))
-            log.critical('Error: {}'.format(str(ex.errno)))
+            log.critical('checkLogin:: Arquivo de sessao: {} não encontrado'.format(file))
+            log.critical('checkLogin:: Error: {}'.format(str(ex.errno)))
             status = False
 
         else:
 
-            log.info('Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))
-            log.info('userPassword: {}'.format(userPassword))
-            log.info('userPassword session: {}'.format(session['userPassword']))
+            log.info('checkLogin:: Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))
+            #log.info('userPassword: {}'.format(userPassword))
+            #log.info('userPassword session: {}'.format(session['userPassword']))
 
             #checar login
             if userName == session['userName'] and userPassword == session['userPassword']:
@@ -282,9 +282,9 @@ def saveSession(session, file):
         json.dump(session, open(file,'w'),indent=3)
 
     except OSError as ex:
-        log.critical('Erro ao gravar arquivo de sessao')
+        log.critical('saveSession:: Erro ao gravar arquivo de sessao')
     else:
-        log.info('Sessao gravada')
+        log.info('saveSession:: Sessao gravada')
 
 def checkSession(userName, userToken):
     status = True
@@ -301,32 +301,35 @@ def checkSession(userName, userToken):
         date = getDate()
         currentDate = date.get('year') + '-' + date.get('month') + '-' + date.get('day') + ' ' + date.get('hourOnly') + ':' + date.get('minute')
         currentDate = datetime.strptime(currentDate, '%Y-%b-%d %H:%M')
-
+        
         try:
 
             session = json.load(open(file, 'r'))
 
         except OSError as ex:
 
-            log.critical('Arquivo de sessao: {} não encontrado'.format(file))
-            log.critical('Error: {}'.format(str(ex.errno)))
+            log.critical('checkSession:: Arquivo de sessao: {} não encontrado'.format(file))
+            log.critical('checkSession Error: {}'.format(str(ex.errno)))
             status = False
 
         else:
 
-            log.info('Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))
+            log.info('checkSession:: Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))
 
             #session = json.load(open('sessions/igor14.json', 'r'))
 
             lastSession = datetime.strptime(session['lastSession'], '%Y-%b-%d %H:%M')
-
+            
             deltaSession = currentDate - lastSession
 
             minutes =  deltaSession.__str__().split(',')
+            
+            #usando strftime para corrigir inclusao de segundos, indevidamente, na data 
+            currentDate = currentDate.strftime('%Y-%b-%d %H:%M')
 
             if (len(minutes)>1):
                 status = False
-                log.critical('Sessão expirou')
+                log.critical('checkSession:: Sessão expirou')
                #expirou o tempo , dias já se passaram
             else:
                 minutes = minutes[0].split(':')
@@ -339,7 +342,8 @@ def checkSession(userName, userToken):
                         session['lastSession'] = currentDate.__str__()
                         session['sessionStatus'] = 'on'
                         saveSession(session, userName)
-                        log.info('Sessao validada')
+                        log.info('checkSession:: Sessao validada')
+                        status = True
 
                     else:
                         #sessao expirou ou token errado
@@ -347,13 +351,13 @@ def checkSession(userName, userToken):
                         session['loginStatus'] = 'off'
                         saveSession(session, userName)
                         status = False
-                        log.critical('Sessao expirou ou Token inválidos')
+                        log.critical('checkSession:: Sessao expirou ou Token inválidos')
                 else:
                     #usuario invalido
                     status = False
-                    log.critical('Usuario ou Token inválidos')
+                    log.critical('checkSession:: Usuario ou Token inválidos')
     else:
-        log.critical('Arquivo de sessao: {} não encontrado'.format(file))
+        log.critical('checkSession:: Arquivo de sessao: {} não encontrado'.format(file))
         status = False
 
     return status

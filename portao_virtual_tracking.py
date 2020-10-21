@@ -1400,7 +1400,8 @@ while init_video and sessionStatus:
         #log.info('timeSession: {}'.format(timeSession))
 
         if timeSession >= 20:
-            sessionStatus, error = checkSessionPv(login)
+            session = {login['user'], login['token']}
+            sessionStatus = checkSessionPv(login)
             log.info('sessionStatus: {}'.format(sessionStatus))
             timeSessionInit = time.time()
 

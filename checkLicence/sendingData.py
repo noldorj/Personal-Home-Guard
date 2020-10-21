@@ -5,6 +5,7 @@ import sys
 log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 
 sio = socketio.Client()
+#sio = socketio.AsyncClient()
 #ip fixo instancia AWS
 #host = "http://ec2-18-230-53-22.sa-east-1.compute.amazonaws.com:5000"
 host = "http://ec2-18-230-50-38.sa-east-1.compute.amazonaws.com:5000"
@@ -17,12 +18,7 @@ changePasswdStatus = False
 
 @sio.event
 def connect():
-    log.info('conexao efetuada')
-
-@sio.event
-def sendingData():
-    log.info('sendingData: Enviando dados...')
-    sio.emit('dados login', {'usuario':'igor2'})
+    log.info('connect: conexao efetuada')
 
 @sio.event
 def checkLogin(login):
@@ -48,6 +44,7 @@ def changePasswd(login):
     
     try: 
         sio.connect(host)
+        sio.wait()
 
     except socketio.exceptions.ConnectionError as  err:
 
@@ -61,7 +58,7 @@ def changePasswd(login):
         sio.emit('changePasswd', login)
         sio.wait()
         log.info('changePasswd changePasswd: ' + str(changePasswd))
-        #sio.disconnect()
+        sio.disconnect()
     
     return changePasswd, error
 
@@ -69,46 +66,50 @@ def changePasswd(login):
 def checkSessionPv(session):
     global sessionStatus, error
 
-    sessionStatus = True
+    #sessionStatus = True
 
     try: 
+        log.info("checkSessionPv:: conectando...")
         sio.connect(host)
 
     except socketio.exceptions.ConnectionError as  err:
 
-        log.info('Erro na conexao: ' + str(err))
+        log.critical('checkSessionPv:: Erro na conexao: ' + str(err))
         error = 'conexao' 
         sessionStatus = False
 
     else:
-        log.info('Conexao efetuada')
+        log.info('checkSessionPv:: Conexao efetuada checkSessionPv')
         checkSession(session)
         sio.wait()
         log.info('checkSessionPv: ' + str(sessionStatus))
+        #sio.disconnect()
     
-    return sessionStatus, error
+    return sessionStatus
 
 
 
 def checkLoginPv(login):
     global loginStatus, error
 
-    loginStatus = True
+    #loginStatus = True
 
     try: 
         sio.connect(host)
+        #sio.wait()        
 
     except socketio.exceptions.ConnectionError as  err:
 
-        log.info('Erro na conexao: ' + str(err))
+        log.info('checkLoginPv:: Erro na conexao: ' + str(err))
         error = 'conexao' 
         loginStatus = False
 
     else:
-        log.info('Conexao efetuada')
+        log.info('checkLoginPv:: Conexao efetuada')
         checkLogin(login)
         sio.wait()
-        log.info('loginStatus checkLoginPv: ' + str(loginStatus))
+        log.info('checkLoginPv:: loginStatus: ' + str(loginStatus))
+        #sio.disconnect()
     
     return loginStatus, error
 
@@ -129,7 +130,7 @@ def replyChangePasswd(status):
 def replyLogin(status):
     global loginStatus, error
     
-    log.info('Login status: ' + str(status))
+    log.info('replyLogin:: Login status: ' + str(status))
     
     loginStatus = status
 
@@ -137,8 +138,9 @@ def replyLogin(status):
     if not status:
         error = 'login'
 
-    log.info('loginStatus replyLogin: ' + str(loginStatus))
+    log.info('replyLogin:: loginStatus: ' + str(loginStatus))
     sio.disconnect()
+    sio.wait()
 
 
 @sio.event 
@@ -150,15 +152,19 @@ def replyNewUser(status):
 def replyCheckSession(status):
     global sessionStatus
 
-    print ('Check Session status: ' + str(status))
+    print ('replyCheckSession:: sessionStatus: ' + str(status))
     sessionStatus = status 
     sio.disconnect()
 
 @sio.event 
 def disconnect():
-    print('desconectado')
+    log.info('desconectado')
 
 
+#testes
+#login = {'user':'igor1', 'passwd':'senha2', 'token':'2'}
+#statusLicence, error  = checkLoginPv(login) 
 
+#statusSession = checkSessionPv(login)
 
 

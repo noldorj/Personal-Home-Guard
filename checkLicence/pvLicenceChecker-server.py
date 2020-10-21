@@ -291,7 +291,10 @@ def checkSession(userName, userToken):
         session = None
         date = getDate()
         currentDate = date.get('year') + '-' + date.get('month') + '-' + date.get('day') + ' ' + date.get('hourOnly') + ':' + date.get('minute')
+        
+        currentDate = datetime.strptime(currentDate, '%Y-%b-%d')
         currentDate = datetime.strptime(currentDate, '%Y-%b-%d %H:%M')
+        currentDate[0]
 
         try:
 
