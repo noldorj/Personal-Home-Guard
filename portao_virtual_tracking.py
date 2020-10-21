@@ -10,8 +10,9 @@ import logging as log
 import sys
 from threading import Thread
 from checkLicence.sendingData import checkLoginPv 
-from checkLicence.sendingData import changePasswd 
+from checkLicence.sendingData import changePasswdPv 
 from checkLicence.sendingData import checkSessionPv
+from checkLicence.sendingData import forgotPasswordPv 
 
 from objectDetectionTensorFlow import objectDetection 
 
@@ -310,15 +311,14 @@ def btnAlterarSenha():
 
         if (uiLogin.txtNovaSenha.text() == uiLogin.txtNovaSenha2.text()):
         
-            #login = {'user':uiLogin.txtEmail_minhaConta.text(), 'passwd':uiLogin.txtNovaSenha.text(), 'token':'2'} #IJF checar valor do token
-            login = {'user':uiLogin.txtEmail_minhaConta.text(), 'passwd':uiLogin.txtNovaSenha.text(), 'token':token} #IJF checar valor do token
-            log.info('token: {}'.format(token))
+            login = {'user':uiLogin.txtEmail_minhaConta.text(), 'passwd':uiLogin.txtNovaSenha.text(), 'token':token} 
+            
 
-            statusPasswd, error = changePasswd(login)
+            statusPasswd, error = changePasswdPv(login)
             
             if statusPasswd:
                 
-                log.warning("Senha alterada com sucesso")
+                log.info("Senha alterada com sucesso")
                 uiLogin.lblStatus.setText("Senha alterada com sucesso")
             
             else:
@@ -326,17 +326,46 @@ def btnAlterarSenha():
                 #se o servidor estiver fora do ar - libera acesso ao sistema 
                 if error == "conexao":
                     log.warning("Erro de conexão com o servidor")
+                    uiLogin.lblStatus.setText("Erro de conexão com o servidor")
 
                 elif error == "login":
-
                     log.warning("Usuario invalido")
                     uiLogin.lblStatus.setText("Usuário ou senha inválida. Tente novamente")
-    
     else:
-
         log.info("Erro de conexao com a Internet")
         uiLogin.lblStatus.setText("Cheque sua conexão com a Internet por favor e tente mais tarde")
-        conexao = False
+
+def btnEsqueciSenha():
+    global uiLogin, conexao
+
+    log.info('btnEsqueciSenha:: Checando conexão com a Internet')
+    uiLogin.lblStatus.setText("Checando conexão com a Internet")
+
+    conexao = checkInternetAccess()
+
+    if conexao:    
+    
+        log.info('btnEsqueciSenha:: Checando licença no servidor - Por favor aguarde')
+        #uiLogin.lblStatus.setText("Conectando com o servidor")
+        status, error = forgotPasswordPv(uiLogin.txtEmail.text()) 
+        
+        if error == "conexao":
+            log.warning("btnEsqueciSenha:: Erro de conexão com o servidor")
+            uiLogin.lblStatus.setText("Error de conexão com o servidor - tente novamente")
+
+        elif error == "login":
+
+            log.warning("Usuario invalido")
+            uiLogin.lblStatus.setText("Usuário desconhecido.")
+
+        if status:
+            log.warning("Email de recuperação de senha enviado")
+            uiLogin.lblStatus.setText("Email de recuperação de senha enviado")
+
+    else:
+         
+        log.warning("Erro de conexao com a Internet")
+        uiLogin.lblStatus.setText("Cheque sua conexão com a Internet.")
 
 
 def btnLogin():
@@ -387,9 +416,7 @@ def btnLogin():
 
         log.info("Erro de conexao com a Internet")
         uiLogin.lblStatus.setText("Cheque sua conexão com a Internet por favor e tente mais tarde")
-        conexao = False
-        statusLicence = False
-        init_video = False
+        
 
 
 #---------------- gui  tab configuração geral -------------------
@@ -1006,6 +1033,7 @@ def initFormLogin(self, ret):
 
     uiLogin.btnLogin.clicked.connect(btnLogin)
     uiLogin.btnExit.clicked.connect(btnExit)
+    uiLogin.btnEsqueciSenha.clicked.connect(btnEsqueciSenha)
     
     uiLogin.btnAlterarSenha.clicked.connect(btnAlterarSenha)
 

@@ -5,6 +5,9 @@ from datetime import datetime
 import logging as log
 import pymysql
 import sys
+from threading import Thread
+
+from utilsServer import sendMailForgotPasswd
 
 log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 
@@ -35,7 +38,7 @@ def changePasswd(userName, userPassword, userToken):
 
     status = True
     
-    log.info("pvLicenceChecker-server::  Alterando senha do usuario")
+    log.info("changePasswd:: Alterando senha do usuario")
     
     file = 'sessions/'+ userName + '.json'
     
@@ -49,13 +52,13 @@ def changePasswd(userName, userPassword, userToken):
 
         except OSError as ex:
 
-            log.critical('Arquivo de sessao: {} não encontrado'.format(file))
-            log.critical('Error: {}'.format(str(ex.errno)))
+            log.critical('changePasswd:: Arquivo de sessao: {} não encontrado'.format(file))
+            log.critical('changePasswd:: Error: {}'.format(str(ex.errno)))
             status = False
 
         else:
 
-            log.info('Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))
+            log.info('changePasswd:: Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))
             
             log.info("changePasswd:: Usuario ok - alterando a senha no banco de dados...")
 
@@ -64,17 +67,16 @@ def changePasswd(userName, userPassword, userToken):
 
             try:
                 with conn.cursor() as cursor:
-                    #cursor.execute("SET PASSWORD FOR '" + userName + "'@dbpv = PASSWORD('" + userPassword + "'")
-                    #cursor.execute("ALTER USER '" + userName + "'@dbpv IDENTIFIED BY '" + userPassword + "'")
+                    
                     cursor.execute("UPDATE users set userPassword = '" + userPassword + "' where userName = '" + userName + "'")
                     
             except OSError as error:
                 status = False
-                log.critical(error)
+                log.critical('changePasswd:: error: {}'.format(error))
 
             finally:
                 
-                log.info("senha alterada com sucesso no banco de dados")
+                log.info("changePasswd:: senha alterada com sucesso no banco de dados")
                 cursor.close()
                 conn.close()
             
@@ -83,20 +85,19 @@ def changePasswd(userName, userPassword, userToken):
             session['userPassword'] = userPassword
 
             try:
-                log.info('Atualizando senha no arquivo de sessao: ' + file)
+                log.info('changePasswd:: Atualizando senha no arquivo de sessao: ' + file)
                 json.dump(session, open(file,'w'),indent=3)
 
             except OSError as ex:
                 status = False
-                log.critical('Erro ao gravar arquivo de sessao')
+                log.critical('changePasswd:: Erro ao gravar arquivo de sessao')
 
             else:
-                log.info('Sessao: {} atualizada'.format(userName))
+                log.info('changePasswd:: Sessao: {} atualizada'.format(userName))
 
     else:
         status = False 
-        log.critical('Arquivo de sessao: {} não encontrado'.format(file))
-        return status
+        log.critical('changePasswd:: Arquivo de sessao: {} não encontrado'.format(file))
 
     return status
 
@@ -270,7 +271,7 @@ def checkLogin(userName, userPassword, userToken):
                 status = False
 
     else:
-        log.critical('Arquivo de sessao: {} não encontrado'.format(file))
+        log.critical('checkLogin:: Arquivo de sessao: {} não encontrado'.format(file))
     
     return status
 
@@ -285,6 +286,45 @@ def saveSession(session, file):
         log.critical('saveSession:: Erro ao gravar arquivo de sessao')
     else:
         log.info('saveSession:: Sessao gravada')
+
+
+def forgotPassword(email):
+    
+    file = 'sessions/'+ email + '.json'
+    status = checkFileSession(file) 
+    session = None
+
+    if status:
+
+        try:
+
+            session = json.load(open(file, 'r'))
+
+        except OSError as ex:
+
+            log.critical('forgotPassword:: Arquivo de sessao: {} não encontrado'.format(file))
+            log.critical('forgotPassword:: Error: {}'.format(str(ex.errno)))
+            status = False
+
+        else:
+            
+            passwd = session['userPassword']
+
+            threadEmail = Thread(target=sendMailForgotPasswd, 
+                    args=('portaovirtual@gmail.com',
+                    email,
+                    'Portao Virtual - Recuperação de senha',
+                    '587',
+                    'smtp.gmail.com', 
+                    'portaovirtual@gmail.com',
+                    'budega11',
+                    passwd
+                                                                                                               ))                                                                        
+        threadEmail.start()  
+        status = True
+
+    return status
+
 
 def checkSession(userName, userToken):
     status = True

@@ -14,6 +14,7 @@ loginStatus = False
 sessionStatus = False
 error = ''
 changePasswdStatus = False
+statusForgotPasswd = False
 
 
 @sio.event
@@ -31,6 +32,17 @@ def checkSession(session):
     log.info('Check session de: ' + session['user']) 
     sio.emit('checkSession', session)
 
+@sio.event
+def forgotPassword(email):
+    log.info('forgotPassword:: email: ' + email) 
+    sio.emit('forgotPassword', email)
+
+
+@sio.event
+def changePasswd(login):
+    log.info('changePasswd:: alterando senha do usuario: ' + login['user']) 
+    sio.emit('changePasswd', login)
+
 
 @sio.event
 def newUser(login):
@@ -38,29 +50,55 @@ def newUser(login):
     sio.emit('newUser', login)
 
 @sio.event
-def changePasswd(login):
+def changePasswdPv(login):
     global changePasswdStatus, error
     
     
     try: 
         sio.connect(host)
-        sio.wait()
+        #sio.wait()
 
     except socketio.exceptions.ConnectionError as  err:
 
         log.info('Erro na conexao: ' + str(err))
         error = 'conexao' 
+        changePasswdStatus = False
 
     else:
-        log.info('Conexao efetuada')
-       
-        log.info('Alterando a senha do usuario: ' + login['user']) 
-        sio.emit('changePasswd', login)
+        log.info('changePasswd:: Conexao efetuada')
+        log.info('changePasswd:: Alterando a senha do usuario: ' + login['user']) 
+
+        changePasswd(login)  
         sio.wait()
-        log.info('changePasswd changePasswd: ' + str(changePasswd))
-        sio.disconnect()
     
-    return changePasswd, error
+        log.info('changePasswd:: changePasswdStatus: ' + str(changePasswdStatus))
+        #sio.disconnect()
+    
+    return changePasswdStatus, error
+
+
+
+def forgotPasswordPv(email):
+    global statusForgotPasswd, error
+
+    try: 
+        log.info("forgotPasswordPv:: conectando...")
+        sio.connect(host)
+
+    except socketio.exceptions.ConnectionError as  err:
+
+        log.critical('forgotPasswordPv:: Erro na conexao: ' + str(err))
+        error = 'conexao' 
+        statusForgotPasswd = False
+
+    else:
+        log.info('forgotPasswordPv:: Conexao efetuada ')
+        forgotPassword(email)
+        sio.wait()
+        log.info('forgotPasswordPv:: statusForgotPasswd: ' + str(statusForgotPasswd))
+        #sio.disconnect()
+    
+    return statusForgotPasswd, error 
 
 
 def checkSessionPv(session):
@@ -127,6 +165,17 @@ def replyChangePasswd(status):
 
 
 @sio.event 
+def replyForgotPassword(status):
+    global statusForgotPasswd
+    
+    statusForgotPasswd = status
+    log.info('replyForgotPassword:: statusForgotPasswd: ' + str(statusForgotPasswd))
+
+    sio.disconnect() 
+
+
+
+@sio.event 
 def replyLogin(status):
     global loginStatus, error
     
@@ -157,8 +206,8 @@ def replyCheckSession(status):
     sio.disconnect()
 
 @sio.event 
-def disconnect():
-    log.info('desconectado')
+def disconnect(sid):
+    log.info('disconnect:: sid: {}'.format(sid))
 
 
 #testes

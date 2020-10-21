@@ -7,6 +7,7 @@ from pvLicenceChecker import checkLogin as cl
 from pvLicenceChecker import newUser as nu 
 from pvLicenceChecker import checkSession as cs 
 from pvLicenceChecker import changePasswd as passwd 
+from pvLicenceChecker import forgotPassword as forgotPasswd 
 
 sio = socketio.Server()
 
@@ -16,47 +17,59 @@ app = socketio.WSGIApp(sio, static_files={
 
 
 
-log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.DEBUG, stream=sys.stdout)
 
 @sio.event
 def connect(sid, environ):
-    log.info('connect ' + sid)
+    log.info('connect: ' + sid)
 
 @sio.event
 def checkLogin(sid, login):
     log.info('checkLogin of: ' + login['user']) 
-    log.info('sid: ' + sid) 
+    #log.info('sid: ' + sid) 
     status = cl(login['user'], login['passwd'], login['token']) 
     sio.emit('replyLogin', status, room=sid)
+    #sio.disconnect(sid)
+
+
+@sio.event
+def forgotPassword(sid, email):
+
+    log.info('forgotPassword:: email: {}'.format(email))
+    status = forgotPasswd(email)
+    sio.emit('replyForgotPassword', status, room=sid)
 
 
 @sio.event
 def changePasswd(sid, login):
     log.info('changePasswd of: ' + login['user']) 
-    log.info('sid: ' +  sid) 
+    #log.info('sid: ' +  sid) 
     status = passwd(login['user'], login['passwd'], login['token'])
     sio.emit('replyChangePasswd', status, room=sid)
+    #sio.disconnect(sid)
 
 
 @sio.event
 def newUser(sid, login):
     log.info('newUser of: ' + login['user']) 
-    log.info('sid: ' +  sid) 
+    #log.info('sid: ' +  sid) 
     status = nu(login['user'], login['passwd'], login['token']) #IJF checar login['email'] no lugar de login['token']
     sio.emit('replyNewUser', status, room=sid)
+    #sio.disconnect(sid)
             
 
 @sio.event
 def checkSession(sid, session):
     log.info('checkSession of: ' + session['user']) 
-    log.info('sid: ' + sid) 
+    #log.info('sid: ' + sid) 
     status = cs(session['user'], session['token'])
     sio.emit('replyCheckSession', status, room=sid)
+    #sio.disconnect(sid)
 
 
 @sio.event
 def disconnect(sid):
-    log.info('disconnect ' +  sid)
+    log.info('disconnect:: sid: ' +  sid)
 
 
 if __name__ == '__main__':
