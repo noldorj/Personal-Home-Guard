@@ -47,7 +47,7 @@ def changePasswd(login):
 @sio.event
 def newUser(login):
     log.info('Novo usuario: ' + login['user']) 
-    sio.emit('newUser', login)
+    sio.emit('newUser', login )
 
 @sio.event
 def changePasswdPv(login):

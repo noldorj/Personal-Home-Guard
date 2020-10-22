@@ -101,7 +101,7 @@ def changePasswd(userName, userPassword, userToken):
 
     return status
 
-def newUser(userName, userPassword, userEmail):
+def newUser(userName, userPassword, userEmail, numCameras):
 
     log.info("pvLicenceChecker-server:: Criando novo usuario")
 
@@ -122,12 +122,12 @@ def newUser(userName, userPassword, userEmail):
 
             if (dbUserName is not None and dbUserName[0] == userName):
                 status = False
-                log.info('pvLicenceChecker-server::newUsers::  Usuário existente')
+                log.info('newUsers::  Usuário existente')
 
             else:
 
-                sql =  "INSERT INTO `users` (`userName`, `userPassword`, `userEmail`) VALUES (%s, %s, %s)"
-                values = (userName, userPassword, userEmail) 
+                sql =  "INSERT INTO `users` (`userName`, `userPassword`, `userEmail`, `numCameras`) VALUES (%s, %s, %s, %s)"
+                values = (userName, userPassword, userEmail, numCameras) 
                 cursor.execute(sql, values)
                 conn.commit()
 
@@ -135,10 +135,13 @@ def newUser(userName, userPassword, userEmail):
                 userId = cursor.fetchone()[0]
 
                 if userId == None:
-                    log.critical('Erro ao cadastrar novo usuario')
+
+                    log.critical('newUser:: Erro ao cadastrar novo usuario')
                     status = False
+
                 else:
-                    log.info('Usuário cadastrado no banco de dados - userID: {}'.format(userId))
+
+                    log.info('newUsers:: Usuário cadastrado no banco de dados - userID: {}'.format(userId))
 
                     #criando arquivo de sessao baseado no ID
                     session = {
@@ -149,19 +152,24 @@ def newUser(userName, userPassword, userEmail):
                         'lastLogin':'0',
                         'lastSession':'0',
                         'loginStatus':'off',
-                        'sessionStatus':'off'
+                        'sessionStatus':'off',
+                        'numCameras':numCameras
                     }
                     file = 'sessions/' + str(userName) + '.json'
                     try:
                         json.dump(session, open(file, 'w'),indent=3)
+
                     except OSError as ex:
+                        
                         log.critical('Erro ao salvar o arquivo de sessao do Usuario: {}'.format(userName))
                         status = False
+
                     else:
-                        log.info('Arquivo de sessão salvo - Usuario: {}'.format(userName))
+                        log.info('newUses:: Arquivo de sessão salvo - Usuario: {}'.format(userName))
 
     except Error as error:
-        print(error)
+
+        log.critical(error)
 
     finally:
         cursor.close()
@@ -311,7 +319,7 @@ def forgotPassword(email):
             passwd = session['userPassword']
 
             threadEmail = Thread(target=sendMailForgotPasswd, 
-                    args=('portaovirtual@gmail.com',
+                    args=('portaovirtual@contato.com.br',
                     email,
                     'Portao Virtual - Recuperação de senha',
                     '587',

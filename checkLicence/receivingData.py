@@ -52,10 +52,8 @@ def changePasswd(sid, login):
 @sio.event
 def newUser(sid, login):
     log.info('newUser of: ' + login['user']) 
-    #log.info('sid: ' +  sid) 
-    status = nu(login['user'], login['passwd'], login['token']) #IJF checar login['email'] no lugar de login['token']
+    status = nu(login['user'], login['passwd'], login['userEmail'], login['numCameras']) 
     sio.emit('replyNewUser', status, room=sid)
-    #sio.disconnect(sid)
             
 
 @sio.event
