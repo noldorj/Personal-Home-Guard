@@ -7,38 +7,42 @@ from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 import smtplib
 from smtplib import SMTPException
+from smtplib import SMTP_SSL
+
+import secrets
 
 
-def sendMailnewUser(sender, recipients, subject, port, smtp, user, password, userPassword):
+def sendMailnewUser(to, port, smtp, userPassword):
 
-    status = False
+    status = False   
 
-    #data = utils.getDate()
-    msg = MIMEMultipart()
+    
+    
+    sent_from = 'contato@portaovirtual.com.br'    
+    gmail_password = 'guxryxnrljrhspyw'
+    
+    to = 'igorddf@gmail.com'
 
-    msg['Subject'] = subject
-    msg['From'] = sender
-    msg['To'] = recipients
+    subject = ('Portão Virtual - Compra de Licença')
 
-    text = MIMEText('Obrigado pela sua compra do software Portao Virtual ! Dados do seu login: Usuário : ' + user + '  Senha   : ' + userPassword + ' . Recomendamos que você altere a senha o quanto antes. Atenciosamente, Equipe Portao Virtual www.portaovirtual.com.br'
-            )
-    msg.attach(text)
+    body = ('Obrigado pela sua compra do software Portao Virtual ! \n\n Dados do seu login: \
+        \n\n Usuário: {} \n Senha: {} . \n\n Recomendamos que você altere a senha o quanto antes. \
+    \n\n Atenciosamente, \n\n Equipe Portao Virtual \n\n www.portaovirtual.com.br ').format(to, userPassword)
 
-    smtpObj = smtplib.SMTP(smtp, int(port))
+    message = 'Subject: {} \n\n {}'.format(subject, body)
+  
+    
     try:
-        smtpObj.ehlo()
-        smtpObj.starttls()
-        smtpObj.ehlo()
-        smtpObj.login(sender,password)
-        smtpObj.send_message(msg)
-        smtpObj.quit()
-
-    except SMTPException as e:
-        log.info("sendMailForgotPasswd:: Error: unable to send email" + str(e))
-
-    else:
-        log.info('sendMailForgotPasswd:: Email Esqueceu a Senha - enviado')
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server.ehlo()
+        server.login(sent_from, gmail_password)
+        server.sendmail(sent_from, to, message.encode('utf-8'))
+        server.close()
+        print ('Email enviado !')
         status = True
+        
+    except:
+        print ('Something went wrong...')
 
     return status
 
@@ -72,15 +76,15 @@ def replyNewUser(status):
 
 def main():
 
-    email = sys.argv[1]
-    passwd = sys.argv[2]
-    numCameras = sys.argv[3]
+    emailCliente = 'igorddf@gmail.com'
+    passwd = secrets.token_urlsafe(6)
+    numCameras = '1'
     
-    print('email:      ' + email)
+    print('email:      ' + emailCliente)
     print('passwd:     ' + passwd)
     print('numCameras: ' + numCameras)
     
-    login = {'user':email, 'passwd':passwd, 'userEmail':email, 'numCameras':numCameras} 
+    login = {'user':emailCliente, 'passwd':passwd, 'userEmail':emailCliente, 'numCameras':numCameras} 
     
     try: 
         sio.connect(host)
@@ -88,8 +92,7 @@ def main():
     except socketio.exceptions.ConnectionError as  err:
 
         log.info('Erro na conexao: ' + str(err))
-        error = 'conexao' 
-        status = False
+      
 
     else:
         log.info('Conexao efetuada')
@@ -102,32 +105,13 @@ def main():
     
     if statusNewUser:
         log.info('Usuario cadastrado com sucesso')
-
-        sendMailnewUser('contato@portaovirtual.com.br',
-                            email,
-                            'Portao Virtual - Compra',
-                            '587',
-                            'smtp.gmail.com',
-                            email,
-                            'cacete33',
+q
+        sendMailnewUser(     emailCliente,                            
+                            '465',
+                            'smtp.gmail.com', 
                             passwd)
-
-
-
 
 
 if __name__ == "__main__":
     main()
 
-def teste():
-    email = 'igorddf@gmail.com'    
-    passwd = 'senha'
-
-    sendMailnewUser('contato@portaovirtual.com.br',
-                            email,
-                            'Portao Virtual - Compra',
-                            '587',
-                            'smtp.gmail.com',
-                            email,
-                            'cacete33',
-                            passwd)
