@@ -22,8 +22,7 @@ from argparse import ArgumentParser
 import cv2
 import time
 import logging as log
-#from  openvino.inference_engine import IENetwork, IEPlugin
-from  openvino.inference_engine import IENetwork, IECore
+from  openvino.inference_engine import IENetwork, IEPlugin
 
 #def main():
 log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
@@ -33,82 +32,98 @@ labels_map = ["background", "car", "person", "bike"]
 #lista de boxes detectados
 listRectanglesDetected = []
 listObjectsTracking = []
-devIces_disponiveis = []
+
 
 def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
 
+    #cpu_extension = '/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_avx2.so'
+
+    #plugin_dir = '/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64'
     log.info('CPU Extension    : {}'.format(cpu_extension))
     log.info('Plugin Diretorio : {}'.format(plugin_dir))
     log.info(' ')
-    
-    devices_disponiveis = IECore().available_devices 
-   
-    log.info('Dispositivos disponíveis: {}'.format(devices_disponiveis))
-    log.info('Device no arquivo config.json: {}'.format(device))
+
+    if device == 'MYRIAD':
+        log.info('loading MYRIAD plugins...')
+        log.info('Model XML: {}'.format(model_xml))
+        log.info('Model Bin: {}'.format(model_bin))
+        #model_xml = os.getcwd() + '/dlModels/openvino/pedestrian-and-vehicle-detector-adas-0001/FP16/pedestrian-and-vehicle-detector-adas-0001.xml'
+        #model_bin = os.getcwd() + '/dlModels/openvino/pedestrian-and-vehicle-detector-adas-0001/FP16/pedestrian-and-vehicle-detector-adas-0001.bin'
+
+        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP16/pedestrian-detection-adas-0002.xml'
+        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP16/pedestrian-detection-adas-0002.bin'
+
+    elif device == 'CPU':
+        log.info('loading CPU plugins...')
+        log.info('Model XML: {}'.format(model_xml))
+        log.info('Model Bin: {}'.format(model_bin))
+        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP32/pedestrian-detection-adas-0002.xml'
+        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP32/pedestrian-detection-adas-0002.bin'
+
+        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-and-vehicle-detector-adas-0001/FP32/pedestrian-and-vehicle-detector-adas-0001.bin'
+        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-and-vehicle-detector-adas-0001/FP32/pedestrian-and-vehicle-detector-adas-0001.xml'
+
+        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0002/FP32/person-detection-retail-0002.bin'
+        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0002/FP32/person-detection-retail-0002.xml'
+
+        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP32/person-vehicle-bike-detection-crossroad-0078.bin'
+        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP32/person-vehicle-bike-detection-crossroad-0078.xml'
+
+        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0013/FP32/person-detection-retail-0013.bin'
+        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0013/FP32/person-detection-retail-0013.xml'
+
+    elif device == 'GPU':
+        log.info('loading GPU plugins...')
+        log.info('Model XML: {}'.format(model_xml))
+        log.info('Model Bin: {}'.format(model_bin))
+
 
     # Plugin initialization for specified device and load extensions library if specified
-    #log.info("Initializing plugin for {} device...".format(device))
-    
-  
-    if device not in devices_disponiveis:
-        log.error('Device {} não disponível neste computador'.format(device))
-        device = 'CPU' 
-        log.error('Habilitando apenas CPU para processaento')
+    log.info("Initializing plugin for {} device...".format(device))
 
     try: 
-        plugin = IECore()
-    
-    except:
-   
-        log.critical('Erro IECore - instanciando plugin openvino')
-        plugin = IECore()
-    
+        plugin = IEPlugin(device=device, plugin_dirs=plugin_dir)
+    except e:
+        log.critical('IEPlugin error: {}'.format(e))
     else:
-        log.info('Plugin carregado via IECore')
+        log.info('Plugin {} carregado'.format(device))
 
+    if cpu_extension and 'CPU' in device:
 
-    try: 
-        
-        plugin.add_extension(extention_path=cpu_extension, device_name=device)
-    
-    except:
-        log.critical('Erro ao carregar CPU extension plugin.add_extension')
+        plugin.add_cpu_extension(cpu_extension)
+        log.info('CPU Estension carregado')
     else:
-        log.info('plugin.add_extension(cpu_extension) ok')
+        log.critical('Erro adicionando CPU_Extension')
 
     # Read IR
     log.info("Reading IR...")
-    #net = IENetwork(model=model_xml, weights=model_bin) #deprecated
     try:
-        net = plugin.read_network(model=model_xml, weights=model_bin)
-    except:
-        log.critical('Erro carregando IECore.read_network')
-    else:
-        log.info('Plugin.read_network ok')
+        log.info('Carregando IENetwork') 
+        net = IENetwork(model=model_xml, weights=model_bin)
 
-#    if plugin.device == "CPU":
-#        log.info('aqui plugi.device')
-#        if len(not_supported_layers) != 0:
-#            log.error("Following layers are not supported by the plugin for specified device {}:\n {}".
-#                      format(plugin.device, ', '.join(not_supported_layers)))
-#            log.error("Please try to specify cpu extensions library path in demo's command line parameters using -l "
-#                      "or --cpu_extension command line argument")
-#            sys.exit(1)
-#
-    #assert len(net.inputs.keys()) == 1, "Demo supports only single input topologies"
-    #assert len(net.outputs) == 1, "Demo supports only single output topologies"
-    
-    input_blob = next(iter(net.input_info))
+    except Exception as e:
+
+        log.critical('IENetwork error: {}'.format(e))
+
+    else:
+        log.info('IENetwork carregada')
+
+    if plugin.device == "CPU":
+        supported_layers = plugin.get_supported_layers(net)
+        not_supported_layers = [l for l in net.layers.keys() if l not in supported_layers]
+        if len(not_supported_layers) != 0:
+            log.error("Following layers are not supported by the plugin for specified device {}:\n {}".
+                      format(plugin.device, ', '.join(not_supported_layers)))
+            log.error("Please try to specify cpu extensions library path in demo's command line parameters using -l "
+                      "or --cpu_extension command line argument")
+            sys.exit(1)
+    assert len(net.inputs.keys()) == 1, "Demo supports only single input topologies"
+    assert len(net.outputs) == 1, "Demo supports only single output topologies"
+    input_blob = next(iter(net.inputs))
     out_blob = next(iter(net.outputs))
-    
     log.info("Loading IR to the plugin...")
-    
-    try: 
-        exec_net = plugin.load_network(network=net, device_name=device, num_requests=2)
-    except:
-        log.critical('Erro plugin.load')
-    
-    n, c, h, w = net.input_info[input_blob].input_data.shape
+    exec_net = plugin.load(network=net, num_requests=2)
+    n, c, h, w = net.inputs[input_blob].shape
     nchw = [n,c,h,w]
     del net
 
@@ -170,6 +185,16 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
                         listObjectsTracking.append(boxTracking)
                         listRectanglesDetected.append(box)
 
+
+
+            #if det_label is 'person' or \
+            #            det_label is 'cat' or \
+            #            det_label is 'car' or \
+            #            det_label is 'dog':
+
+                #boxTracking = (xmin, ymin, xmax, ymax)
+                #listObjectsTracking.append(boxTracking)
+                #listRectanglesDetected.append(box)
 
     listReturn = [frame, next_frame, cur_request_id, next_request_id, listRectanglesDetected, listObjectsTracking, prob_threshold_returned]
 

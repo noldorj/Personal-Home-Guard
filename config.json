@@ -5,8 +5,8 @@
     "dnnModelPb": "dlModels/ssd-mobilenet/frozen_inference_graph_v1_coco_2017_11_17.pb",
     "dnnModelPbTxt": "dlModels/ssd-mobilenet/ssd_mobilenet_v1_coco_2017_11_17.pbtxt",
 	
-    "openVinoCpuExtension": "openvino_deploy_package_win/deployment_tools/inference_engine/bin/intel64/Release/MKLDNNPlugin.dll",
-    "openVinoPluginDir": "openvino_deploy_package_win/deployment_tools/inference_engine/bin/intel64/Release",
+    "openVinoCpuExtension": "/home/igor/intel/openvino_2019.1.144/inference_engine/lib/intel64/libcpu_extension_avx2.so",
+    "openVinoPluginDir": "/home/igor/intel/openvino_2019.1.144/inference_engine/lib/intel64/",
     "openVinoModels": [
         {
             "isActive": "False",
@@ -18,8 +18,8 @@
         {
             "isActive": "True",
             "name": "pedestre-veiculo-adas-001-CPU",
-            "openVinoModelXml": "dlModels/intel/pedestrian-and-vehicle-detector-adas-0001/FP32/pedestrian-and-vehicle-detector-adas-0001.xml",
-            "openVinoModelBin": "dlModels/intel/pedestrian-and-vehicle-detector-adas-0001/FP32/pedestrian-and-vehicle-detector-adas-0001.bin",
+            "openVinoModelXml": "dlModels/intel/pedestrian-and-vehicle-detector-adas-0001-old/FP32/pedestrian-and-vehicle-detector-adas-0001.xml",
+            "openVinoModelBin": "dlModels/intel/pedestrian-and-vehicle-detector-adas-0001-old/FP32/pedestrian-and-vehicle-detector-adas-0001.bin",
             "openVinoDevice": "CPU"
         },
         {
@@ -41,5 +41,6 @@
         "to": "igorddf@gmail.com"
     },
     "dirVideos": "video_alarmes",
-    "openVinoPlugirDir": "openvino_deploy_package_win/deployment_tools/inference_engine/bin/intel64/Release"
+    "openVinoPlugirDir": "/home/igor/intel/openvino_2019.1.144/inference_engine/lib/intel64/"
+    
 }
