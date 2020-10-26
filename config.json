@@ -5,8 +5,8 @@
     "dnnModelPb": "dlModels/ssd-mobilenet/frozen_inference_graph_v1_coco_2017_11_17.pb",
     "dnnModelPbTxt": "dlModels/ssd-mobilenet/ssd_mobilenet_v1_coco_2017_11_17.pbtxt",
 	
-    "openVinoCpuExtension": "/home/igor/intel/openvino_2019.1.144/inference_engine/lib/intel64/libcpu_extension_avx2.so",
-    "openVinoPluginDir": "/home/igor/intel/openvino_2019.1.144/inference_engine/lib/intel64/",
+    "openVinoCpuExtension": "C:/Program Files (x86)/Intel/openvino_2019.1.148/inference_engine/bin/intel64/Release/cpu_extension_avx2.dll",
+    "openVinoPluginDir": "C:/Program Files (x86)/Intel/openvino_2019.1.148/inference_engine/bin/intel64/Release",
     "openVinoModels": [
         {
             "isActive": "False",

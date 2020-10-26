@@ -1,6 +1,9 @@
 1. Erro matplotlib com pyinstaller:
 
-https://stackoverflow.com/questions/63163027/how-to-use-pyinstaller-with-matplotlib-in-use
+Instalar última versão Dev: 
+pip install https://github.com/pyinstaller/pyinstaller/tarball/develop
+
+Solução do post: https://stackoverflow.com/questions/63163027/how-to-use-pyinstaller-with-matplotlib-in-use 
 
 Editar o arquivo abaixo:
 C:\Users\pv\Anaconda3\envs\pv\Lib\site-packages\PyInstaller\hooks\hook-matplotlib.py
@@ -24,3 +27,41 @@ Traceback (most recent call last):
   File "ie_api.pyx", line 24, in init openvino.inference_engine.ie_api
 ModuleNotFoundError: No module named 'openvino.inference_engine.constants'
 [2904] Failed to execute script portao_virtual_tracking
+
+Só corrigido com o uso do OpenVino 2019 R.1.1
+
+
+3. Ambiente
+
+Python 3.7.9 
+pip 20.1.1 from c:\users\pv\appdata\local\programs\python\python37\lib\site-packages\pip (python 3.7)
+
+altgraph==0.17
+certifi==2020.6.20
+chardet==3.0.4
+cycler==0.10.0
+future==0.18.2
+idna==2.10
+kiwisolver==1.2.0
+matplotlib==3.2.0
+numpy==1.19.2
+opencv-python==4.4.0.44
+pefile==2019.4.18
+Pillow==8.0.1
+pygame==1.9.6
+pyinstaller @ https://github.com/pyinstaller/pyinstaller/tarball/develop
+pyinstaller-hooks-contrib==2020.9
+pyparsing==2.4.7
+PyQt5==5.15.1
+PyQt5-sip==12.8.1
+python-dateutil==2.8.1
+python-engineio==3.13.2
+python-socketio==4.6.0
+pywin32-ctypes==0.2.0
+requests==2.24.0
+scipy==1.5.3
+six==1.15.0
+urllib3==1.25.11
+websocket-client==0.57.0
+
+
