@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>909</width>
-    <height>521</height>
+    <width>839</width>
+    <height>568</height>
    </rect>
   </property>
   <property name="focusPolicy">
@@ -24,12 +24,12 @@
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>891</width>
-     <height>521</height>
+     <width>821</width>
+     <height>551</height>
     </rect>
    </property>
    <property name="currentIndex">
-    <number>2</number>
+    <number>1</number>
    </property>
    <property name="tabsClosable">
     <bool>true</bool>
@@ -70,12 +70,18 @@
         <property name="text">
          <string>Cachorro</string>
         </property>
+        <property name="tristate">
+         <bool>false</bool>
+        </property>
        </widget>
       </item>
       <item row="5" column="1">
        <widget class="QCheckBox" name="checkBike">
         <property name="text">
          <string>Moto</string>
+        </property>
+        <property name="tristate">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
@@ -84,12 +90,18 @@
         <property name="text">
          <string>Carro</string>
         </property>
+        <property name="tristate">
+         <bool>false</bool>
+        </property>
        </widget>
       </item>
       <item row="3" column="1">
        <widget class="QCheckBox" name="checkPerson">
         <property name="text">
          <string>Pessoa</string>
+        </property>
+        <property name="tristate">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
@@ -158,12 +170,18 @@
           <property name="text">
            <string>Seg</string>
           </property>
+          <property name="tristate">
+           <bool>false</bool>
+          </property>
          </widget>
         </item>
         <item row="5" column="1">
          <widget class="QCheckBox" name="checkFri">
           <property name="text">
            <string>Sex</string>
+          </property>
+          <property name="tristate">
+           <bool>false</bool>
           </property>
          </widget>
         </item>
@@ -172,6 +190,9 @@
           <property name="text">
            <string>Ter</string>
           </property>
+          <property name="tristate">
+           <bool>false</bool>
+          </property>
          </widget>
         </item>
         <item row="6" column="1">
@@ -179,12 +200,18 @@
           <property name="text">
            <string>Sab</string>
           </property>
+          <property name="tristate">
+           <bool>false</bool>
+          </property>
          </widget>
         </item>
         <item row="7" column="0">
          <widget class="QCheckBox" name="checkWed">
           <property name="text">
            <string>Qua</string>
+          </property>
+          <property name="tristate">
+           <bool>false</bool>
           </property>
          </widget>
         </item>
@@ -199,6 +226,9 @@
          <widget class="QCheckBox" name="checkThur">
           <property name="text">
            <string>Qui</string>
+          </property>
+          <property name="tristate">
+           <bool>false</bool>
           </property>
          </widget>
         </item>
@@ -263,6 +293,15 @@
        <widget class="QCheckBox" name="checkEmailAlert">
         <property name="text">
          <string>Alerta de Email</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+        <property name="tristate">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
@@ -402,111 +441,111 @@
       <rect>
        <x>2</x>
        <y>19</y>
-       <width>671</width>
-       <height>408</height>
+       <width>801</width>
+       <height>442</height>
       </rect>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="12" column="1">
+      <item row="14" column="2">
        <widget class="QLineEdit" name="txtEmailTo">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Utilizar vírgula para separar vários destinatários&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
-      <item row="7" column="0">
+      <item row="9" column="0">
        <widget class="QLabel" name="label_16">
         <property name="text">
          <string>Porta:</string>
         </property>
        </widget>
       </item>
-      <item row="5" column="0">
+      <item row="7" column="0">
        <widget class="QLabel" name="label_15">
         <property name="text">
          <string>Configuração de Email</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
+      <item row="5" column="0">
        <widget class="QLabel" name="label_14">
         <property name="text">
          <string>URL Câmera RSTP:</string>
         </property>
        </widget>
       </item>
-      <item row="11" column="1">
+      <item row="13" column="2">
        <widget class="QLineEdit" name="txtEmailSubject"/>
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_13">
         <property name="text">
-         <string>Diretório de gravação:</string>
+         <string>Diretório de gravação 24h:</string>
         </property>
        </widget>
       </item>
       <item row="0" column="0">
-       <widget class="QCheckBox" name="checkBoxVideoRecording">
+       <widget class="QCheckBox" name="checkBoxVideoRecordingAllTime">
         <property name="text">
-         <string>Gravação de video</string>
+         <string>Gravar video 24h</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="txtDirRecording"/>
+      <item row="1" column="2">
+       <widget class="QLineEdit" name="txtDirRecordingAllTime"/>
       </item>
-      <item row="7" column="4">
+      <item row="9" column="5">
        <widget class="QLabel" name="label_10">
         <property name="text">
          <string/>
         </property>
        </widget>
       </item>
-      <item row="8" column="0">
+      <item row="10" column="0">
        <widget class="QLabel" name="label_17">
         <property name="text">
          <string>SMTP:</string>
         </property>
        </widget>
       </item>
-      <item row="8" column="1">
+      <item row="10" column="2">
        <widget class="QLineEdit" name="txtEmailSmtp"/>
       </item>
-      <item row="10" column="0">
+      <item row="12" column="0">
        <widget class="QLabel" name="label_19">
         <property name="text">
          <string>Senha:</string>
         </property>
        </widget>
       </item>
-      <item row="9" column="1">
+      <item row="11" column="2">
        <widget class="QLineEdit" name="txtEmailUser"/>
       </item>
-      <item row="7" column="1">
+      <item row="9" column="2">
        <widget class="QLineEdit" name="txtEmailPort"/>
       </item>
-      <item row="2" column="0">
+      <item row="4" column="0">
        <widget class="QCheckBox" name="checkBoxWebCam">
         <property name="text">
          <string>Capturar da WebCam</string>
         </property>
        </widget>
       </item>
-      <item row="11" column="0">
+      <item row="13" column="0">
        <widget class="QLabel" name="label_20">
         <property name="text">
          <string>Campo &quot;Assunto&quot;:</string>
         </property>
        </widget>
       </item>
-      <item row="12" column="0">
+      <item row="14" column="0">
        <widget class="QLabel" name="label_21">
         <property name="text">
          <string>Destinatário(s):</string>
         </property>
        </widget>
       </item>
-      <item row="10" column="1">
+      <item row="12" column="2">
        <widget class="QLineEdit" name="txtEmailPassword">
         <property name="inputMethodHints">
          <set>Qt::ImhHiddenText|Qt::ImhNoAutoUppercase|Qt::ImhNoPredictiveText|Qt::ImhSensitiveData</set>
@@ -516,14 +555,14 @@
         </property>
        </widget>
       </item>
-      <item row="9" column="0">
+      <item row="11" column="0">
        <widget class="QLabel" name="label_18">
         <property name="text">
          <string>Usuário:</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="1">
+      <item row="6" column="2">
        <spacer name="horizontalSpacer_2">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -536,18 +575,42 @@
         </property>
        </spacer>
       </item>
-      <item row="6" column="0">
+      <item row="8" column="0">
        <widget class="QLabel" name="label_29">
         <property name="text">
          <string>Nome:</string>
         </property>
        </widget>
       </item>
-      <item row="6" column="1">
+      <item row="8" column="2">
        <widget class="QLineEdit" name="txtEmailName"/>
       </item>
-      <item row="3" column="1">
-       <widget class="QLineEdit" name="txtUrlRstp"/>
+      <item row="5" column="2">
+       <widget class="QLineEdit" name="txtUrlRstp">
+        <property name="statusTip">
+         <string> rtsp://&lt;IP&gt;:&lt;Porta&gt;/user=&lt;usuario&gt;_password=&lt;senha&gt;_channel=&lt;canal&gt;_stream=0.sdp?real_stream</string>
+        </property>
+        <property name="placeholderText">
+         <string> rtsp://&lt;IP&gt;:&lt;Porta&gt;/user=&lt;usuario&gt;_password=&lt;senha&gt;_channel=&lt;canal&gt;_stream=0.sdp?real_stream</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_22">
+        <property name="text">
+         <string>Diretório de gravação (Alarmes) :</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QLineEdit" name="txtDirRecordingOnAlarmes"/>
+      </item>
+      <item row="2" column="0">
+       <widget class="QCheckBox" name="checkBoxVideoRecordingOnAlarmes">
+        <property name="text">
+         <string>Gravar video - somente quando houver alarme</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -568,8 +631,8 @@
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>430</y>
-       <width>561</width>
+       <y>470</y>
+       <width>801</width>
        <height>41</height>
       </rect>
      </property>
@@ -578,193 +641,6 @@
        <widget class="QPushButton" name="btnSaveEmail">
         <property name="text">
          <string>Salvar</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </widget>
-   <widget class="QWidget" name="tabConfigDetection">
-    <attribute name="title">
-     <string>Configuração OpenVINO </string>
-    </attribute>
-    <widget class="QWidget" name="gridLayoutWidget_2">
-     <property name="geometry">
-      <rect>
-       <x>40</x>
-       <y>10</y>
-       <width>741</width>
-       <height>321</height>
-      </rect>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_2">
-      <property name="horizontalSpacing">
-       <number>7</number>
-      </property>
-      <property name="verticalSpacing">
-       <number>8</number>
-      </property>
-      <item row="7" column="2">
-       <widget class="QLineEdit" name="txtCpuExtension"/>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_28">
-        <property name="text">
-         <string>Modelos:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="label_24">
-        <property name="text">
-         <string>Arquivo .xml:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="2">
-       <widget class="QLineEdit" name="txtModelXml"/>
-      </item>
-      <item row="6" column="0">
-       <widget class="QLabel" name="label_25">
-        <property name="text">
-         <string>Dispositivo de processamento:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="QComboBox" name="comboListModelDetection">
-        <item>
-         <property name="text">
-          <string>Intel OpenVINO</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>TensorFlow</string>
-         </property>
-        </item>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_23">
-        <property name="text">
-         <string>Arquivo .bin:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="2">
-       <widget class="QLineEdit" name="txtModelBin"/>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_22">
-        <property name="text">
-         <string>Modo de detecção:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="QLineEdit" name="txtModelName"/>
-      </item>
-      <item row="1" column="2">
-       <widget class="QComboBox" name="comboListModels"/>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_30">
-        <property name="text">
-         <string>Nome:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="3">
-       <widget class="QPushButton" name="btnNewModel">
-        <property name="text">
-         <string>+ Adicionar </string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="2">
-       <widget class="QComboBox" name="comboListDevices">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <item>
-         <property name="text">
-          <string>CPU</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Placa Gráfica (GPU)</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>VPU (Movidius)</string>
-         </property>
-        </item>
-       </widget>
-      </item>
-      <item row="2" column="3">
-       <widget class="QCheckBox" name="checkBoxActiveModel">
-        <property name="text">
-         <string>Ativo</string>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="2">
-       <widget class="QLineEdit" name="txtPluginDir">
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="0">
-       <widget class="QLabel" name="label_26">
-        <property name="text">
-         <string>CPU Extension</string>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="0">
-       <widget class="QLabel" name="label_27">
-        <property name="text">
-         <string>Plugin Dir</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-    <widget class="QWidget" name="horizontalLayoutWidget_5">
-     <property name="geometry">
-      <rect>
-       <x>100</x>
-       <y>380</y>
-       <width>641</width>
-       <height>41</height>
-      </rect>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_6">
-      <item>
-       <widget class="QPushButton" name="btnSaveOpenVino">
-        <property name="text">
-         <string>Salvar</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="btnDeleteOpenVino">
-        <property name="text">
-         <string>Deletar</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="btnCancelOpenVino">
-        <property name="text">
-         <string>Cancelar</string>
         </property>
        </widget>
       </item>
@@ -803,8 +679,8 @@
   <tabstop>btnSaveRegion</tabstop>
   <tabstop>btnDeleteRegion</tabstop>
   <tabstop>btnCancelRegion</tabstop>
-  <tabstop>checkBoxVideoRecording</tabstop>
-  <tabstop>txtDirRecording</tabstop>
+  <tabstop>checkBoxVideoRecordingAllTime</tabstop>
+  <tabstop>txtDirRecordingAllTime</tabstop>
   <tabstop>checkBoxWebCam</tabstop>
   <tabstop>txtUrlRstp</tabstop>
   <tabstop>txtEmailName</tabstop>
@@ -815,14 +691,6 @@
   <tabstop>txtEmailSubject</tabstop>
   <tabstop>txtEmailTo</tabstop>
   <tabstop>btnSaveEmail</tabstop>
-  <tabstop>comboListModelDetection</tabstop>
-  <tabstop>comboListModels</tabstop>
-  <tabstop>txtModelBin</tabstop>
-  <tabstop>txtModelXml</tabstop>
-  <tabstop>comboListDevices</tabstop>
-  <tabstop>btnSaveOpenVino</tabstop>
-  <tabstop>btnDeleteOpenVino</tabstop>
-  <tabstop>btnCancelOpenVino</tabstop>
  </tabstops>
  <resources/>
  <connections/>

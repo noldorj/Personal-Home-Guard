@@ -39,24 +39,21 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
     #cpu_extension = '/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_avx2.so'
 
     #plugin_dir = '/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64'
-    log.info('CPU Extension    : {}'.format(cpu_extension))
-    log.info('Plugin Diretorio : {}'.format(plugin_dir))
-    log.info(' ')
 
-    if device == 'MYRIAD':
-        log.info('loading MYRIAD plugins...')
-        log.info('Model XML: {}'.format(model_xml))
-        log.info('Model Bin: {}'.format(model_bin))
+    #if device == 'MYRIAD':
+    #    log.info('loading MYRIAD plugins...')
+    #    log.info('Model XML: {}'.format(model_xml))
+    #    log.info('Model Bin: {}'.format(model_bin))
         #model_xml = os.getcwd() + '/dlModels/openvino/pedestrian-and-vehicle-detector-adas-0001/FP16/pedestrian-and-vehicle-detector-adas-0001.xml'
         #model_bin = os.getcwd() + '/dlModels/openvino/pedestrian-and-vehicle-detector-adas-0001/FP16/pedestrian-and-vehicle-detector-adas-0001.bin'
 
         #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP16/pedestrian-detection-adas-0002.xml'
         #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP16/pedestrian-detection-adas-0002.bin'
 
-    elif device == 'CPU':
-        log.info('loading CPU plugins...')
-        log.info('Model XML: {}'.format(model_xml))
-        log.info('Model Bin: {}'.format(model_bin))
+    #elif device == 'CPU':
+    #    log.info('loading CPU plugins...')
+    #    log.info('Model XML: {}'.format(model_xml))
+    #    log.info('Model Bin: {}'.format(model_bin))
         #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP32/pedestrian-detection-adas-0002.xml'
         #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP32/pedestrian-detection-adas-0002.bin'
 
@@ -72,28 +69,43 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
         #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0013/FP32/person-detection-retail-0013.bin'
         #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0013/FP32/person-detection-retail-0013.xml'
 
-    elif device == 'GPU':
-        log.info('loading GPU plugins...')
-        log.info('Model XML: {}'.format(model_xml))
-        log.info('Model Bin: {}'.format(model_bin))
+   # elif device == 'GPU':
+   #     log.info('loading GPU plugins...')
+   #     log.info('Model XML: {}'.format(model_xml))
+   #     log.info('Model Bin: {}'.format(model_bin))
 
 
     # Plugin initialization for specified device and load extensions library if specified
+    log.info(' ')
     log.info("Initializing plugin for {} device...".format(device))
+    log.info('Model XML: {}'.format(model_xml))
+    log.info('Model Bin: {}'.format(model_bin))
+    log.info('CPU Extension    : {}'.format(cpu_extension))
+    log.info('Plugin Diretorio : {}'.format(plugin_dir))
+    log.info(' ')
 
     try: 
+
+        log.info('IEPlugin inicializando...')
         plugin = IEPlugin(device=device, plugin_dirs=plugin_dir)
-    except e:
+
+    except Exception as e:
+        
         log.critical('IEPlugin error: {}'.format(e))
+
     else:
-        log.info('Plugin {} carregado'.format(device))
+
+        log.info('IEPlugin {} carregado'.format(device))
 
     if cpu_extension and 'CPU' in device:
 
-        plugin.add_cpu_extension(cpu_extension)
-        log.info('CPU Estension carregado')
-    else:
-        log.critical('Erro adicionando CPU_Extension')
+        try: 
+            log.info('CPU_Extension sendo carregado...')
+            plugin.add_cpu_extension(cpu_extension)
+        except Exception as e:
+            log.critical('Erro adicionando CPU_Extension: {}'.format(e))
+        else:
+            log.info('CPU_Extension ok')
 
     # Read IR
     log.info("Reading IR...")

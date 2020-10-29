@@ -1,12 +1,12 @@
 {
-    "isRecording": "True",
+    "isRecordingAllTime": "False",
+    "isRecordingOnAlarmes": "False",
     "isOpenVino": "True",
     "camSource": "rtsp://admin:WWYZRL@192.168.5.101/live/mpeg4:554",
     "dnnModelPb": "dlModels/ssd-mobilenet/frozen_inference_graph_v1_coco_2017_11_17.pb",
     "dnnModelPbTxt": "dlModels/ssd-mobilenet/ssd_mobilenet_v1_coco_2017_11_17.pbtxt",
-	
-    "openVinoCpuExtension": "C:/Program Files (x86)/Intel/openvino_2019.1.148/inference_engine/bin/intel64/Release/cpu_extension_avx2.dll",
-    "openVinoPluginDir": "C:/Program Files (x86)/Intel/openvino_2019.1.148/inference_engine/bin/intel64/Release",
+    "openVinoCpuExtension": "/home/igor/intel/openvino_2019.1.144/inference_engine/lib/intel64/libcpu_extension_avx2.so",
+    "openVinoPluginDir": "/home/igor/intel/openvino_2019.1.144/inference_engine/lib/intel64/",
     "openVinoModels": [
         {
             "isActive": "False",
@@ -26,7 +26,7 @@
             "isActive": "False",
             "name": "person-vehicle-bike-FP16-GPU",
             "openVinoModelXml": "dlModels/intel/person-vehicle-bike-detection-crossroad-0078/FP16/person-vehicle-bike-detection-crossroad-0078.xml",
-            "openVinoModelBin": "dlModels/intel/person-vehicle-bike-detection-crossroad-0078/FP16/person-vehicle-bike-detection-crossroad-0078.bin",                        
+            "openVinoModelBin": "dlModels/intel/person-vehicle-bike-detection-crossroad-0078/FP16/person-vehicle-bike-detection-crossroad-0078.bin",
             "openVinoDevice": "GPU"
         }
     ],
@@ -40,7 +40,6 @@
         "subject": "PV",
         "to": "igorddf@gmail.com"
     },
-    "dirVideos": "video_alarmes",
-    "openVinoPlugirDir": "/home/igor/intel/openvino_2019.1.144/inference_engine/lib/intel64/"
-    
+    "dirVideosOnAlarmes": "videos_alarme_alterado",
+    "dirVideosAllTime": "videos_all_time"
 }

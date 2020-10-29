@@ -8,6 +8,9 @@ from Utils_tracking import saveImageBox
 import utilsCore as utils
 import logging as log
 import sys
+
+import ffmpeg
+
 from threading import Thread
 from checkLicence.sendingData import checkLoginPv 
 from checkLicence.sendingData import changePasswdPv 
@@ -43,8 +46,13 @@ conectado = None
 conexao = False
 frame = None
 
-token = secrets.token_urlsafe(20)
+CHECK_SESSION = 20
+GRAVANDO_TIME = 20
 
+
+token = secrets.token_urlsafe(20)
+gravandoAllTime = False
+gravandoOnAlarmes = False
 
 #tempo sem objetos detectados
 tEmptyStart = time.time()
@@ -56,9 +64,7 @@ tEmptyStart = 0
 stopSound = False
 initOpenVinoStatus = True
 
-#gravando = statusConfig.data["isRecording"] == 'True'
 nameVideo  = 'firstVideo'
-gravando = False
 newVideo = True
 releaseVideo = False 
 #objects = None
@@ -70,6 +76,8 @@ listObjectMailAlerted = []
 listObjectSoundAlerted = []
 listObjectVideoRecorded = []
 out_video = None
+out_video_all_time = None
+
 init_video = False 
 
 statusPasswd = False
@@ -81,8 +89,10 @@ pbtxt = None
 regions = None
 emailConfig = None
 portaoVirtualSelecionado = False 
-status_dir_criado = None
-dir_video_trigger = None
+status_dir_criado_on_alarmes = None
+status_dir_criado_all_time = None
+dir_video_trigger_on_alarmes = None
+dir_video_trigger_all_time = None
 source = None
 ipCam = None
 prob_threshold = 60.0 
@@ -138,14 +148,17 @@ sessionStatus = True
 def initConfig():
 
     global statusConfig, pb, pbtxt, regions, emailConfig, portaoVirtualSelecionado
-    global status_dir_criado, dir_video_trigger, source, ipCam, prob_threshold, hora, current_data_dir, isOpenVino
-    global device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir, openVinoModelName  
+    global status_dir_criado_all_time, status_dir_criado_all_time, dir_video_trigger_on_alarmes, dir_video_trigger_all_time, source, ipCam, prob_threshold, hora, current_data_dir, isOpenVino
+    global device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir, openVinoModelName, gravandoAllTime 
     
     current_data_dir = utils.getDate()
     current_data_dir = [current_data_dir.get('day'), current_data_dir.get('month')]
     hora = utils.getDate()['hour'].replace(':','-')
     
     statusConfig = utils.StatusConfig()
+    
+    gravandoAllTime = statusConfig.data["isRecordingAllTime"] == 'True'
+    gravandoOnAlarmes = statusConfig.data["isRecordingOnAlarmes"] == 'True'
     
     isOpenVino = statusConfig.data["isOpenVino"] == 'True'
     
@@ -169,7 +182,10 @@ def initConfig():
         portaoVirtualSelecionado = True
     
     #Criando diretorio para salvar videos de alarmes
-    status_dir_criado, dir_video_trigger = utils.createDirectory(statusConfig.data["dirVideos"])
+    status_dir_criado_on_alarmes, dir_video_trigger_on_alarmes = utils.createDirectory(statusConfig.data["dirVideosOnAlarmes"])
+
+    status_dir_criado_all_time, dir_video_trigger_all_time = utils.createDirectory(statusConfig.data["dirVideosAllTime"])
+    
     
     #origem do stream do video
     source = statusConfig.data["camSource"]
@@ -192,7 +208,8 @@ def polygonSelection(event, x, y, flags, param):
     global ref_point_polygon, cropPolygon, portaoVirtualSelecionado
 
     if event == cv.EVENT_LBUTTONDBLCLK and not portaoVirtualSelecionado:  
-
+        
+        log.info('polygonSelection')
         ref_point_polygon.append([x, y])
         cropPolygon = True
 
@@ -267,6 +284,8 @@ ui.setupUi(windowConfig)
 #for linux x264 need to recompile opencv mannually
 #fourcc = cv.VideoWriter_fourcc(*'XVID') #IJF
 fourcc = cv.VideoWriter_fourcc('M','J','P','G')
+#fourcc = cv.VideoWriter_fourcc(*'MP4V')
+
 #cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
 
 posConfigPv = 255
@@ -483,11 +502,20 @@ def btnSaveEmail():
         ui.txtEmailTo.setFocus()
         statusFields = False
 
-    elif len(ui.txtDirRecording.text()) == 0:
-        msg.setText("Campo 'Diretório de gravação' em branco")
+
+    elif  ui.checkBoxVideoRecordingAllTime.isChecked() and len(ui.txtDirRecordingAllTime.text()) ==  0:
+        msg.setText("Campo 'Diretório de gravação 24h' em branco")
         msg.exec()
-        ui.txtDirRecording.setFocus()
+        ui.txtDirRecordingAllTime.setFocus()
         statusFields = False
+
+
+    elif  ui.checkBoxVideoRecordingOnAlarmes.isChecked() and len(ui.txtDirRecordingOnAlarmes.text()) ==  0:
+        msg.setText("Campo 'Diretório de gravação de Alarmes' em branco")
+        msg.exec()
+        ui.txtDirRecordingOnAlarmes.setFocus()
+        statusFields = False
+
 
     elif  ui.checkBoxWebCam.isChecked() and len(ui.txtUrlRstp.text()) > 0:
         msg.setText("Escolha somente 'Capturar da Webcam' ou 'Câmera RSTP'")
@@ -498,7 +526,8 @@ def btnSaveEmail():
 
     if statusFields:
         camSource = "webcam" if ui.checkBoxWebCam.isChecked() else ui.txtUrlRstp.text()
-        isRecording = "True" if ui.checkBoxVideoRecording.isChecked() else "False"
+        isRecordingAllTime = "True" if ui.checkBoxVideoRecordingAllTime.isChecked() else "False"
+        isRecordingOnAlarmes = "True" if ui.checkBoxVideoRecordingOnAlarmes.isChecked() else "False"
 
         statusConfig.addConfigGeral(ui.txtEmailName.text(),
                               ui.txtEmailPort.text(),
@@ -507,14 +536,21 @@ def btnSaveEmail():
                               ui.txtEmailPassword.text(),
                               ui.txtEmailSubject.text(),
                               ui.txtEmailTo.text(),
-                              isRecording,
-                              ui.txtDirRecording.text(),
+                              isRecordingAllTime,
+                              isRecordingOnAlarmes,
+                              ui.txtDirRecordingAllTime.text(),
+                              ui.txtDirRecordingOnAlarmes.text(),
                               camSource)
 
 
         refreshStatusConfig()
         clearFieldsTabGeralEmail()
         fillTabGeral()
+
+        initConfig()
+
+        #gravandoAllTime = statusConfig.data["isRecordingAllTime"] == 'True'
+        #gravandoOnAlarmes= statusConfig.data["isRecordingOnAlarmes"] == 'True'
 
 
 
@@ -524,14 +560,18 @@ def fillTabGeral():
 
     clearFieldsTabGeralEmail()
 
-    ui.checkBoxVideoRecording.setCheckState( True if statusConfig.data.get("isRecording") == "True" else False )
+
+    ui.checkBoxVideoRecordingOnAlarmes.setCheckState( True if statusConfig.data.get("isRecordingOnAlarmes") == "True" else False )
+
+    ui.checkBoxVideoRecordingAllTime.setCheckState( True if statusConfig.data.get("isRecordingAllTime") == "True" else False )
 
     if statusConfig.data.get("camSource") == "webcam":
         ui.txtUrlRstp.clear()
     else:
         ui.txtUrlRstp.setText(statusConfig.data.get("camSource"))
 
-    ui.txtDirRecording.setText(statusConfig.data.get("dirVideos"))
+    ui.txtDirRecordingAllTime.setText(statusConfig.data.get("dirVideosAllTime"))
+    ui.txtDirRecordingOnAlarmes.setText(statusConfig.data.get("dirVideosOnAlarmes"))
     ui.txtEmailName.setText(statusConfig.data["emailConfig"].get('name'))
     ui.txtEmailPort.setText(statusConfig.data["emailConfig"].get('port'))
     ui.txtEmailSmtp.setText(statusConfig.data["emailConfig"].get('smtp'))
@@ -543,140 +583,140 @@ def fillTabGeral():
 
 #---------------- gui tab modelos de deteccao -------------------
 
-def clearFieldsTabConfigDetection():
-    ui.txtModelName.clear()
-    ui.txtModelBin.clear()
-    ui.txtModelXml.clear()
-    ui.comboListModels.clear()
+#def clearFieldsTabConfigDetection():
+#    ui.txtModelName.clear()
+#    ui.txtModelBin.clear()
+#    ui.txtModelXml.clear()
+#    ui.comboListModels.clear()
 
 
-def btnCancelOpenVino():
-    ui.btnCancelOpenVino.setEnabled(False)
-    ui.btnDeleteOpenVino.setEnabled(True)
-    clearFieldsTabConfigDetection()
-    comboListModelsUpdate(0)
+#def btnCancelOpenVino():
+#    ui.btnCancelOpenVino.setEnabled(False)
+#    ui.btnDeleteOpenVino.setEnabled(True)
+#    clearFieldsTabConfigDetection()
+#    comboListModelsUpdate(0)
 
-def btnDeleteOpenVino():
+#def btnDeleteOpenVino():
+#
+#    msg = QMessageBox()
+#    msg.setIcon(QMessageBox.Information)
+#    msg.setWindowTitle("Sem modelo ativo")
+#    msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+#
+#    if len(statusConfig.data.get('openVinoModels')) > 0:
+#        if not statusConfig.deleteModel(ui.comboListModels.currentText()):
+#            msg.setText("Ao menos um modelo deve estar cadastrado e estar ativo. Adicione/altere algum modelo como 'Ativo' antes de delete-lo")
+#            msg.exec()
+#        else:
+#            refreshStatusConfig()
+#            comboListModelsUpdate(0)
 
-    msg = QMessageBox()
-    msg.setIcon(QMessageBox.Information)
-    msg.setWindowTitle("Sem modelo ativo")
-    msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+#def btnNewModel():
+#    clearFieldsTabConfigDetection()
+#    ui.txtModelName.setFocus()
+#    ui.btnCancelOpenVino.setEnabled(True)
+#    ui.btnDeleteOpenVino.setEnabled(False)
 
-    if len(statusConfig.data.get('openVinoModels')) > 0:
-        if not statusConfig.deleteModel(ui.comboListModels.currentText()):
-            msg.setText("Ao menos um modelo deve estar cadastrado e estar ativo. Adicione/altere algum modelo como 'Ativo' antes de delete-lo")
-            msg.exec()
-        else:
-            refreshStatusConfig()
-            comboListModelsUpdate(0)
-
-def btnNewModel():
-    clearFieldsTabConfigDetection()
-    ui.txtModelName.setFocus()
-    ui.btnCancelOpenVino.setEnabled(True)
-    ui.btnDeleteOpenVino.setEnabled(False)
-
-def btnSaveOpenVino():
-
-    statusFields = True
-    msg = QMessageBox()
-    msg.setIcon(QMessageBox.Information)
-    msg.setWindowTitle("Campo em branco")
-    msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-
-    #checando campos em branco
-
-    if len(ui.txtModelName.text()) == 0:
-        msg.setText("Campo 'Nome' em branco")
-        msg.exec()
-        ui.txtModelName.setFocus()
-        statusFields = False
-
-    elif len(ui.txtModelBin.text()) == 0:
-        msg.setText("Campo 'Arquivo .bin' em branco")
-        msg.exec()
-        ui.txtModelBin.setFocus()
-        statusFields = False
-
-    elif len(ui.txtModelXml.text()) == 0:
-        msg.setText("Campo 'Arquivo .xml' em branco")
-        msg.exec()
-        ui.txtModelXml.setFocus()
-        statusFields = False
-    
-    elif len(ui.txtCpuExtension.text()) == 0:
-        msg.setText("Campo 'CPU Extensions' em branco")
-        msg.exec()
-        ui.txtCpuExtension.setFocus()
-        statusFields = False
-    
-    elif len(ui.txtPluginDir.text()) == 0:
-        msg.setText("Campo 'Plugin Diretorio' em branco")
-        msg.exec()
-        ui.txtPluginDir.setFocus()
-        statusFields = False
-
-    elif not statusConfig.checkActiveModel() and len(statusConfig.data.get('openVinoModels')) == 1:
-        statusFields = False
-        msg.setText("Ao menos 1 modelo deve estar ativo. Marque a opção 'Ativo'")
-        msg.exec()
-
-    #elif statusConfig.checkActiveModel() and len(statusConfig.data.get('openVinoModels')) > 1 and ui.checkBoxActiveModel.isChecked():
-    #    statusFields = False
-    #    msg.setText("Já existe um modelo 'Ativo', desmarque a opção 'Ativo' antes de salvar")
-    #    msg.exec()
-
-    deviceTxt = "CPU"
-    if ui.comboListDevices.currentIndex() == 0:
-        deviceTxt = "CPU"
-    elif ui.comboListDevices.currentIndex() == 1:
-        deviceTxt = "GPU"
-    elif ui.comboListDevices.currentIndex() == 2:
-        deviceTxt = "MYRIAD"
-
-
-    if statusFields:
-
-        statusConfig.addOpenVinoModels("True" if ui.checkBoxActiveModel.isChecked() else "False",
-                                   ui.txtModelName.text(),
-                                   ui.txtModelXml.text(),
-                                   ui.txtModelBin.text(),
-                                   ui.txtCpuExtension.text(),
-                                   ui.txtPluginDir.text(),
-                                   deviceTxt)
-        refreshStatusConfig()
-        comboListModelsUpdate(ui.comboListModels.currentIndex())
-        ui.btnCancelOpenVino.setEnabled(False)
-        ui.btnDeleteOpenVino.setEnabled(True)
+#def btnSaveOpenVino():
+#
+#    statusFields = True
+#    msg = QMessageBox()
+#    msg.setIcon(QMessageBox.Information)
+#    msg.setWindowTitle("Campo em branco")
+#    msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+#
+#    #checando campos em branco
+#
+#    if len(ui.txtModelName.text()) == 0:
+#        msg.setText("Campo 'Nome' em branco")
+#        msg.exec()
+#        ui.txtModelName.setFocus()
+#        statusFields = False
+#
+#    elif len(ui.txtModelBin.text()) == 0:
+#        msg.setText("Campo 'Arquivo .bin' em branco")
+#        msg.exec()
+#        ui.txtModelBin.setFocus()
+#        statusFields = False
+#
+#    elif len(ui.txtModelXml.text()) == 0:
+#        msg.setText("Campo 'Arquivo .xml' em branco")
+#        msg.exec()
+#        ui.txtModelXml.setFocus()
+#        statusFields = False
+#    
+#    elif len(ui.txtCpuExtension.text()) == 0:
+#        msg.setText("Campo 'CPU Extensions' em branco")
+#        msg.exec()
+#        ui.txtCpuExtension.setFocus()
+#        statusFields = False
+#    
+#    elif len(ui.txtPluginDir.text()) == 0:
+#        msg.setText("Campo 'Plugin Diretorio' em branco")
+#        msg.exec()
+#        ui.txtPluginDir.setFocus()
+#        statusFields = False
+#
+#    elif not statusConfig.checkActiveModel() and len(statusConfig.data.get('openVinoModels')) == 1:
+#        statusFields = False
+#        msg.setText("Ao menos 1 modelo deve estar ativo. Marque a opção 'Ativo'")
+#        msg.exec()
+#
+#    #elif statusConfig.checkActiveModel() and len(statusConfig.data.get('openVinoModels')) > 1 and ui.checkBoxActiveModel.isChecked():
+#    #    statusFields = False
+#    #    msg.setText("Já existe um modelo 'Ativo', desmarque a opção 'Ativo' antes de salvar")
+#    #    msg.exec()
+#
+#    deviceTxt = "CPU"
+#    if ui.comboListDevices.currentIndex() == 0:
+#        deviceTxt = "CPU"
+#    elif ui.comboListDevices.currentIndex() == 1:
+#        deviceTxt = "GPU"
+#    elif ui.comboListDevices.currentIndex() == 2:
+#        deviceTxt = "MYRIAD"
+#
+#
+#    if statusFields:
+#
+#        statusConfig.addOpenVinoModels("True" if ui.checkBoxActiveModel.isChecked() else "False",
+#                                   ui.txtModelName.text(),
+#                                   ui.txtModelXml.text(),
+#                                   ui.txtModelBin.text(),
+#                                   ui.txtCpuExtension.text(),
+#                                   ui.txtPluginDir.text(),
+#                                   deviceTxt)
+#        refreshStatusConfig()
+#        comboListModelsUpdate(ui.comboListModels.currentIndex())
+#        ui.btnCancelOpenVino.setEnabled(False)
+#        ui.btnDeleteOpenVino.setEnabled(True)
 
 
-def comboListModelsUpdate(i):
-
-    clearFieldsTabConfigDetection()
-
-    if len(statusConfig.data.get('openVinoModels')) > 0:
-        for m in statusConfig.data.get('openVinoModels'):
-            ui.comboListModels.addItem(m.get('name'))
-
-        ui.comboListModels.setCurrentIndex(i)
-
-        m = statusConfig.data.get('openVinoModels')[i]
-
-        ui.checkBoxActiveModel.setCheckState(True if m.get('isActive') == "True" else False)
-        ui.txtModelName.setText(m.get('name'))
-        ui.txtModelBin.setText(m.get('openVinoModelBin'))
-        ui.txtModelXml.setText(m.get('openVinoModelXml'))
-        ui.txtCpuExtension.setText(statusConfig.getCpuExtension())
-        ui.txtPluginDir.setText(statusConfig.getPluginDir())
-        ui.txtModelName.setText(m.get('name'))
-
-        if m.get('openVinoDevice') == 'CPU':
-            ui.comboListDevices.setCurrentIndex(0)
-        elif m.get('openVinoDevice')  == 'GPU':
-            ui.comboListDevices.setCurrentIndex(1)
-        elif m.get('openVinoDevice') == 'MYRIAD':
-            ui.comboListDevices.setCurrentIndex(2)
+#def comboListModelsUpdate(i):
+#
+#   # clearFieldsTabConfigDetection()
+#
+#    if len(statusConfig.data.get('openVinoModels')) > 0:
+#        for m in statusConfig.data.get('openVinoModels'):
+#            ui.comboListModels.addItem(m.get('name'))
+#
+#        ui.comboListModels.setCurrentIndex(i)
+#
+#        m = statusConfig.data.get('openVinoModels')[i]
+#
+#        ui.checkBoxActiveModel.setCheckState(True if m.get('isActive') == "True" else False)
+#        ui.txtModelName.setText(m.get('name'))
+#        ui.txtModelBin.setText(m.get('openVinoModelBin'))
+#        ui.txtModelXml.setText(m.get('openVinoModelXml'))
+#        ui.txtCpuExtension.setText(statusConfig.getCpuExtension())
+#        ui.txtPluginDir.setText(statusConfig.getPluginDir())
+#        ui.txtModelName.setText(m.get('name'))
+#
+#        if m.get('openVinoDevice') == 'CPU':
+#            ui.comboListDevices.setCurrentIndex(0)
+#        elif m.get('openVinoDevice')  == 'GPU':
+#            ui.comboListDevices.setCurrentIndex(1)
+#        elif m.get('openVinoDevice') == 'MYRIAD':
+#            ui.comboListDevices.setCurrentIndex(2)
 
 
 
@@ -1015,6 +1055,25 @@ def callbackButtonResumeSound(self, ret):
     tSound = 0
     stopSound = False
 
+
+#def checkBoxVideoRecordingStateChanged(state):
+#    if state == 0:
+#       ui.checkBoxVideoRecordingOnAlarmes.setCheckState(True)
+#    # Qt.Checked 
+#    elif (state == 1 or state == 2):
+#        ui.checkBoxVideoRecordingOnAlarmes.setCheckState(False)
+#
+#
+#
+#def checkBoxVideoRecordingOnAlarmesStateChanged(state):
+#    if state == 0:
+#       ui.checkBoxVideoRecording.setCheckState(True)
+#    # Qt.Checked 
+#    elif (state == 1 or state == 2):
+#        ui.checkBoxVideoRecording.setCheckState(False)
+#        #ui.txtUrlRstp.setEnabled(False)
+
+
 def checkBoxWebcamStateChanged(state):
     if state == 0:
        ui.txtUrlRstp.setEnabled(True)
@@ -1046,10 +1105,10 @@ def callbackButtonRegioes(self, ret):
 
     # ----------- init tab modelos detecção --------------- 
 
-    ui.btnSaveOpenVino.setEnabled(True)
-    ui.btnNewModel.setEnabled(True)
-    ui.btnDeleteOpenVino.setEnabled(True)
-    ui.btnCancelOpenVino.setEnabled(False)
+    #ui.btnSaveOpenVino.setEnabled(True)
+    #ui.btnNewModel.setEnabled(True)
+    #ui.btnDeleteOpenVino.setEnabled(True)
+    #ui.btnCancelOpenVino.setEnabled(False)
 
     #mostrando o modelo atualmente em uso
     currentIndex = 0
@@ -1060,14 +1119,14 @@ def callbackButtonRegioes(self, ret):
                 currentIndex = currentIndex + 1
             else:
                 break
-    comboListModelsUpdate(currentIndex)
+    #comboListModelsUpdate(currentIndex)
 
     #slots
-    ui.comboListModels.activated['int'].connect(comboListModelsUpdate)
-    ui.btnNewModel.clicked.connect(btnNewModel)
-    ui.btnDeleteOpenVino.clicked.connect(btnDeleteOpenVino)
-    ui.btnSaveOpenVino.clicked.connect(btnSaveOpenVino)
-    ui.btnCancelOpenVino.clicked.connect(btnCancelOpenVino)
+    #ui.comboListModels.activated['int'].connect(comboListModelsUpdate)
+    #ui.btnNewModel.clicked.connect(btnNewModel)
+    #ui.btnDeleteOpenVino.clicked.connect(btnDeleteOpenVino)
+    #ui.btnSaveOpenVino.clicked.connect(btnSaveOpenVino)
+    #ui.btnCancelOpenVino.clicked.connect(btnCancelOpenVino)
     #windowConfig.destroyed.connect(tabClose)
 
     # ----------- init tab configuração geral --------------- 
@@ -1080,7 +1139,10 @@ def callbackButtonRegioes(self, ret):
 
     #slots
     ui.btnSaveEmail.clicked.connect(btnSaveEmail)
-    #ui.checkBoxWebCam.stateChanged.connect(checkBoxWebcamStateChanged)
+    ui.checkBoxWebCam.stateChanged.connect(checkBoxWebcamStateChanged)
+    #ui.checkBoxVideoRecordingOnAlarmes.stateChanged.connect(checkBoxVideoRecordingOnAlarmesStateChanged)
+
+    #ui.checkBoxVideoRecording.stateChanged.connect(checkBoxVideoRecordingStateChanged)
 
     refreshStatusConfig()
 
@@ -1180,14 +1242,45 @@ if statusLicence and conexao:
 
 
 timeSessionInit = time.time()
+timeGravandoAllInit = time.time()
+
+hora = utils.getDate()['hour'].replace(':','-')
+nameVideoAllTime = dir_video_trigger_all_time + '/' + hora + '.avi'
+
+#primeiro arquivo fica zuado - bug
+out_video_all_time = cv.VideoWriter(nameVideoAllTime, fourcc, FPS, (w,h))
+
+def save_video(cap, saving_file_name):
+#def save_video(frame, saving_file_name):
+    global FPS, nameVideoAllTime
+
+   # while cap.isOpened():
+   #     ret, frame = cap.read()
+   #     if ret:
+   #         i_width,i_height = frame.shape[1],frame.shape[0]
+   #         break
+
+    if ret:
+        i_width,i_height = frame.shape[1],frame.shape[0]
+
+    process = (
+    ffmpeg
+        .input('pipe:',format='rawvideo', pix_fmt='rgb24',s='{}x{}'.format(i_width,i_height))
+        .output(saving_file_name, pix_fmt='yuv420p',vcodec='libx264',r=FPS,crf=37)
+        .overwrite_output()
+        .run_async(pipe_stdin=True)
+    )
+
+    return process
+
+
 
 while init_video and sessionStatus:
 
     #if counter == 0:
     #    startFps = time.time()
 
-    start = time.time()
-
+    #start = time.time()
     
 
     conectado, frame = ipCam.read()
@@ -1205,7 +1298,7 @@ while init_video and sessionStatus:
         currentData = [currentData.get('day'), currentData.get('month')]
 
         if current_data_dir != currentData:
-            status_dir_criado, dir_video_trigger = utils.createDirectory(statusConfig.data["dirVideos"])
+            status_dir_criado_on_alarmes, dir_video_trigger_on_alarmes = utils.createDirectory(statusConfig.data["dirVideosOnAlarmes"])
             current_data_dir = utils.getDate()
             current_data_dir = [current_data_dir.get('day'), current_data_dir.get('month')]
 
@@ -1216,6 +1309,7 @@ while init_video and sessionStatus:
              cv.polylines(frame_screen,[pts],True,(0,0,255), 2)
 
         if cropPolygon:
+            log.info('if cropPolygon')
             pts = np.array(ref_point_polygon, np.int32)
             pts = pts.reshape((-1,1,2))
             cv.polylines(frame_screen,[pts],True,(0,0,255), 2)
@@ -1244,14 +1338,12 @@ while init_video and sessionStatus:
 
         if len(listObjects) == 0 and portaoVirtualSelecionado:
 
-
-
             tEmptyEnd = time.time()
             tEmpty = tEmptyEnd - tEmptyStart
 
             if tEmpty > 10:
                 #print('tempty > 10')
-                gravando = False
+                gravandoOnAlarmes = False
                 newVideo = True
                 releaseVideo = True
 
@@ -1300,7 +1392,7 @@ while init_video and sessionStatus:
                                         tEmptyStart = time.time()
 
                                         #enquanto tiver objetos dentro da regiao o video eh gravado, independente do alarme
-                                        gravando = True
+                                        #gravandoOnAlarmes = True
                                         #resume_screensaver()
 
                                         #checando alarmes 
@@ -1375,7 +1467,7 @@ while init_video and sessionStatus:
                                         #print('tEmpty {}'.format(tEmpty))
 
                                         if tEmpty > 10:
-                                            gravando = False
+                                            gravandoOnAlarmes = False
                                             newVideo = True
                                             releaseVideo = True
                                             #suspend_screensaver()
@@ -1395,7 +1487,7 @@ while init_video and sessionStatus:
         tEmpty = tEmptyEnd- tEmptyStart
         #print('tEmpty end loop {}'.format(tEmpty))
 
-        if newVideo and gravando:
+        if newVideo and gravandoOnAlarmes:
 
              if out_video is not None:
                  out_video.release()
@@ -1404,21 +1496,64 @@ while init_video and sessionStatus:
 
              #grava video novo se tiver um objeto novo na cena
              hora = utils.getDate()['hour'].replace(':','-')
-             nameVideo = dir_video_trigger + '/' + hora + '.avi'
+             nameVideo = dir_video_trigger_on_alarmes + '/' + hora + '.avi'
+             #process = save_video(ipCam, nameVideo)
+             #process = save_video(frame, nameVideo)
+             
+             #process.stdin.write(
+             #                    cv.cvtColor(frame_no_label, cv.COLOR_BGR2RGB)
+             #                    .astype(np.uint8)
+             #                    .tobytes()
+             #       )
              out_video = cv.VideoWriter(nameVideo, fourcc, FPS, (w,h))
              out_video.write(frame_no_label)
              newVideo = False
 
-        if gravando:
+        
+        #if gravando:
+        if gravandoOnAlarmes:
             if out_video is not None:
                 out_video.write(frame_no_label)
 
+        if gravandoAllTime:
+            if out_video_all_time is not None:
+                out_video_all_time.write(frame_no_label)
+        
+        timeGravandoAll = time.time() - timeGravandoAllInit
+        
+        if gravandoAllTime and (timeGravandoAll >= GRAVANDO_TIME):
+
+            if out_video_all_time is not None:
+                 out_video_all_time.release()
+                 out_video_all_time = None
+            
+            #if out_video_all_time is not None:
+
+            log.info('Gravando video_all_time')
+            
+            hora = utils.getDate()['hour'].replace(':','-')
+            nameVideoAllTime = dir_video_trigger_all_time + '/' + hora + '.avi'
+            
+            out_video_all_time = cv.VideoWriter(nameVideoAllTime, fourcc, FPS, (w,h))
+            out_video_all_time.write(frame_no_label)
+
+            timeGravandoAllInit = time.time()
+                
+                #process = save_video(ipCam, nameVideoAllTime)
+             
+                #process.stdin.write(
+                #                 cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                #                 .astype(np.uint8)
+                #                 .tobytes()
+                #    )
+                #process.stdin.close()
+
         cv.imshow('frame', frame_screen)
 
-        end = time.time()
+        #end = time.time()
 
-        renderTime = (end-start)*1000
-        FPS = 1000/renderTime
+        #renderTime = (end-start)*1000
+        #FPS = 1000/renderTime
         #print('render time: {:10.2f} ms'.format(renderTime))
         #print('FPS: {:10.2f} ms'.format(FPS))
 
@@ -1427,12 +1562,30 @@ while init_video and sessionStatus:
         
         #log.info('timeSession: {}'.format(timeSession))
 
-        if timeSession >= 20:
-            session = {login['user'], login['token']}
-            sessionStatus = checkSessionPv(login)
-            log.info('sessionStatus: {}'.format(sessionStatus))
-            timeSessionInit = time.time()
+        if timeSession >= CHECK_SESSION:
 
+            session = {login['user'], login['token']}
+
+            conexao = checkInternetAccess()
+
+            if conexao: 
+                
+                sessionStatus, error = checkSessionPv(login)
+
+                if error == 'servidorOut':
+                    
+                    log.critical('Servidor não respondendo. Ignorando checkSession')
+                    sessionStatus = True
+
+                else:
+                    log.info('sessionStatus: {}'.format(sessionStatus))
+
+            else:
+                log.info("Sem internet - sessao não checada")
+                #emitir mensagem de aviso
+                sessionStatus = True
+
+            timeSessionInit = time.time()
 
         listObjects.clear()
         #listObjectsTracking.clear()
@@ -1452,7 +1605,14 @@ while init_video and sessionStatus:
 
 if out_video is not None:
     log.warning('Fim da captura de video')
+    #process.stdin.close()
+    #process.wait()
     out_video.release()
+
+if out_video_all_time is not None:
+    log.warning('Fim da captura de video')
+    out_video_all_time.release()
+
 
 if ipCam and cv is not None:
     ipCam.release()

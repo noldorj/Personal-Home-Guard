@@ -67,6 +67,7 @@ def changePasswdPv(login):
     else:
         log.info('changePasswd:: Conexao efetuada')
         log.info('changePasswd:: Alterando a senha do usuario: ' + login['user']) 
+        error = ''
 
         changePasswd(login)  
         sio.wait()
@@ -96,6 +97,7 @@ def forgotPasswordPv(email):
         forgotPassword(email)
         sio.wait()
         log.info('forgotPasswordPv:: statusForgotPasswd: ' + str(statusForgotPasswd))
+        error = ''
         #sio.disconnect()
     
     return statusForgotPasswd, error 
@@ -113,17 +115,19 @@ def checkSessionPv(session):
     except socketio.exceptions.ConnectionError as  err:
 
         log.critical('checkSessionPv:: Erro na conexao: ' + str(err))
-        error = 'conexao' 
+        error = 'servidorOut' 
         sessionStatus = False
 
     else:
         log.info('checkSessionPv:: Conexao efetuada checkSessionPv')
+        error = ''
         checkSession(session)
         sio.wait()
         log.info('checkSessionPv: ' + str(sessionStatus))
+
         #sio.disconnect()
     
-    return sessionStatus
+    return sessionStatus, error
 
 
 

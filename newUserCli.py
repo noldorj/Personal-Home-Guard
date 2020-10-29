@@ -15,13 +15,12 @@ import secrets
 def sendMailnewUser(to, port, smtp, userPassword):
 
     status = False   
-
     
     
     sent_from = 'contato@portaovirtual.com.br'    
     gmail_password = 'guxryxnrljrhspyw'
     
-    to = 'igorddf@gmail.com'
+    #to = 'igorddf@gmail.com'
 
     subject = ('Portão Virtual - Compra de Licença')
 
@@ -76,8 +75,10 @@ def replyNewUser(status):
 
 def main():
 
-    emailCliente = 'igorddf@gmail.com'
     passwd = secrets.token_urlsafe(6)
+    
+    
+    emailCliente = 'igorddf2@gmail.com'
     numCameras = '1'
     
     print('email:      ' + emailCliente)

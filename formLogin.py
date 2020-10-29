@@ -2,35 +2,37 @@
 
 # Form implementation generated from reading ui file 'formLogin.ui'
 #
-# Created by: PyQt5 UI code generator 5.9.2
+# Created by: PyQt5 UI code generator 5.12.3
 #
 # WARNING! All changes made in this file will be lost!
 
+
 from PyQt5 import QtCore, QtGui, QtWidgets
+
 
 class Ui_formLogin(object):
     def setupUi(self, formLogin):
         formLogin.setObjectName("formLogin")
         formLogin.setWindowModality(QtCore.Qt.WindowModal)
-        formLogin.resize(572, 289)
+        formLogin.resize(518, 307)
         formLogin.setFocusPolicy(QtCore.Qt.NoFocus)
         formLogin.setContextMenuPolicy(QtCore.Qt.NoContextMenu)
         formLogin.setAcceptDrops(False)
         formLogin.setLayoutDirection(QtCore.Qt.LeftToRight)
         formLogin.setLocale(QtCore.QLocale(QtCore.QLocale.Portuguese, QtCore.QLocale.Brazil))
         self.lblStatus = QtWidgets.QLabel(formLogin)
-        self.lblStatus.setGeometry(QtCore.QRect(0, 250, 571, 31))
+        self.lblStatus.setGeometry(QtCore.QRect(0, 270, 511, 31))
         self.lblStatus.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.lblStatus.setText("")
         self.lblStatus.setObjectName("lblStatus")
         self.tabWidget = QtWidgets.QTabWidget(formLogin)
-        self.tabWidget.setGeometry(QtCore.QRect(0, 10, 561, 231))
+        self.tabWidget.setGeometry(QtCore.QRect(0, 10, 511, 251))
         self.tabWidget.setContextMenuPolicy(QtCore.Qt.NoContextMenu)
         self.tabWidget.setObjectName("tabWidget")
         self.tab_3 = QtWidgets.QWidget()
         self.tab_3.setObjectName("tab_3")
         self.formLayoutWidget = QtWidgets.QWidget(self.tab_3)
-        self.formLayoutWidget.setGeometry(QtCore.QRect(90, 40, 401, 71))
+        self.formLayoutWidget.setGeometry(QtCore.QRect(10, 49, 401, 71))
         self.formLayoutWidget.setObjectName("formLayoutWidget")
         self.formLayout = QtWidgets.QFormLayout(self.formLayoutWidget)
         self.formLayout.setContentsMargins(0, 0, 0, 0)
@@ -50,25 +52,31 @@ class Ui_formLogin(object):
         self.txtEmail.setObjectName("txtEmail")
         self.formLayout.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.txtEmail)
         self.btnLogin = QtWidgets.QPushButton(self.tab_3)
-        self.btnLogin.setGeometry(QtCore.QRect(190, 120, 89, 31))
+        self.btnLogin.setGeometry(QtCore.QRect(100, 129, 89, 31))
         self.btnLogin.setObjectName("btnLogin")
         self.btnExit = QtWidgets.QPushButton(self.tab_3)
-        self.btnExit.setGeometry(QtCore.QRect(300, 120, 89, 31))
+        self.btnExit.setGeometry(QtCore.QRect(210, 129, 89, 31))
         self.btnExit.setObjectName("btnExit")
         self.label_3 = QtWidgets.QLabel(self.tab_3)
-        self.label_3.setGeometry(QtCore.QRect(210, 10, 151, 17))
+        self.label_3.setGeometry(QtCore.QRect(130, 19, 151, 17))
         self.label_3.setObjectName("label_3")
         self.btnEsqueciSenha = QtWidgets.QPushButton(self.tab_3)
-        self.btnEsqueciSenha.setGeometry(QtCore.QRect(220, 171, 141, 20))
+        self.btnEsqueciSenha.setGeometry(QtCore.QRect(130, 179, 141, 31))
         font = QtGui.QFont()
         font.setPointSize(8)
         self.btnEsqueciSenha.setFont(font)
         self.btnEsqueciSenha.setObjectName("btnEsqueciSenha")
+        self.checkBoxSalvarLogin = QtWidgets.QCheckBox(self.tab_3)
+        self.checkBoxSalvarLogin.setGeometry(QtCore.QRect(350, 130, 111, 23))
+        self.checkBoxSalvarLogin.setObjectName("checkBoxSalvarLogin")
+        self.checkBoxLoginAutomatico = QtWidgets.QCheckBox(self.tab_3)
+        self.checkBoxLoginAutomatico.setGeometry(QtCore.QRect(350, 160, 151, 23))
+        self.checkBoxLoginAutomatico.setObjectName("checkBoxLoginAutomatico")
         self.tabWidget.addTab(self.tab_3, "")
         self.tab_4 = QtWidgets.QWidget()
         self.tab_4.setObjectName("tab_4")
         self.formLayoutWidget_2 = QtWidgets.QWidget(self.tab_4)
-        self.formLayoutWidget_2.setGeometry(QtCore.QRect(70, 10, 421, 151))
+        self.formLayoutWidget_2.setGeometry(QtCore.QRect(20, 10, 421, 151))
         self.formLayoutWidget_2.setObjectName("formLayoutWidget_2")
         self.formLayout_2 = QtWidgets.QFormLayout(self.formLayoutWidget_2)
         self.formLayout_2.setContentsMargins(0, 0, 0, 0)
@@ -102,7 +110,7 @@ class Ui_formLogin(object):
         self.label_7.setObjectName("label_7")
         self.formLayout_2.setWidget(2, QtWidgets.QFormLayout.LabelRole, self.label_7)
         self.btnAlterarSenha = QtWidgets.QPushButton(self.tab_4)
-        self.btnAlterarSenha.setGeometry(QtCore.QRect(230, 160, 89, 31))
+        self.btnAlterarSenha.setGeometry(QtCore.QRect(180, 160, 89, 31))
         self.btnAlterarSenha.setObjectName("btnAlterarSenha")
         self.tabWidget.addTab(self.tab_4, "")
 
@@ -129,6 +137,8 @@ class Ui_formLogin(object):
         self.btnExit.setText(_translate("formLogin", "Cancelar"))
         self.label_3.setText(_translate("formLogin", "Portão Virtual - Login"))
         self.btnEsqueciSenha.setText(_translate("formLogin", "Esqueci minha senha"))
+        self.checkBoxSalvarLogin.setText(_translate("formLogin", "Salvar login"))
+        self.checkBoxLoginAutomatico.setText(_translate("formLogin", "Login automático"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("formLogin", "Login"))
         self.label_4.setText(_translate("formLogin", "Email:"))
         self.label_6.setText(_translate("formLogin", "Senha atual:"))
@@ -146,4 +156,3 @@ if __name__ == "__main__":
     ui.setupUi(formLogin)
     formLogin.show()
     sys.exit(app.exec_())
-

@@ -164,5 +164,59 @@
                 159
             ]
         ]
+    },
+    {
+        "nameRegion": "calcada",
+        "alarm": [
+            {
+                "name": "sempre",
+                "time": {
+                    "start": {
+                        "hour": 0,
+                        "min": 0
+                    },
+                    "end": {
+                        "hour": 23,
+                        "min": 59
+                    }
+                },
+                "days": {
+                    "mon": "True",
+                    "tue": "True",
+                    "wed": "True",
+                    "thu": "True",
+                    "fri": "True",
+                    "sat": "True",
+                    "sun": "True"
+                },
+                "isEmailAlert": "True",
+                "isSoundAlert": "True"
+            }
+        ],
+        "objectType": {
+            "person": "True",
+            "car": "True",
+            "bike": "True",
+            "dog": "True"
+        },
+        "prob_threshold": 60.0,
+        "pointsPolygon": [
+            [
+                985,
+                419
+            ],
+            [
+                986,
+                489
+            ],
+            [
+                307,
+                291
+            ],
+            [
+                311,
+                258
+            ]
+        ]
     }
 ]

@@ -3,13 +3,17 @@ import os
 import pygame
 import cv2 as cv
 import time
+import logging as log
+import sys
+
+log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 
 def camSource(source = 'webcam'):
     if source == 'webcam':
-        print('imagem da WebCam')
+        log.info('imagem da WebCam')
         return cv.VideoCapture(0)
     else:
-        print('imagem de camera rstp')
+        log.info('imagem de camera rstp')
         return cv.VideoCapture(source)
 
 def getDate():
@@ -61,10 +65,11 @@ class StatusConfig:
 
 
     data = {
-            "isRecording"       : "True",
-            "isOpenVino"        : "True",
-            "camSource"         : "webcam",
-            "prob_threshold"    : 0.60,
+            "isRecordingAllTime"    : "False",
+            "isRecordingOnAlarmes"  : "True",
+            "isOpenVino"            : "True",
+            "camSource"             : "webcam",
+            "prob_threshold"        : 0.60,
             # aponta para pastas dentro de dlModels
             "dnnModelPb"        : "./dlModels/ssd-mobilenet/frozen_inference_graph_v1_coco_2017_11_17.pb",
             "dnnModelPbTxt"     : "./dlModels/ssd-mobilenet/ssd_mobilenet_v1_coco_2017_11_17.pbtxt",
@@ -184,7 +189,7 @@ class StatusConfig:
 
 
 
-    def addConfigGeral(self, name, port, smtp, user, password, subject, to, isRecording, dirVideos, camSource):
+    def addConfigGeral(self, name, port, smtp, user, password, subject, to, isRecordingAllTime, isRecordingOnAlarmes, dirVideosAllTime, dirVideosOnAlarmes, camSource):
         email = {'name':name,
                  'port':port,
                  'smtp':smtp,
@@ -194,18 +199,21 @@ class StatusConfig:
                  'to':to
                 }
 
-        self.data["isRecording"] = isRecording
-        self.data["dirVideos"] = dirVideos
+        self.data["isRecordingAllTime"] = isRecordingAllTime
+        self.data["isRecordingOnAlarmes"] = isRecordingOnAlarmes
+        self.data["dirVideosAllTime"] = dirVideosAllTime
+        self.data["dirVideosOnAlarmes"] = dirVideosOnAlarmes
         self.data["camSource"] = camSource
         self.data["emailConfig"] = email
-        self.data["openVinoCpuExtension"] = openVinoCpuExtension 
-        self.data["openVinoPluginDir"] = openVinoPluginDir 
+        #self.data["openVinoCpuExtension"] = openVinoCpuExtension 
+        #self.data["openVinoPluginDir"] = openVinoPluginDir 
 
         self.saveConfigFile()
 
-    def setConfig(self, isRecording, isOpenVino,
+    def setConfig(self, isRecordingAllTime, isRecordingOnAlarmes, isOpenVino,
                       dnnModel, openVinoModel, emailConfig, dirVideos, camSource, openVinoDevice, prob_threshold):
-        self.data["isRecording"]              = isRecording
+        self.data["isRecordingAllTime"]       = isRecordingAllTime
+        self.data["isRecordingOnAlarmes"]     = isRecordingOnAlarmes
         self.data["camSource"]                = camSource
         self.data["prob_threshold"]           = prob_threshold
         self.data["isOpenVino"]               = isOpenVino
@@ -214,8 +222,7 @@ class StatusConfig:
         self.data["openVinoDevice"]           = openVinoDevice
         self.data["openVinoModel"]            = openVinoModel
         self.data["openVinoCpuExtension"]     = openVinoCpuExtension
-        self.data["openVinoPluginDir"]        = openVinoPluginDir
-        self.data["dirVideos"]                = dirVideos
+        self.data["dirVideosOnAlarmes"]       = dirVideosOnAlarmes
         self.data["emailConfig"]              = emailConfig #list of emails
 
         #self.data["emailConfig"]["port"]      = emailConfig["port"]
@@ -376,7 +383,8 @@ class StatusConfig:
 
     def printConfig(self):
         print('--- Config status  ---')
-        print('isRecording:             {}'.format(self.data.get('isRecording')))
+        print('isRecordingAllTime:      {}'.format(self.data.get('isRecordingAllTime')))
+        print('isRecordingOnAlarmes:    {}'.format(self.data.get('isRecordingOnAlarmes')))
         print('isEmailAlert:            {}'.format(self.data.get('isEmailAlert')))
         print('isGateSelected:          {}'.format(self.data.get('isGateSelected')))
         print('isSoundAlert:            {}'.format(self.data.get('isSoundAlert')))
@@ -424,29 +432,30 @@ class StatusConfig:
                     print('             ')
 
     def saveRegionFile(self, file = 'regions.json'):
-        print('Salvando arquivo de regiones: ' + os.getcwd() + '/' + file)
+        log.info('Salvando arquivo de regiones: ' + os.getcwd() + '/' + file)
         try:
             json.dump(self.regions, open(file, 'w'), indent=4)
 
         except OSError as ex:
 
-            print('Erro ao salvar arquivo {}'.format(file))
+            log.critical('Erro ao salvar arquivo {}'.format(file))
 
         else:
-            print('Arquivo {} salvo'.format(file))
+            log.info('Arquivo {} salvo'.format(file))
 
 
     def saveConfigFile(self, file = 'config.json'):
-        print('Salvando arquivo de configuração: ' + os.getcwd() + '/' + file)
+        log.info('Salvando arquivo de configuração: {}/{}'.format(os.getcwd(), file))
         json.dump(self.data, open(file,'w'), indent=4)
 
 
 def playSound():
    # campainha = pyglet.media.load('campainha.wav')
    # campainha.play()
-    print('Campainha tocada: ' + os.getcwd())
+    #log.info('Campainha tocada: {}'.format(os.getcwd()))
     pygame.init()
     pygame.mixer.music.load('campainha.mp3')
+    pygame.mixer.init()
     pygame.mixer.music.play(0)
 
 
