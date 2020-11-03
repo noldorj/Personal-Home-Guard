@@ -9,7 +9,7 @@ import utilsCore as utils
 import logging as log
 import sys
 
-import ffmpeg
+#import ffmpeg
 
 from threading import Thread
 from checkLicence.sendingData import checkLoginPv 
@@ -46,8 +46,8 @@ conectado = None
 conexao = False
 frame = None
 
-CHECK_SESSION = 20
-GRAVANDO_TIME = 20
+CHECK_SESSION = 300 # checar sessao a cada 5 min
+GRAVANDO_TIME = 300 #gravar videos de 5min 
 
 
 token = secrets.token_urlsafe(20)
@@ -143,6 +143,14 @@ openVinoModelName = None
 login = None 
 sessionStatus = True
 
+#variaveis do disco
+dirMaxUsage = 85 
+spaceMaxDirVideosOnAlarme = 0 #zero significa sem limites de utilizacao do disco 
+spaceMaxDirVideosAllTime = 0 
+eraseOldestFiles = True 
+stopSaveNewVideos = False
+
+
 #inicializa configuracoes do sistema
 
 def initConfig():
@@ -150,6 +158,7 @@ def initConfig():
     global statusConfig, pb, pbtxt, regions, emailConfig, portaoVirtualSelecionado
     global status_dir_criado_all_time, status_dir_criado_all_time, dir_video_trigger_on_alarmes, dir_video_trigger_all_time, source, ipCam, prob_threshold, hora, current_data_dir, isOpenVino
     global device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir, openVinoModelName, gravandoAllTime 
+    global dirMaxUsage, spaceMaxDirVideosAllTime, spaceMaxDirVideosOnAlarme, eraseOldestFiles, stopSaveNewVideos
     
     current_data_dir = utils.getDate()
     current_data_dir = [current_data_dir.get('day'), current_data_dir.get('month')]
@@ -157,10 +166,16 @@ def initConfig():
     
     statusConfig = utils.StatusConfig()
     
-    gravandoAllTime = statusConfig.data["isRecordingAllTime"] == 'True'
-    gravandoOnAlarmes = statusConfig.data["isRecordingOnAlarmes"] == 'True'
+    gravandoAllTime = True if statusConfig.data["isRecordingAllTime"] == 'True' else False
+    gravandoOnAlarmes = True if statusConfig.data["isRecordingOnAlarmes"] == 'True' else False
     
     isOpenVino = statusConfig.data["isOpenVino"] == 'True'
+
+    dirMaxUsage = int(statusConfig.data["storageConfig"]["dirMaxUsage"])  
+    spaceMaxDirVideosOnAlarme = int(statusConfig.data["storageConfig"]["spaceMaxDirVideosOnAlarme"])  
+    spaceMaxDirVideosAllTime = int(statusConfig.data["storageConfig"]["spaceMaxDirVideosAllTime"])  
+    eraseOldestFiles = True if statusConfig.data["storageConfig"]["eraseOldestFiles"] == 'True' else False 
+    stopSaveNewVideos = True if statusConfig.data["storageConfig"]["stopSaveNewVideos"] == 'True' else False 
     
     #if isOpenVino:
     #    import pluginOpenVino as pOpenVino
@@ -193,6 +208,10 @@ def initConfig():
     ipCam = utils.camSource(source)
 
     prob_threshold = float(statusConfig.data["prob_threshold"])
+
+    #configuracoes de armazenamento
+    
+
 
 
 
@@ -282,8 +301,8 @@ ui.setupUi(windowConfig)
 
 #fourcc = cv.VideoWriter_fourcc(*'X264')
 #for linux x264 need to recompile opencv mannually
-#fourcc = cv.VideoWriter_fourcc(*'XVID') #IJF
-fourcc = cv.VideoWriter_fourcc('M','J','P','G')
+fourcc = cv.VideoWriter_fourcc(*'X''V''I''D') #IJF
+#fourcc = cv.VideoWriter_fourcc('M','J','P','G')
 #fourcc = cv.VideoWriter_fourcc(*'MP4V')
 
 #cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
@@ -387,6 +406,38 @@ def btnEsqueciSenha():
         uiLogin.lblStatus.setText("Cheque sua conexão com a Internet.")
 
 
+
+def btnSaveStorage():
+
+    statusFields = True 
+    msg = QMessageBox()
+    msg.setIcon(QMessageBox.Information)
+    msg.setWindowTitle("Campo em branco")
+    msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+
+    #checando campos em branco
+
+    if len(ui.txtDefinirMaximoAllTime.text()) == 0:
+        ui.txtDefinirMaximoAllTime.setText('Utilizar o máximo do HD') 
+
+    if len(ui.txtDefinirMaximoOnAlarmes.text()) == 0:
+        ui.txtDefinirMaximoAllTime.setText('Utilizar o máximo do HD') 
+
+    if len(ui.txtAvisoUtilizacaoHD.text()) == 0:
+        ui.txtDefinirMaximoAllTime.setText('80')
+
+    statusConfig.addStorageConfig(
+            ui.txtAvisoUtilizacaoHD.text(), 
+            ui.txtDefinirMaximoOnAlarmes.text(),
+            ui.txtDefinirMaximoAllTime.text(),
+            "True" if ui.radioButtonDeleteOldestFiles.isChecked() else "False",
+            "True" if ui.radioButtonStopSaveNewVideos.isChecked() else "False"
+            )
+    refreshStatusConfig() 
+    initConfig()
+
+    
+
 def btnLogin():
     #checando licenca de usuario no servidor
     global init_video, statusLicence, uiLogin, conexao, login 
@@ -452,7 +503,7 @@ def clearFieldsTabGeralEmail():
 
 
 def btnSaveEmail():
-    statusFields = True
+    statusFields = True 
     msg = QMessageBox()
     msg.setIcon(QMessageBox.Information)
     msg.setWindowTitle("Campo em branco")
@@ -517,6 +568,7 @@ def btnSaveEmail():
         statusFields = False
 
 
+
     elif  ui.checkBoxWebCam.isChecked() and len(ui.txtUrlRstp.text()) > 0:
         msg.setText("Escolha somente 'Capturar da Webcam' ou 'Câmera RSTP'")
         msg.exec()
@@ -540,7 +592,8 @@ def btnSaveEmail():
                               isRecordingOnAlarmes,
                               ui.txtDirRecordingAllTime.text(),
                               ui.txtDirRecordingOnAlarmes.text(),
-                              camSource)
+                              camSource, 
+                              ui.txtAvisoUtilizacaoHD.text())
 
 
         refreshStatusConfig()
@@ -572,6 +625,7 @@ def fillTabGeral():
 
     ui.txtDirRecordingAllTime.setText(statusConfig.data.get("dirVideosAllTime"))
     ui.txtDirRecordingOnAlarmes.setText(statusConfig.data.get("dirVideosOnAlarmes"))
+    ui.txtAvisoUtilizacaoHD.setText(statusConfig.data.get("diskMaxUsage"))
     ui.txtEmailName.setText(statusConfig.data["emailConfig"].get('name'))
     ui.txtEmailPort.setText(statusConfig.data["emailConfig"].get('port'))
     ui.txtEmailSmtp.setText(statusConfig.data["emailConfig"].get('smtp'))
@@ -579,6 +633,40 @@ def fillTabGeral():
     ui.txtEmailPassword.setText(statusConfig.data["emailConfig"].get('password'))
     ui.txtEmailSubject.setText(statusConfig.data["emailConfig"].get('subject'))
     ui.txtEmailTo.setText(statusConfig.data["emailConfig"].get('to'))
+
+    #configuracoes de armazenamento
+    if spaceMaxDirVideosAllTime == 0:
+        
+        ui.txtDefinirMaximoAllTime.setText('0')
+        ui.txtDefinirMaximoAllTime.setEnabled(False)
+        ui.checkBoxNoLimitsVideosAllTime.setChecked(True)
+
+    else: 
+        ui.txtDefinirMaximoAllTime.setText(str(spaceMaxDirVideosAllTime))
+        ui.txtDefinirMaximoAllTime.setEnabled(True)
+    
+    if spaceMaxDirVideosOnAlarme == 0: 
+
+        ui.txtDefinirMaximoOnAlarmes.setText('0')
+        ui.txtDefinirMaximoOnAlarmes.setEnabled(False)
+        ui.checkBoxNoLimitsVideosOnAlarmes.setChecked(True)
+    else:
+        ui.txtDefinirMaximoOnAlarmes.setEnabled(True)
+        ui.txtDefinirMaximoOnAlarmes.setText(str(spaceMaxDirVideosOnAlarme))
+        ui.checkBoxNoLimitsVideosOnAlarmes.setChecked(False)
+    
+    
+    ui.txtAvisoUtilizacaoHD.setText(str(dirMaxUsage))
+    ui.radioButtonStopSaveNewVideos.setChecked(stopSaveNewVideos)
+    ui.radioButtonDeleteOldestFiles.setChecked(eraseOldestFiles)
+    ui.progressBarDisponivelHD.setValue(utils.getDiskUsageFree())
+    ui.txtAvailableHD.setText('{:03.2f}'.format((utils.getDiskUsageFreeGb())))
+    ui.txtDirUsedVideosAllTime.setText('{:03.2f}'.format(utils.getDirUsedSpace(statusConfig.data["dirVideosAllTime"])))
+    ui.txtDirUsedVideosOnAlarmes.setText('{:03.2f}'.format(utils.getDirUsedSpace(statusConfig.data["dirVideosOnAlarmes"])))
+
+    ui.txtDiasEstimado.setText('{:d}'.format((utils.getNumDaysRecording())) + ' dias' )
+
+    
 
 
 #---------------- gui tab modelos de deteccao -------------------
@@ -1082,6 +1170,22 @@ def checkBoxWebcamStateChanged(state):
         ui.txtUrlRstp.clear()
         ui.txtUrlRstp.setEnabled(False)
 
+def checkBoxNoLimitsVideosAllTime(state):
+    if state == 0:
+       ui.txtDefinirMaximoAllTime.setEnabled(True)
+    # Qt.Checked 
+    elif (state == 1 or state == 2):
+        ui.txtDefinirMaximoAllTime.setText('0')
+        ui.txtDefinirMaximoAllTime.setEnabled(False)
+
+
+def checkBoxNoLimitsVideosOnAlarmes(state):
+    if state == 0:
+       ui.txtDefinirMaximoOnAlarmes.setEnabled(True)
+    # Qt.Checked 
+    elif (state == 1 or state == 2):
+        ui.txtDefinirMaximoOnAlarmes.setText('0') #zero significa sem limites de utilizacao do disco
+        ui.txtDefinirMaximoOnAlarmes.setEnabled(False)
 
 
 def initFormLogin(self, ret):
@@ -1139,7 +1243,13 @@ def callbackButtonRegioes(self, ret):
 
     #slots
     ui.btnSaveEmail.clicked.connect(btnSaveEmail)
+    ui.btnSaveStorage.clicked.connect(btnSaveStorage)
+    
     ui.checkBoxWebCam.stateChanged.connect(checkBoxWebcamStateChanged)
+   
+    ui.checkBoxNoLimitsVideosAllTime.stateChanged.connect(checkBoxNoLimitsVideosAllTime)
+    ui.checkBoxNoLimitsVideosOnAlarmes.stateChanged.connect(checkBoxNoLimitsVideosOnAlarmes)
+    
     #ui.checkBoxVideoRecordingOnAlarmes.stateChanged.connect(checkBoxVideoRecordingOnAlarmesStateChanged)
 
     #ui.checkBoxVideoRecording.stateChanged.connect(checkBoxVideoRecordingStateChanged)
@@ -1250,28 +1360,28 @@ nameVideoAllTime = dir_video_trigger_all_time + '/' + hora + '.avi'
 #primeiro arquivo fica zuado - bug
 out_video_all_time = cv.VideoWriter(nameVideoAllTime, fourcc, FPS, (w,h))
 
-def save_video(cap, saving_file_name):
-#def save_video(frame, saving_file_name):
-    global FPS, nameVideoAllTime
-
-   # while cap.isOpened():
-   #     ret, frame = cap.read()
-   #     if ret:
-   #         i_width,i_height = frame.shape[1],frame.shape[0]
-   #         break
-
-    if ret:
-        i_width,i_height = frame.shape[1],frame.shape[0]
-
-    process = (
-    ffmpeg
-        .input('pipe:',format='rawvideo', pix_fmt='rgb24',s='{}x{}'.format(i_width,i_height))
-        .output(saving_file_name, pix_fmt='yuv420p',vcodec='libx264',r=FPS,crf=37)
-        .overwrite_output()
-        .run_async(pipe_stdin=True)
-    )
-
-    return process
+#def save_video(cap, saving_file_name):
+##def save_video(frame, saving_file_name):
+#    global FPS, nameVideoAllTime
+#
+#   # while cap.isOpened():
+#   #     ret, frame = cap.read()
+#   #     if ret:
+#   #         i_width,i_height = frame.shape[1],frame.shape[0]
+#   #         break
+#
+#    if ret:
+#        i_width,i_height = frame.shape[1],frame.shape[0]
+#
+#    process = (
+#    ffmpeg
+#        .input('pipe:',format='rawvideo', pix_fmt='rgb24',s='{}x{}'.format(i_width,i_height))
+#        .output(saving_file_name, pix_fmt='yuv420p',vcodec='libx264',r=FPS,crf=37)
+#        .overwrite_output()
+#        .run_async(pipe_stdin=True)
+#    )
+#
+#    return process
 
 
 
@@ -1392,7 +1502,10 @@ while init_video and sessionStatus:
                                         tEmptyStart = time.time()
 
                                         #enquanto tiver objetos dentro da regiao o video eh gravado, independente do alarme
-                                        #gravandoOnAlarmes = True
+                                         
+                                        if statusConfig.data["isRecordingOnAlarmes"] == 'True':
+                                            gravandoOnAlarmes = True
+                                        
                                         #resume_screensaver()
 
                                         #checando alarmes 
@@ -1487,66 +1600,108 @@ while init_video and sessionStatus:
         tEmpty = tEmptyEnd- tEmptyStart
         #print('tEmpty end loop {}'.format(tEmpty))
 
-        if newVideo and gravandoOnAlarmes:
-
-             if out_video is not None:
-                 out_video.release()
-                 out_video = None
-                 releaseVideo = False
-
-             #grava video novo se tiver um objeto novo na cena
-             hora = utils.getDate()['hour'].replace(':','-')
-             nameVideo = dir_video_trigger_on_alarmes + '/' + hora + '.avi'
-             #process = save_video(ipCam, nameVideo)
-             #process = save_video(frame, nameVideo)
-             
-             #process.stdin.write(
-             #                    cv.cvtColor(frame_no_label, cv.COLOR_BGR2RGB)
-             #                    .astype(np.uint8)
-             #                    .tobytes()
-             #       )
-             out_video = cv.VideoWriter(nameVideo, fourcc, FPS, (w,h))
-             out_video.write(frame_no_label)
-             newVideo = False
-
-        
-        #if gravando:
-        if gravandoOnAlarmes:
-            if out_video is not None:
-                out_video.write(frame_no_label)
-
-        if gravandoAllTime:
-            if out_video_all_time is not None:
-                out_video_all_time.write(frame_no_label)
-        
         timeGravandoAll = time.time() - timeGravandoAllInit
         
-        if gravandoAllTime and (timeGravandoAll >= GRAVANDO_TIME):
+        if not utils.isDiskFull(statusConfig.getDiskMaxUsage()):
 
-            if out_video_all_time is not None:
-                 out_video_all_time.release()
-                 out_video_all_time = None
-            
-            #if out_video_all_time is not None:
+            if spaceMaxDirVideosOnAlarme == 0 or ( spaceMaxDirVideosOnAlarme >= utils.getDirUsedSpace(statusConfig.data["dirVideosOnAlarmes"]) ):
 
-            log.info('Gravando video_all_time')
-            
-            hora = utils.getDate()['hour'].replace(':','-')
-            nameVideoAllTime = dir_video_trigger_all_time + '/' + hora + '.avi'
-            
-            out_video_all_time = cv.VideoWriter(nameVideoAllTime, fourcc, FPS, (w,h))
-            out_video_all_time.write(frame_no_label)
-
-            timeGravandoAllInit = time.time()
+                if newVideo and gravandoOnAlarmes:
                 
-                #process = save_video(ipCam, nameVideoAllTime)
-             
-                #process.stdin.write(
-                #                 cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                #                 .astype(np.uint8)
-                #                 .tobytes()
-                #    )
-                #process.stdin.close()
+                    if out_video is not None:
+                       out_video.release()
+                       out_video = None
+                       releaseVideo = False
+
+                    #grava video novo se tiver um objeto novo na cena
+                    hora = utils.getDate()['hour'].replace(':','-')
+                    nameVideo = dir_video_trigger_on_alarmes + '/' + hora + '.avi'
+                    #process = save_video(ipCam, nameVideo)
+                    #process = save_video(frame, nameVideo)
+                    
+                    #process.stdin.write(
+                    #                    cv.cvtColor(frame_no_label, cv.COLOR_BGR2RGB)
+                    #                    .astype(np.uint8)
+                    #                    .tobytes()
+                    #       )
+                    out_video = cv.VideoWriter(nameVideo, fourcc, FPS, (w,h))
+                    out_video.write(frame_no_label)
+                    newVideo = False
+
+                
+                #if gravando:
+                if gravandoOnAlarmes:
+                    if out_video is not None:
+                        out_video.write(frame_no_label)
+
+            #espaço maximo na pasta VideosOnAlarmes atingido 
+            else:
+                log.critical('Espaço maximo na pasta {} atingido'.format(statusConfig.data["dirVideosOnAlarmes"]))
+                #avisar por email 1x a cada X tempo ? 
+
+
+            if spaceMaxDirVideosAllTime == 0 or ( spaceMaxDirVideosAllTime >= utils.getDirUsedSpace(statusConfig.data["dirVideosAllTime"]) ):
+            
+                if gravandoAllTime:
+                    if out_video_all_time is not None:
+                        out_video_all_time.write(frame_no_label)
+                
+                
+                if gravandoAllTime and (timeGravandoAll >= GRAVANDO_TIME):
+
+                    if out_video_all_time is not None:
+                         out_video_all_time.release()
+                         out_video_all_time = None
+                    
+                    #if out_video_all_time is not None:
+
+                    log.info('Gravando video_all_time')
+                    
+                    hora = utils.getDate()['hour'].replace(':','-')
+                    nameVideoAllTime = dir_video_trigger_all_time + '/' + hora + '.avi'
+                    
+                    out_video_all_time = cv.VideoWriter(nameVideoAllTime, fourcc, FPS, (w,h))
+                    out_video_all_time.write(frame_no_label)
+
+                    timeGravandoAllInit = time.time()
+                        
+                        #process = save_video(ipCam, nameVideoAllTime)
+                     
+                        #process.stdin.write(
+                        #                 cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        #                 .astype(np.uint8)
+                        #                 .tobytes()
+                        #    )
+                        #process.stdin.close()
+
+            else:
+                log.critical('Espaço maximo na pasta {} atingido'.format(statusConfig.data["dirVideosAllTime"]))
+                #avisar por email 1x a cada X tempo ? 
+
+        #disco cheio 
+        else:
+            #log.info('Disco cheio')
+            #log.info(' ')
+            #log.info('Apagando diretórios de videos 24h')
+            #log.i$fo('Dir: {}'.format(statusConfig.getDirVideosOnAlarmes()))
+
+            # realmente apaga os videos mais antigos ? 
+            if eraseOldestFiles:
+
+                utils.freeDiskSpace(statusConfig.getDirVideosAllTime())
+            
+                #se ainda não tiver sido suficiente
+                if isDiskFull(statusConfig.getDiskMaxUsage()):
+                    #log.info('Apagando diretórios de Alarmes')
+                    #log.info('Dir: {}'.format(statusConfig.getDirVideosOnAlarmes()))
+                    utils.freeDiskSpace(statusConfig.getDirVideosOnAlarmes())
+
+            # ou então parar de gravar novos videos
+            elif stopSaveNewVideos:
+
+                gravandoAllTime = False
+                gravandoOnAlarmes = False
+
 
         cv.imshow('frame', frame_screen)
 

@@ -30,6 +30,13 @@
             "openVinoDevice": "GPU"
         }
     ],
+    "storageConfig": {
+        "dirMaxUsage": "15",
+        "spaceMaxDirVideosAllTime": "2",
+        "spaceMaxDirVideosOnAlarme": "3",
+        "eraseOldestFiles": "True",
+        "stopSaveNewVideos": "False"
+    },
     "prob_threshold": 0.7,
     "emailConfig": {
         "name": "igorddf@gmail.com",
@@ -41,5 +48,6 @@
         "to": "igorddf@gmail.com"
     },
     "dirVideosOnAlarmes": "videos_alarme_alterado",
-    "dirVideosAllTime": "videos_all_time"
+    "dirVideosAllTime": "videos_all_time",
+    "diskMaxUsage": "90"
 }

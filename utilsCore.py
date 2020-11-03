@@ -1,10 +1,20 @@
+import cv2 as cv
+import pygame
 import json
 import os
-import pygame
-import cv2 as cv
 import time
 import logging as log
 import sys
+import shutil
+from glob import glob
+from datetime import datetime
+import subprocess
+import time
+import locale
+
+locale.setlocale(locale.LC_ALL, 'pt_BR.utf-8')
+#timezone = pytz.timezone("America/Sao_Paulo")
+    
 
 log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 
@@ -16,8 +26,207 @@ def camSource(source = 'webcam'):
         log.info('imagem de camera rstp')
         return cv.VideoCapture(source)
 
+
+def getDirUsedSpace(start_path):
+
+    total_size = 0
+
+    for dirpath, dirnames, filenames in os.walk(start_path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            # skip if it is symbolic link
+            if not os.path.islink(fp):
+                total_size += os.path.getsize(fp)
+
+    #log.info('getDirUsed:used {:f}'.format(total_size))
+    return (total_size / (2**30))
+
+def getDiskUsedGb():
+    total, used, free = shutil.disk_usage("/")
+    return (used / (2**30))
+
+
+def getNumDaysRecording():
+    
+    #cada dia consome +- 24 GB
+    total, used, free = shutil.disk_usage("/")
+    days = (free // (2**30)) / 24
+    return int(days)
+
+
+def getDiskUsageFreeGb():
+
+    total, used, free = shutil.disk_usage("/")
+    return (free / (2**30))
+
+
+def getDiskUsageFree():
+
+    total, used, free = shutil.disk_usage("/")
+    return int((free / total)*100)
+
+def isDiskFull(diskMaxUsage):
+    
+    isFull = False 
+    total, used, free = shutil.disk_usage("/")
+
+    if ((used / total)*100) >= float(diskMaxUsage):
+       
+        isFull = True 
+        #log.info(' ')
+        
+        #log.critical('Disco cheio - atingiu {} % da capacidade'.format(diskMaxUsage))
+
+        #log.info("Total: %d GiB" % (total // (2**30)))
+        #log.info("Used: %d GiB" % (used // (2**30)))
+        #log.info("Free: %d GiB" % (free // (2**30)))
+
+        #log.info(' ')
+
+
+    return isFull
+
+
+
+def freeDiskSpace(dirVideo):
+
+ #vai apagando um dia por vez até sobrar espaço
+ #se não sobrar espaço, avisar o usuário que o disco está cheio por outros motivos
+     
+     statusConfig = StatusConfig()    
+     monthList = []
+     dirList = []
+     yearList = []
+     dirSorted = []
+     daysSorted = []
+     daysDir= []
+     dayList = []
+     
+     totalLiberado = 0.0
+      
+     #dirVideo = 'videos_all_time'     
+     
+     dirVideo = os.getcwd() + '/' + dirVideo  
+     log.info('::freeDiskSpace dirVideo: {}'.format(dirVideo))
+     
+     dirListFull = glob(dirVideo + '/*')
+          
+     for m in dirListFull:         
+        dirList.append(m.rsplit('/').pop())
+
+     for y in dirList:
+        yearList.append(y.rsplit('-').pop())
+     
+     for m in dirList:
+        monthList.append(m.rsplit('-')[0])
+
+     log.info('::freeDiskSpace dirList: {}'.format(dirList))
+     log.info('::freeDiskSpace yearList: {}'.format(yearList))
+     log.info('::freeDiskSpace monthList: {}'.format(monthList))
+     
+     
+     log.info('::freeDiskSpace dirList len: {:d}'.format(len(dirList)))
+     
+     
+     log.info('::freeDiskSpace dirList: {}'.format(dirList))
+     
+     dirSorted = sorted(dirList, key=lambda dirList: datetime.strptime(dirList,'%b-%Y'))
+     
+     log.info('len dirSorted: {:d}'.format(len(dirSorted)))
+     log.info('dirSorted: {:}'.format(dirSorted))
+
+
+     daysDir = glob(dirVideo + '/' + dirSorted[0] + '/*')     
+     
+     for d in daysDir:
+        dayList.append(d.rsplit('/').pop())
+     
+
+     daysSorted = sorted(dayList, key=lambda dayList: datetime.strptime(dayList,'%d'))
+     
+     #oldestDir = dirVideo + '/' + dirSorted[0] + '/' + daysSorted[0]
+          
+     iDirSorted = 0 
+     iDaysSorted = 0  
+     
+     while (statusConfig.getDiskMaxUsage()):
+            
+         #proxima pasta a ser deletada
+         if iDirSorted < len(dirSorted):
+         
+             if iDaysSorted < len(daysSorted):
+             
+                 oldestDir = dirVideo + '/' + dirSorted[iDirSorted] + '/' + daysSorted[iDaysSorted]                        
+             
+                 #log.info("Total: %d GiB" % (total // (2**30)))
+                 #print("Used: %d GiB" % (used // (2**30)))
+                 #log.info("Free: %d GiB" % (free // (2**30)))
+                 
+                 dirSpace = subprocess.check_output(['du','-sh', oldestDir]).split()[0].decode('utf-8')
+                
+                 #deletar a pasta do ano-mes-dia mais antigo
+                 try:
+                     
+                     shutil.rmtree(oldestDir)
+                     
+                 except OSError as e:
+                     
+                     log.critical('Diretorio nao encontrado')
+                     log.crtical("Error: %s : %s" % (oldestDir, e.strerror))
+                     
+                 else:
+                     log.info('Diretorio {} removido. Foi liberado {} de espaço'.format(oldestDir, dirSpace))             
+                     iDaysSorted = iDaysSorted + 1
+                     #totalLiberado = totalLiberado + float(dirSpace)
+                 
+             else:
+                 
+                 log.info('Removendo pastas do proximo diretorio se houver')
+                 #apagando o diretorio que ficou vazio
+                 oldestDir = dirVideo + '/' + dirSorted[iDirSorted]
+                 
+                 try:
+                     
+                     shutil.rmtree(oldestDir)
+                     
+                 except OSError as e:
+                     
+                     log.critical('Diretorio nao encontrado')
+                     log.crtical("Error: %s : %s" % (oldestDir, e.strerror))
+                     
+                 else:
+                     iDirSorted = iDirSorted + 1
+                     log.info('Diretorio {} removido'.format(oldestDir))
+       
+     #log.info('Total liberado: {:f}'.format(totalLiberado))
+
+
 def getDate():
     data = time.asctime().split(" ")
+    
+    
+    if data[0] == 'Mon': data[0] = 'Seg'
+    if data[0] == 'Tue': data[0] = 'Ter'
+    if data[0] == 'Wed': data[0] = 'Qua'
+    if data[0] == 'Thu': data[0] = 'Qui'
+    if data[0] == 'Fri': data[0] = 'Sex'
+    if data[0] == 'Sat': data[0] = 'Sab'
+    if data[0] == 'Sun': data[0] = 'Dom'
+    
+    if data[1] == 'Jan': data[1] = 'Jan'
+    if data[1] == 'Feb': data[1] = 'Fev'
+    if data[1] == 'Mar': data[1] = 'Mar'
+    if data[1] == 'Apr': data[1] = 'Abr'
+    if data[1] == 'May': data[1] = 'Mai'
+    if data[1] == 'Jun': data[1] = 'Jun'
+    if data[1] == 'Jul': data[1] = 'Jul'
+    if data[1] == 'Aug': data[1] = 'Ago'
+    if data[1] == 'Sep': data[1] = 'Set'
+    if data[1] == 'Oct': data[1] = 'Out'
+    if data[1] == 'Nov': data[1] = 'Nov'
+    if data[1] == 'Dez': data[1] = 'Dez'
+    
+    
     #para dias com um digito
     if data.count("") > 0:
         data.remove("")
@@ -118,11 +327,20 @@ class StatusConfig:
                 return m.get('openVinoDevice'), m.get('openVinoModelXml'), m.get('openVinoModelBin'), self.data["openVinoCpuExtension"], self.data["openVinoPluginDir"], m.get('name')
 
 
+    def getDiskMaxUsage(self):
+        return self.data["diskMaxUsage"]
+    
     def getCpuExtension(self):
         return self.data["openVinoCpuExtension"]
     
     def getPluginDir(self):
         return self.data["openVinoPluginDir"]
+    
+    def getDirVideosOnAlarmes(self):
+        return self.data["dirVideosOnAlarmes"]
+    
+    def getDirVideosAllTime(self):
+        return self.data["dirVideosAllTime"]
     
     def getEmailConfig(self):
         return self.data["emailConfig"]
@@ -188,8 +406,26 @@ class StatusConfig:
         self.saveConfigFile()
 
 
+    def addStorageConfig(self, dirMaxUsage, spaceMaxDirVideosOnAlarme, spaceMaxDirVideosAllTime, eraseOldestFiles, stopSaveNewVideos):
 
-    def addConfigGeral(self, name, port, smtp, user, password, subject, to, isRecordingAllTime, isRecordingOnAlarmes, dirVideosAllTime, dirVideosOnAlarmes, camSource):
+        storageConfig = {
+                "dirMaxUsage": dirMaxUsage,
+                "spaceMaxDirVideosAllTime": spaceMaxDirVideosAllTime,
+                "spaceMaxDirVideosOnAlarme": spaceMaxDirVideosOnAlarme,
+                "eraseOldestFiles": eraseOldestFiles,
+                "stopSaveNewVideos": stopSaveNewVideos
+                } 
+
+        self.data["storageConfig"] = storageConfig
+
+        self.saveConfigFile()
+
+
+
+
+
+
+    def addConfigGeral(self, name, port, smtp, user, password, subject, to, isRecordingAllTime, isRecordingOnAlarmes, dirVideosAllTime, dirVideosOnAlarmes, camSource, diskMaxUsage):
         email = {'name':name,
                  'port':port,
                  'smtp':smtp,
@@ -205,6 +441,8 @@ class StatusConfig:
         self.data["dirVideosOnAlarmes"] = dirVideosOnAlarmes
         self.data["camSource"] = camSource
         self.data["emailConfig"] = email
+        self.data["diskMaxUsage"] = diskMaxUsage
+
         #self.data["openVinoCpuExtension"] = openVinoCpuExtension 
         #self.data["openVinoPluginDir"] = openVinoPluginDir 
 
@@ -224,6 +462,7 @@ class StatusConfig:
         self.data["openVinoCpuExtension"]     = openVinoCpuExtension
         self.data["dirVideosOnAlarmes"]       = dirVideosOnAlarmes
         self.data["emailConfig"]              = emailConfig #list of emails
+        self.data["diskMaxUsage"]             = diskMaxUsage 
 
         #self.data["emailConfig"]["port"]      = emailConfig["port"]
         #self.data["emailConfig"]["smtp"]      = emailConfig["smtp"]
@@ -401,7 +640,7 @@ class StatusConfig:
         print('emailConfig/user:        {}'.format(self.data.get('emailConfig').get('user')))
         print('emailConfig/smtp:        {}'.format(self.data.get('emailConfig').get('smtp')))
         print('emailConfig/port:        {}'.format(self.data.get('emailConfig').get('port')))
-        print('dirVideos:               {}'.format(self.data.get('dirVideos')))
+        print('dirVideosOnAlarmes:      {}'.format(self.data.get('dirVideosOnAlarmes')))
 
 
     def printRegions(self):
