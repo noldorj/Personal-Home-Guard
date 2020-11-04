@@ -30,6 +30,8 @@ def saveImageBox(frame, classe):
 #envia alerta do portao virtual com imagem anexada ao email
 def sendMailAlert(sender, recipients, subject, port, smtp, user, password, frame, tipoObjetoDetectado, region):
 
+    
+
     status = False
 
     img_file = os.getcwd() + '/' + 'foto_alerta.jpg'
@@ -38,17 +40,17 @@ def sendMailAlert(sender, recipients, subject, port, smtp, user, password, frame
         cv.imwrite(img_file, frame)
 
     except OSError as error:
-        print('Erro ao salvar a foto: ' + str(error))
+        log.critical('Erro ao salvar a foto: ' + str(error))
         return status
     else:
-        print('Foto alarme salva')
+        log.info('Foto alarme salva')
 
 
     try:
         img_file = open(img_file, 'rb').read()
 
     except OSError as error:
-        log.info('Erro ao anexar foto no email: ' + str(error))
+        log.critical('Erro ao anexar foto no email: ' + str(error))
         return status
     else:
         log.info('Foto anexada')
@@ -90,7 +92,7 @@ def sendMailAlert(sender, recipients, subject, port, smtp, user, password, frame
         smtpObj.quit()
 
     except SMTPException as e:
-        log.info("Error: unable to send email" + str(e))
+        log.critical("Error: unable to send email" + str(e))
 
     else:
         log.info('Email de alerta enviado')

@@ -1,6 +1,6 @@
 {
-    "isRecordingAllTime": "False",
-    "isRecordingOnAlarmes": "False",
+    "isRecordingAllTime": "True",
+    "isRecordingOnAlarmes": "True",
     "isOpenVino": "True",
     "camSource": "rtsp://admin:WWYZRL@192.168.5.101/live/mpeg4:554",
     "dnnModelPb": "dlModels/ssd-mobilenet/frozen_inference_graph_v1_coco_2017_11_17.pb",
@@ -31,9 +31,10 @@
         }
     ],
     "storageConfig": {
-        "dirMaxUsage": "15",
-        "spaceMaxDirVideosAllTime": "2",
-        "spaceMaxDirVideosOnAlarme": "3",
+        "diskMaxUsage": 85,
+        "diskMinUsage": "10",
+        "spaceMaxDirVideosAllTime": "0",
+        "spaceMaxDirVideosOnAlarme": "0",
         "eraseOldestFiles": "True",
         "stopSaveNewVideos": "False"
     },
@@ -48,6 +49,5 @@
         "to": "igorddf@gmail.com"
     },
     "dirVideosOnAlarmes": "videos_alarme_alterado",
-    "dirVideosAllTime": "videos_all_time",
-    "diskMaxUsage": "90"
+    "dirVideosAllTime": "videos_all_time"
 }

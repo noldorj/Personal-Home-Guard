@@ -144,7 +144,8 @@ login = None
 sessionStatus = True
 
 #variaveis do disco
-dirMaxUsage = 85 
+diskMinUsage = 15
+diskMaxUsage = 85
 spaceMaxDirVideosOnAlarme = 0 #zero significa sem limites de utilizacao do disco 
 spaceMaxDirVideosAllTime = 0 
 eraseOldestFiles = True 
@@ -158,7 +159,7 @@ def initConfig():
     global statusConfig, pb, pbtxt, regions, emailConfig, portaoVirtualSelecionado
     global status_dir_criado_all_time, status_dir_criado_all_time, dir_video_trigger_on_alarmes, dir_video_trigger_all_time, source, ipCam, prob_threshold, hora, current_data_dir, isOpenVino
     global device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir, openVinoModelName, gravandoAllTime 
-    global dirMaxUsage, spaceMaxDirVideosAllTime, spaceMaxDirVideosOnAlarme, eraseOldestFiles, stopSaveNewVideos
+    global spaceMaxDirVideosAllTime, spaceMaxDirVideosOnAlarme, eraseOldestFiles, stopSaveNewVideos, diskMaxUsage, diskMinUsage
     
     current_data_dir = utils.getDate()
     current_data_dir = [current_data_dir.get('day'), current_data_dir.get('month')]
@@ -168,10 +169,10 @@ def initConfig():
     
     gravandoAllTime = True if statusConfig.data["isRecordingAllTime"] == 'True' else False
     gravandoOnAlarmes = True if statusConfig.data["isRecordingOnAlarmes"] == 'True' else False
+    diskMinUsage = int(statusConfig.data["storageConfig"]["diskMinUsage"])
     
     isOpenVino = statusConfig.data["isOpenVino"] == 'True'
 
-    dirMaxUsage = int(statusConfig.data["storageConfig"]["dirMaxUsage"])  
     spaceMaxDirVideosOnAlarme = int(statusConfig.data["storageConfig"]["spaceMaxDirVideosOnAlarme"])  
     spaceMaxDirVideosAllTime = int(statusConfig.data["storageConfig"]["spaceMaxDirVideosAllTime"])  
     eraseOldestFiles = True if statusConfig.data["storageConfig"]["eraseOldestFiles"] == 'True' else False 
@@ -424,15 +425,17 @@ def btnSaveStorage():
         ui.txtDefinirMaximoAllTime.setText('Utilizar o máximo do HD') 
 
     if len(ui.txtAvisoUtilizacaoHD.text()) == 0:
-        ui.txtDefinirMaximoAllTime.setText('80')
+        ui.txtDefinirMaximoAllTime.setText('15')
 
     statusConfig.addStorageConfig(
+            diskMaxUsage, 
             ui.txtAvisoUtilizacaoHD.text(), 
             ui.txtDefinirMaximoOnAlarmes.text(),
             ui.txtDefinirMaximoAllTime.text(),
             "True" if ui.radioButtonDeleteOldestFiles.isChecked() else "False",
             "True" if ui.radioButtonStopSaveNewVideos.isChecked() else "False"
             )
+    
     refreshStatusConfig() 
     initConfig()
 
@@ -612,6 +615,7 @@ def fillTabGeral():
     global emailConfig, statusConfig
 
     clearFieldsTabGeralEmail()
+    refreshStatusConfig()
 
 
     ui.checkBoxVideoRecordingOnAlarmes.setCheckState( True if statusConfig.data.get("isRecordingOnAlarmes") == "True" else False )
@@ -625,7 +629,7 @@ def fillTabGeral():
 
     ui.txtDirRecordingAllTime.setText(statusConfig.data.get("dirVideosAllTime"))
     ui.txtDirRecordingOnAlarmes.setText(statusConfig.data.get("dirVideosOnAlarmes"))
-    ui.txtAvisoUtilizacaoHD.setText(statusConfig.data.get("diskMaxUsage"))
+    ui.txtAvisoUtilizacaoHD.setText(statusConfig.data["storageConfig"].get("diskMinUsage"))
     ui.txtEmailName.setText(statusConfig.data["emailConfig"].get('name'))
     ui.txtEmailPort.setText(statusConfig.data["emailConfig"].get('port'))
     ui.txtEmailSmtp.setText(statusConfig.data["emailConfig"].get('smtp'))
@@ -656,7 +660,6 @@ def fillTabGeral():
         ui.checkBoxNoLimitsVideosOnAlarmes.setChecked(False)
     
     
-    ui.txtAvisoUtilizacaoHD.setText(str(dirMaxUsage))
     ui.radioButtonStopSaveNewVideos.setChecked(stopSaveNewVideos)
     ui.radioButtonDeleteOldestFiles.setChecked(eraseOldestFiles)
     ui.progressBarDisponivelHD.setValue(utils.getDiskUsageFree())
@@ -1419,7 +1422,7 @@ while init_video and sessionStatus:
              cv.polylines(frame_screen,[pts],True,(0,0,255), 2)
 
         if cropPolygon:
-            log.info('if cropPolygon')
+            #log.info('if cropPolygon')
             pts = np.array(ref_point_polygon, np.int32)
             pts = pts.reshape((-1,1,2))
             cv.polylines(frame_screen,[pts],True,(0,0,255), 2)
@@ -1518,6 +1521,7 @@ while init_video and sessionStatus:
                                         currentMinutes = (hour * 60) + minute
 
                                         for a in r.get('alarm'):
+                                            #log.info('for a in r.get(alarme)')
 
 
                                             startMinutes = (int(a.get('time').get('start').get('hour'))*60) + int(a.get('time').get('start').get('min'))
@@ -1525,6 +1529,10 @@ while init_video and sessionStatus:
 
 
                                             if a.get('days').get(weekDay) == "True":
+                                                
+                                                #log.info('currentMinutes: {}'.format(currentMinutes))
+                                                #log.info('startMinutes: {}'.format(startMinutes))
+                                                #log.info('weekDay: {}'.format(weekDay))
 
                                                 if currentMinutes >= startMinutes and currentMinutes < endMinutes:
 
@@ -1546,6 +1554,7 @@ while init_video and sessionStatus:
                                                             listObjectSoundAlerted.append(objectID)
 
                                                     if a.get('isEmailAlert') == "True":
+                                                        #log.info('if a.get(isEmailAlert) == True')
                                                         #evitar emails seguidos para mesmo objeto
                                                         if listObjectMailAlerted.count(objectID) == 0:
 
@@ -1557,7 +1566,7 @@ while init_video and sessionStatus:
                                                             #saveImageBox(frame_no_label, str(box[6]))
 
                                                             #if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame_no_label_email, str(box[6]), r.get('nameRegion'))):
-                                                            #    log.info('Alerta enviado ID[' + str(objectID) + ']')
+                                                            log.info('Alerta enviado ID[' + str(objectID) + ']')
                                                             threadEmail = Thread(target=sendMailAlert, args=(emailConfig['name'],
                                                                                                                emailConfig['to'],
                                                                                                                emailConfig['subject'],
@@ -1569,8 +1578,6 @@ while init_video and sessionStatus:
                                                                                                                str(box[6]),
                                                                                                                r.get('nameRegion')))
                                                             threadEmail.start()
-
-
                                                             listObjectMailAlerted.append(objectID)
                                         #end loop alarms
                                     else:
@@ -1602,7 +1609,7 @@ while init_video and sessionStatus:
 
         timeGravandoAll = time.time() - timeGravandoAllInit
         
-        if not utils.isDiskFull(statusConfig.getDiskMaxUsage()):
+        if not utils.isDiskFull(diskMinUsage):
 
             if spaceMaxDirVideosOnAlarme == 0 or ( spaceMaxDirVideosOnAlarme >= utils.getDirUsedSpace(statusConfig.data["dirVideosOnAlarmes"]) ):
 
@@ -1680,7 +1687,7 @@ while init_video and sessionStatus:
 
         #disco cheio 
         else:
-            #log.info('Disco cheio')
+            log.info('Disco cheio')
             #log.info(' ')
             #log.info('Apagando diretórios de videos 24h')
             #log.i$fo('Dir: {}'.format(statusConfig.getDirVideosOnAlarmes()))
@@ -1688,17 +1695,18 @@ while init_video and sessionStatus:
             # realmente apaga os videos mais antigos ? 
             if eraseOldestFiles:
 
-                utils.freeDiskSpace(statusConfig.getDirVideosAllTime())
+                if utils.freeDiskSpace(statusConfig.getDirVideosAllTime()) == False:
+                    log.critical('Diretorios de "Videos 24hs" já está vazio')
             
                 #se ainda não tiver sido suficiente
-                if isDiskFull(statusConfig.getDiskMaxUsage()):
-                    #log.info('Apagando diretórios de Alarmes')
+                if utils.isDiskFull(diskMinUsage):
+                    log.info('Apagando diretórios de Alarmes')
                     #log.info('Dir: {}'.format(statusConfig.getDirVideosOnAlarmes()))
-                    utils.freeDiskSpace(statusConfig.getDirVideosOnAlarmes())
+                    if utils.freeDiskSpace(statusConfig.getDirVideosOnAlarmes()) == False:
+                        log.critical('Diretorios de "Vidos Alarme" já está vazio')
 
             # ou então parar de gravar novos videos
             elif stopSaveNewVideos:
-
                 gravandoAllTime = False
                 gravandoOnAlarmes = False
 

@@ -2,7 +2,7 @@ import socketio
 import logging as log
 import sys
 
-log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.DEBUG, stream=sys.stdout)
 
 sio = socketio.Client()
 #sio = socketio.AsyncClient()

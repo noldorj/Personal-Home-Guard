@@ -145,7 +145,7 @@
             "bike": "True",
             "dog": "True"
         },
-        "prob_threshold": 60.0,
+        "prob_threshold": 40.0,
         "pointsPolygon": [
             [
                 307,

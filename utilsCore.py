@@ -12,7 +12,7 @@ import subprocess
 import time
 import locale
 
-locale.setlocale(locale.LC_ALL, 'pt_BR.utf-8')
+#locale.setlocale(locale.LC_ALL, 'pt_BR.utf-8')
 #timezone = pytz.timezone("America/Sao_Paulo")
     
 
@@ -65,12 +65,12 @@ def getDiskUsageFree():
     total, used, free = shutil.disk_usage("/")
     return int((free / total)*100)
 
-def isDiskFull(diskMaxUsage):
+def isDiskFull(diskMinUsage):
     
     isFull = False 
     total, used, free = shutil.disk_usage("/")
 
-    if ((used / total)*100) >= float(diskMaxUsage):
+    if ((free / total)*100) <= float(diskMinUsage):
        
         isFull = True 
         #log.info(' ')
@@ -89,6 +89,8 @@ def isDiskFull(diskMaxUsage):
 
 
 def freeDiskSpace(dirVideo):
+
+     locale.setlocale(locale.LC_ALL, 'en_US.utf-8')
 
  #vai apagando um dia por vez até sobrar espaço
  #se não sobrar espaço, avisar o usuário que o disco está cheio por outros motivos
@@ -110,9 +112,10 @@ def freeDiskSpace(dirVideo):
      log.info('::freeDiskSpace dirVideo: {}'.format(dirVideo))
      
      dirListFull = glob(dirVideo + '/*')
+     
           
      for m in dirListFull:         
-        dirList.append(m.rsplit('/').pop())
+        dirList.append(m.rsplit('/').pop().__str__())
 
      for y in dirList:
         yearList.append(y.rsplit('-').pop())
@@ -130,101 +133,118 @@ def freeDiskSpace(dirVideo):
      
      log.info('::freeDiskSpace dirList: {}'.format(dirList))
      
-     dirSorted = sorted(dirList, key=lambda dirList: datetime.strptime(dirList,'%b-%Y'))
+     if (len(dirList) != 0):
+
+        dirSorted = sorted(dirList, key=lambda dirList: datetime.strptime(dirList,'%b-%Y'))
      
-     log.info('len dirSorted: {:d}'.format(len(dirSorted)))
-     log.info('dirSorted: {:}'.format(dirSorted))
+     
+        log.info('len dirSorted: {:d}'.format(len(dirSorted)))
+        log.info('dirSorted: {:}'.format(dirSorted))
 
 
-     daysDir = glob(dirVideo + '/' + dirSorted[0] + '/*')     
-     
-     for d in daysDir:
-        dayList.append(d.rsplit('/').pop())
-     
+        daysDir = glob(dirVideo + '/' + dirSorted[0] + '/*')     
+        
+        for d in daysDir:
+           dayList.append(d.rsplit('/').pop())
+        
 
-     daysSorted = sorted(dayList, key=lambda dayList: datetime.strptime(dayList,'%d'))
+        daysSorted = sorted(dayList, key=lambda dayList: datetime.strptime(dayList,'%d'))
+
+        log.info('daysSorted: {:}'.format(daysSorted))
+        log.info('len daysSorted: {:d}'.format(len(daysSorted)))
+        
+        #oldestDir = dirVideo + '/' + dirSorted[0] + '/' + daysSorted[0]
+             
+        iDirSorted = 0 
+        iDaysSorted = 0  
+
      
-     #oldestDir = dirVideo + '/' + dirSorted[0] + '/' + daysSorted[0]
-          
-     iDirSorted = 0 
-     iDaysSorted = 0  
-     
-     while (statusConfig.getDiskMaxUsage()):
+        while isDiskFull(statusConfig.getDiskMinUsage()) and (iDirSorted < len(dirSorted)):
+               
+            #proxima pasta a ser deletada
+            if iDirSorted < len(dirSorted):
             
-         #proxima pasta a ser deletada
-         if iDirSorted < len(dirSorted):
-         
-             if iDaysSorted < len(daysSorted):
-             
-                 oldestDir = dirVideo + '/' + dirSorted[iDirSorted] + '/' + daysSorted[iDaysSorted]                        
-             
-                 #log.info("Total: %d GiB" % (total // (2**30)))
-                 #print("Used: %d GiB" % (used // (2**30)))
-                 #log.info("Free: %d GiB" % (free // (2**30)))
-                 
-                 dirSpace = subprocess.check_output(['du','-sh', oldestDir]).split()[0].decode('utf-8')
+                if iDaysSorted < len(daysSorted):
                 
-                 #deletar a pasta do ano-mes-dia mais antigo
-                 try:
-                     
-                     shutil.rmtree(oldestDir)
-                     
-                 except OSError as e:
-                     
-                     log.critical('Diretorio nao encontrado')
-                     log.crtical("Error: %s : %s" % (oldestDir, e.strerror))
-                     
-                 else:
-                     log.info('Diretorio {} removido. Foi liberado {} de espaço'.format(oldestDir, dirSpace))             
-                     iDaysSorted = iDaysSorted + 1
-                     #totalLiberado = totalLiberado + float(dirSpace)
-                 
-             else:
-                 
-                 log.info('Removendo pastas do proximo diretorio se houver')
-                 #apagando o diretorio que ficou vazio
-                 oldestDir = dirVideo + '/' + dirSorted[iDirSorted]
-                 
-                 try:
-                     
-                     shutil.rmtree(oldestDir)
-                     
-                 except OSError as e:
-                     
-                     log.critical('Diretorio nao encontrado')
-                     log.crtical("Error: %s : %s" % (oldestDir, e.strerror))
-                     
-                 else:
-                     iDirSorted = iDirSorted + 1
-                     log.info('Diretorio {} removido'.format(oldestDir))
+                    oldestDir = dirVideo + '/' + dirSorted[iDirSorted] + '/' + daysSorted[iDaysSorted]                        
+                
+                    #log.info("Total: %d GiB" % (total // (2**30)))
+                    #print("Used: %d GiB" % (used // (2**30)))
+                    #log.info("Free: %d GiB" % (free // (2**30)))
+                    
+                    dirSpace = subprocess.check_output(['du','-sh', oldestDir]).split()[0].decode('utf-8')
+                   
+                    #deletar a pasta do ano/mes/dia mais antigo
+                    try:
+                        
+                        shutil.rmtree(oldestDir)
+                        
+                    except OSError as e:
+                        
+                        log.critical('Diretorio nao encontrado')
+                        log.crtical("Error: %s : %s" % (oldestDir, e.strerror))
+                        
+                    else:
+                        log.info('Diretorio {} removido. Foi liberado {} de espaço'.format(oldestDir, dirSpace))             
+                        iDaysSorted = iDaysSorted + 1
+                        #totalLiberado = totalLiberado + float(dirSpace)
+                    
+                else:
+                    
+                    log.info('Removendo diretorio que ficou vazaio')
+                    #apagando o diretorio que ficou vazio
+                    oldestDir = dirVideo + '/' + dirSorted[iDirSorted]
+                    
+                    iDirSorted = iDirSorted + 1
+                    
+                    try:
+                        
+                        shutil.rmtree(oldestDir)
+                        
+                    except OSError as e:
+                        
+                        log.critical('Diretorio nao encontrado')
+                        log.crtical("Error: %s : %s" % (oldestDir, e.strerror))
+                        
+                    else:
+                        log.info('Diretorio {} removido'.format(oldestDir))
+            else:
+               break
+     else:
+        #nao ha mais diretorios a serem apagados
+        return False
+
        
      #log.info('Total liberado: {:f}'.format(totalLiberado))
 
 
 def getDate():
+    #locale.setlocale(locale.LC_ALL, 'pt_BR.utf-8')
     data = time.asctime().split(" ")
+    #print('getDate data before:' + str(data))
+    #print(' ')
     
     
-    if data[0] == 'Mon': data[0] = 'Seg'
-    if data[0] == 'Tue': data[0] = 'Ter'
-    if data[0] == 'Wed': data[0] = 'Qua'
-    if data[0] == 'Thu': data[0] = 'Qui'
-    if data[0] == 'Fri': data[0] = 'Sex'
-    if data[0] == 'Sat': data[0] = 'Sab'
-    if data[0] == 'Sun': data[0] = 'Dom'
-    
-    if data[1] == 'Jan': data[1] = 'Jan'
-    if data[1] == 'Feb': data[1] = 'Fev'
-    if data[1] == 'Mar': data[1] = 'Mar'
-    if data[1] == 'Apr': data[1] = 'Abr'
-    if data[1] == 'May': data[1] = 'Mai'
-    if data[1] == 'Jun': data[1] = 'Jun'
-    if data[1] == 'Jul': data[1] = 'Jul'
-    if data[1] == 'Aug': data[1] = 'Ago'
-    if data[1] == 'Sep': data[1] = 'Set'
-    if data[1] == 'Oct': data[1] = 'Out'
-    if data[1] == 'Nov': data[1] = 'Nov'
-    if data[1] == 'Dez': data[1] = 'Dez'
+    #if data[0] == 'Mon': data[0] = 'Seg'
+    #if data[0] == 'Tue': data[0] = 'Ter'
+    #if data[0] == 'Wed': data[0] = 'Qua'
+    #if data[0] == 'Thu': data[0] = 'Qui'
+    #if data[0] == 'Fri': data[0] = 'Sex'
+    #if data[0] == 'Sat': data[0] = 'Sab'
+    #if data[0] == 'Sun': data[0] = 'Dom'
+    #
+    #if data[1] == 'Jan': data[1] = 'Jan'
+    #if data[1] == 'Feb': data[1] = 'Fev'
+    #if data[1] == 'Mar': data[1] = 'Mar'
+    #if data[1] == 'Apr': data[1] = 'Abr'
+    #if data[1] == 'May': data[1] = 'Mai'
+    #if data[1] == 'Jun': data[1] = 'Jun'
+    #if data[1] == 'Jul': data[1] = 'Jul'
+    #if data[1] == 'Aug': data[1] = 'Ago'
+    #if data[1] == 'Sep': data[1] = 'Set'
+    #if data[1] == 'Oct': data[1] = 'Out'
+    #if data[1] == 'Nov': data[1] = 'Nov'
+    #if data[1] == 'Dez': data[1] = 'Dez'
     
     
     #para dias com um digito
@@ -234,6 +254,9 @@ def getDate():
     #hourOnly = data[3].split(":")[0]
     #weekDay = data[0].lower()
     data = {'day':data[2], 'month':data[1],'hour':data[3], 'year':data[4], 'weekDay':data[0].lower(), 'minute':data[3].split(":")[1], 'hourOnly':data[3].split(":")[0]}
+   
+    #print('getDate data:' + str(data))
+    
     return data
 
 def createDirectory(dirVideos):
@@ -256,14 +279,14 @@ def createDirectory(dirVideos):
     except OSError as ex:
 
         if ex.errno == 17:
-            print('Diretorio ' + current_dir + month_dir + today_dir + ' existente.')
+            log.critical('Diretorio ' + current_dir + month_dir + today_dir + ' existente.')
             status = True
         else:
-            print('Erro ao criar o diretorio: ' + current_dir + month_dir + today_dir)
-            print(ex.__str__())
+            log.critical('Erro ao criar o diretorio: ' + current_dir + month_dir + today_dir)
+            log.critical(ex.__str__())
 
     else:
-        print("Diretorio " + current_dir + month_dir + today_dir + " criado com sucesso")
+        log.info("Diretorio " + current_dir + month_dir + today_dir + " criado com sucesso")
         status = True
 
     dir_temp = current_dir + month_dir + today_dir
@@ -326,6 +349,8 @@ class StatusConfig:
             if m.get('isActive') == "True":
                 return m.get('openVinoDevice'), m.get('openVinoModelXml'), m.get('openVinoModelBin'), self.data["openVinoCpuExtension"], self.data["openVinoPluginDir"], m.get('name')
 
+    def getDiskMinUsage(self):
+        return self.data["storageConfig"]["diskMinUsage"]
 
     def getDiskMaxUsage(self):
         return self.data["diskMaxUsage"]
@@ -406,10 +431,11 @@ class StatusConfig:
         self.saveConfigFile()
 
 
-    def addStorageConfig(self, dirMaxUsage, spaceMaxDirVideosOnAlarme, spaceMaxDirVideosAllTime, eraseOldestFiles, stopSaveNewVideos):
+    def addStorageConfig(self, diskMaxUsage, diskMinUsage, spaceMaxDirVideosOnAlarme, spaceMaxDirVideosAllTime, eraseOldestFiles, stopSaveNewVideos):
 
         storageConfig = {
-                "dirMaxUsage": dirMaxUsage,
+                "diskMaxUsage": diskMaxUsage,
+                "diskMinUsage": diskMinUsage,
                 "spaceMaxDirVideosAllTime": spaceMaxDirVideosAllTime,
                 "spaceMaxDirVideosOnAlarme": spaceMaxDirVideosOnAlarme,
                 "eraseOldestFiles": eraseOldestFiles,
@@ -425,7 +451,7 @@ class StatusConfig:
 
 
 
-    def addConfigGeral(self, name, port, smtp, user, password, subject, to, isRecordingAllTime, isRecordingOnAlarmes, dirVideosAllTime, dirVideosOnAlarmes, camSource, diskMaxUsage):
+    def addConfigGeral(self, name, port, smtp, user, password, subject, to, isRecordingAllTime, isRecordingOnAlarmes, dirVideosAllTime, dirVideosOnAlarmes, camSource, diskMinUsage):
         email = {'name':name,
                  'port':port,
                  'smtp':smtp,
@@ -441,7 +467,8 @@ class StatusConfig:
         self.data["dirVideosOnAlarmes"] = dirVideosOnAlarmes
         self.data["camSource"] = camSource
         self.data["emailConfig"] = email
-        self.data["diskMaxUsage"] = diskMaxUsage
+        self.data["diskMaxUsage"] = "85" 
+        self.data["diskMinUsage"] = diskMinUsage
 
         #self.data["openVinoCpuExtension"] = openVinoCpuExtension 
         #self.data["openVinoPluginDir"] = openVinoPluginDir 
@@ -463,6 +490,7 @@ class StatusConfig:
         self.data["dirVideosOnAlarmes"]       = dirVideosOnAlarmes
         self.data["emailConfig"]              = emailConfig #list of emails
         self.data["diskMaxUsage"]             = diskMaxUsage 
+        self.data["diskMinUsage"]             = diskMinUsage
 
         #self.data["emailConfig"]["port"]      = emailConfig["port"]
         #self.data["emailConfig"]["smtp"]      = emailConfig["smtp"]
@@ -525,19 +553,19 @@ class StatusConfig:
         self.readRegionsFile(regionsFile)
 
     def readConfigFile(self, file = 'config.json'):
-        print('Lendo arquivo de configuração: ' + os.getcwd() + '/' + file)
+        log.info('Lendo arquivo de configuração: ' + os.getcwd() + '/' + file)
         self.data = json.load(open(file,'r'))
         #self.printConfig()
 
     def readRegionsFile(self, file = 'regions.json'):
-        print('Lendo arquivo de regiões: ' + os.getcwd() + '/' + file)
+        log.info('Lendo arquivo de regiões: ' + os.getcwd() + '/' + file)
         try:
             self.regions = json.load(open(file,'r'))
         except OSError as ex:
 
-                print('Arquivo de Regioes inexistente - será criado um novo arquivo') 
+                log.critical('Arquivo de Regioes inexistente - será criado um novo arquivo') 
         else:
-            print('Arquivo de regiões lido com sucesso')
+            log.info('Arquivo de regiões lido com sucesso')
             #self.printRegions()
 
 
@@ -700,9 +728,16 @@ def playSound():
 
 #status = StatusConfig()
 
+#date = getDate()
+
+#print (date)
+
+
+
 #status.deleteEmail("email2")
 
 #status.addEmail('email3', '22', 'smtp.uol.com', 'user1', 'senha', 'assunto', 'destino@gmail.com')
+
 
 
 
