@@ -4,6 +4,7 @@ import numpy as np
 import time
 from objectTracking.pyimagesearch.centroidtracker import CentroidTracker
 from Utils_tracking import sendMailAlert
+from Utils_tracking import sendMail
 from Utils_tracking import saveImageBox
 import utilsCore as utils
 import logging as log
@@ -41,6 +42,17 @@ log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=s
 
 
 #variaveis globais
+
+
+diskFullWarned = False
+diskFullVideosOnAlarmes = False
+diskFullVideosAllTimeWarned = False
+
+emailSentFullVideosOnAlarmes = False
+emailSentFullVideosAllTime = False
+emailSentDiskFull = False
+emailSentdirVideosAllTimeEmpty = False
+emailSentdirVideosOnAlarmesEmpty = False
 
 conectado = None
 conexao = False
@@ -147,7 +159,7 @@ sessionStatus = True
 diskMinUsage = 15
 diskMaxUsage = 85
 spaceMaxDirVideosOnAlarme = 0 #zero significa sem limites de utilizacao do disco 
-spaceMaxDirVideosAllTime = 0 
+spaceMaxDirVideosAllTime = 0  #zero significa sem limites de utilizacao do disco 
 eraseOldestFiles = True 
 stopSaveNewVideos = False
 
@@ -173,8 +185,8 @@ def initConfig():
     
     isOpenVino = statusConfig.data["isOpenVino"] == 'True'
 
-    spaceMaxDirVideosOnAlarme = int(statusConfig.data["storageConfig"]["spaceMaxDirVideosOnAlarme"])  
-    spaceMaxDirVideosAllTime = int(statusConfig.data["storageConfig"]["spaceMaxDirVideosAllTime"])  
+    spaceMaxDirVideosOnAlarme = float(statusConfig.data["storageConfig"]["spaceMaxDirVideosOnAlarme"])  
+    spaceMaxDirVideosAllTime = float(statusConfig.data["storageConfig"]["spaceMaxDirVideosAllTime"])  
     eraseOldestFiles = True if statusConfig.data["storageConfig"]["eraseOldestFiles"] == 'True' else False 
     stopSaveNewVideos = True if statusConfig.data["storageConfig"]["stopSaveNewVideos"] == 'True' else False 
     
@@ -410,6 +422,8 @@ def btnEsqueciSenha():
 
 def btnSaveStorage():
 
+    global emailSentFullVideosAllTime, emailSentFullVideosOnAlarmes, emailSentDiskFull
+
     statusFields = True 
     msg = QMessageBox()
     msg.setIcon(QMessageBox.Information)
@@ -417,27 +431,92 @@ def btnSaveStorage():
     msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
 
     #checando campos em branco
+    discoLivre = utils.getDiskUsageFreeGb()
+    discoLivrePorcentagem = utils.getDiskUsageFree()
 
-    if len(ui.txtDefinirMaximoAllTime.text()) == 0:
-        ui.txtDefinirMaximoAllTime.setText('Utilizar o máximo do HD') 
+    if len(ui.txtDefinirMaximoAllTime.text()) == 0 and not ui.checkBoxNoLimitsVideosAllTime.isChecked():
+        msg.setText("Favor preencher o campo 'Espaço máximo em GB na pasta Videos 24hs' ")
+        msg.exec()
+        ui.txtDefinirMaximoAllTime.setFocus()
+        statusFields = False
 
-    if len(ui.txtDefinirMaximoOnAlarmes.text()) == 0:
-        ui.txtDefinirMaximoAllTime.setText('Utilizar o máximo do HD') 
+
+    if len(ui.txtDefinirMaximoOnAlarmes.text()) == 0 and not ui.checkBoxNoLimitsVideosOnAlarmes.isChecked():
+        msg.setText("Favor preencher o campo 'Espaço máximo em GB na pasta Videos Alarmes' ")
+        msg.exec()
+        ui.txtDefinirMaximoOnAlarmes.setFocus()
+        statusFields = False
+
+
+    if  not ui.checkBoxNoLimitsVideosAllTime.isChecked() \
+        and ui.txtDefinirMaximoAllTime.text() != '0' \
+        and len(ui.txtDefinirMaximoAllTime.text()) != 0:
+
+            if float(ui.txtDefinirMaximoAllTime.text().replace(',', '.')) > discoLivre: 
+                msg.setText("Não há espaço em disco disponível, coloque um valor em GB menor que " + str(discoLivre) + ".")
+                msg.exec()
+                ui.txtDefinirMaximoAllTime.setFocus()
+                statusFields = False
+
+
+    if  not ui.checkBoxNoLimitsVideosOnAlarmes.isChecked() \
+        and len(ui.txtDefinirMaximoOnAlarmes.text()) != 0 \
+        and ui.txtDefinirMaximoOnAlarmes.text() != '0':
+        
+            if float(ui.txtDefinirMaximoOnAlarmes.text().replace(',', '.')) > discoLivre:
+                msg.setText("Não há espaço em disco disponível, coloque um valor em GB menor que " + str(discoLivre) + ".")
+                msg.exec()
+                ui.txtDefinirMaximoOnAlarmes.setFocus()
+                statusFields = False
+
+
+    log.info('txtAvisoUtilizacaoHD: {}'.format(ui.txtAvisoUtilizacaoHD.text()))
+    log.info('getDiskUsageFreeGb: {:f}'.format(utils.getDiskUsageFreeGb()))
+
 
     if len(ui.txtAvisoUtilizacaoHD.text()) == 0:
-        ui.txtDefinirMaximoAllTime.setText('15')
+        discoValor = discoLivrePorcentagem - 5 
+        if discoValor <= 0:
+            ui.txtAvisoUtilizacaoHD.setText(str(discoLivrePorcentagem))
+        else:
+            ui.txtAvisoUtilizacaoHD.setText(str(discoValor))
 
-    statusConfig.addStorageConfig(
-            diskMaxUsage, 
-            ui.txtAvisoUtilizacaoHD.text(), 
-            ui.txtDefinirMaximoOnAlarmes.text(),
-            ui.txtDefinirMaximoAllTime.text(),
-            "True" if ui.radioButtonDeleteOldestFiles.isChecked() else "False",
-            "True" if ui.radioButtonStopSaveNewVideos.isChecked() else "False"
-            )
+        msg.setText("Favor preencher o campo 'Nível mínimo de espaço em disco em porcentagem' ")
+        msg.exec()
+        ui.txtAvisoUtilizacaoHD.setFocus()
+        statusFields = False
+
+    if ui.txtAvisoUtilizacaoHD.text() != '0' and len(ui.txtAvisoUtilizacaoHD.text()) != 0:
+
+        if float(ui.txtAvisoUtilizacaoHD.text().replace(',', '.')) < discoLivrePorcentagem:
+            log.info('emailSentDiskFull False')
+            emailSentDiskFull = False 
+
+    if ui.txtDefinirMaximoOnAlarmes.text() != '0' and len(ui.txtDefinirMaximoOnAlarmes.text()) != 0:
+
+        if float(ui.txtDefinirMaximoOnAlarmes.text().replace(',', '.')) < discoLivre:
+            log.info('emailSentFullVideosOnAlarmes = False')
+            emailSentFullVideosOnAlarmes = False 
+
+    if ui.txtDefinirMaximoAllTime.text() != '0' and len(ui.txtDefinirMaximoAllTime.text()) != 0:
+
+        if float(ui.txtDefinirMaximoAllTime.text().replace(',', '.')) < discoLivre:
+            log.info('emailSentFullVideosAllTime= False')
+            emailSentFullVideosAllTime = False 
+
+    if statusFields:
+
+        statusConfig.addStorageConfig(
+                diskMaxUsage, 
+                ui.txtAvisoUtilizacaoHD.text().replace(',', '.'), 
+                ui.txtDefinirMaximoOnAlarmes.text().replace(',', '.'),
+                ui.txtDefinirMaximoAllTime.text().replace(',', '.'),
+                "True" if ui.radioButtonDeleteOldestFiles.isChecked() else "False",
+                "True" if ui.radioButtonStopSaveNewVideos.isChecked() else "False"
+                )
     
-    refreshStatusConfig() 
-    initConfig()
+        refreshStatusConfig() 
+        initConfig()
 
     
 
@@ -1643,8 +1722,16 @@ while init_video and sessionStatus:
 
             #espaço maximo na pasta VideosOnAlarmes atingido 
             else:
-                log.critical('Espaço maximo na pasta {} atingido'.format(statusConfig.data["dirVideosOnAlarmes"]))
                 #avisar por email 1x a cada X tempo ? 
+                if not emailSentFullVideosOnAlarmes:  
+                    log.critical('Espaço maximo na pasta {} atingido'.format(statusConfig.data["dirVideosOnAlarmes"]))
+                    threadEmail = Thread(target=sendMail, args=(
+
+                        'Portao Virtual - Falta de espaço  na pasta "Alarmes"',
+                        'Espaço maximo na pasta {} atingido'.format(statusConfig.data["dirVideosOnAlarmes"]) ) )
+                    threadEmail.start()
+                    emailSentFullVideosOnAlarmes = True
+                    #avisar por email 1x a cada X tempo ? 
 
 
             if spaceMaxDirVideosAllTime == 0 or ( spaceMaxDirVideosAllTime >= utils.getDirUsedSpace(statusConfig.data["dirVideosAllTime"]) ):
@@ -1682,21 +1769,56 @@ while init_video and sessionStatus:
                         #process.stdin.close()
 
             else:
-                log.critical('Espaço maximo na pasta {} atingido'.format(statusConfig.data["dirVideosAllTime"]))
-                #avisar por email 1x a cada X tempo ? 
+                
+                if not emailSentFullVideosAllTime:  
+                    log.critical('Espaço maximo na pasta {} atingido'.format(statusConfig.data["dirVideosAllTime"]))
+                    threadEmail = Thread( target=sendMail, args=(
+
+                    'Portao Virtual - Falta de espaço  na pasta "Gravação 24hs"',
+                    'Espaço maximo na pasta {} atingido'.format(statusConfig.data["dirVideosAllTime"])) )
+
+                    threadEmail.start()
+                    emailSentFullVideosAllTime = True
+                    #avisar por email 1x a cada X tempo ? 
 
         #disco cheio 
         else:
-            log.info('Disco cheio')
-            #log.info(' ')
-            #log.info('Apagando diretórios de videos 24h')
-            #log.i$fo('Dir: {}'.format(statusConfig.getDirVideosOnAlarmes()))
+
+            if not emailSentDiskFull:  
+                if eraseOldestFiles:
+                    textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a deletar \
+                            os videos mais antigos, recomendamos que aumente seu espaço em disco \
+                            para não perder as gravações realizadas.'
+
+                    threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
+                    threadEmailDiskFull.start()
+                    emailSentDiskFull = True
+                    log.info('Email de disco cheio enviado - apagando videos antigos ')
+                    #avisar por email 1x a cada X tempo ? 
+                else:
+                    textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a não \
+                            gravar videos novos, recomendamos que aumente seu espaço em disco \
+                            para poder novos videos quando ocorrer futuros alarmes.'
+
+                    threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
+                    threadEmailDiskFull.start()
+                    emailSentDiskFull = True
+                    log.info('Email de disco cheio enviado - interromper novos videos')
+
 
             # realmente apaga os videos mais antigos ? 
             if eraseOldestFiles:
 
                 if utils.freeDiskSpace(statusConfig.getDirVideosAllTime()) == False:
+                    
                     log.critical('Diretorios de "Videos 24hs" já está vazio')
+                    if not emailSentdirVideosAllTimeEmpty:
+                        textEmail = 'Mesmo apagando a pasta "Videos 24hs", seu HD continua cheio ! \n\n \ Nossa sugestão é que você libere mais espaço para pode gravar os "Videos 24hs"' 
+
+                        threadEmailAllEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos 24hs" apagada - seu HD está cheio !',textEmail))
+                        threadEmailAllEmpty.start()
+                        emailSentdirVideosAllTimeEmpty = True
+
             
                 #se ainda não tiver sido suficiente
                 if utils.isDiskFull(diskMinUsage):
@@ -1704,6 +1826,14 @@ while init_video and sessionStatus:
                     #log.info('Dir: {}'.format(statusConfig.getDirVideosOnAlarmes()))
                     if utils.freeDiskSpace(statusConfig.getDirVideosOnAlarmes()) == False:
                         log.critical('Diretorios de "Vidos Alarme" já está vazio')
+
+                        if not emailSentdirVideosOnAlarmesEmpty:
+                            textEmail = 'Mesmo apagando a pasta "Videos Alarme", seu HD continua cheio ! \n\n  \
+                                     Nossa sugestão é que você libere mais espaço para pode gravar os "Videos Alarme"' 
+                                    
+                            threadEmailAlarmesEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos Alarmes" apagada - seu HD está cheio !',textEmail))
+                            threadEmailAlarmesEmpty.start()
+                            emailSentdirVideosOnAlarmesEmpty = True
 
             # ou então parar de gravar novos videos
             elif stopSaveNewVideos:

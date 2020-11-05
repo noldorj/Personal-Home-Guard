@@ -664,7 +664,7 @@
       <item row="15" column="0">
        <widget class="QLabel" name="label_27">
         <property name="text">
-         <string>Avisar por email se o HD ficar com pouco espaço disponível em %:</string>
+         <string>Avisar por email se o HD atingir o nível mínimo de (em %):</string>
         </property>
        </widget>
       </item>

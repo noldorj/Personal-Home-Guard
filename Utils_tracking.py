@@ -10,6 +10,10 @@ import utilsCore as utils
 import logging as log
 import sys
 
+statusConfig = utils.StatusConfig() 
+
+emailConfig = statusConfig.getEmailConfig()
+
 log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 
 def saveImageBox(frame, classe):
@@ -25,6 +29,51 @@ def saveImageBox(frame, classe):
         print("Erro em 'saveImageBox': " + str(error))
     else:
         print('saveImageBox - imagem salva')
+
+
+def sendMail(subject, text):
+
+    status = False
+
+    sender = emailConfig['name']
+    recipients = emailConfig['to']
+    port = emailConfig['port']
+    smtp = emailConfig['smtp']
+    user = emailConfig['user']
+    password = emailConfig['password'] 
+
+    #data = utils.getDate()
+    msg = MIMEMultipart()
+
+
+    msg['Subject'] = subject 
+    msg['From'] = sender
+    msg['To'] = recipients
+
+    text = MIMEText(text)
+
+    msg.attach(text)
+
+    smtpObj = smtplib.SMTP(smtp, int(port))
+    try:
+        smtpObj.ehlo()
+        smtpObj.starttls()
+        smtpObj.ehlo()
+        smtpObj.login(sender,password)
+        smtpObj.send_message(msg)
+        smtpObj.quit()
+
+    except SMTPException as e:
+        log.info("sendMail: Error: unable to send email" + str(e))
+
+    else:
+        log.info('sendMail: {} enviado.'.format(subject))
+        status = True
+
+    return status
+
+
+
 
 
 #envia alerta do portao virtual com imagem anexada ao email

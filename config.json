@@ -33,10 +33,10 @@
     "storageConfig": {
         "diskMaxUsage": 85,
         "diskMinUsage": "10",
-        "spaceMaxDirVideosAllTime": "0",
-        "spaceMaxDirVideosOnAlarme": "0",
-        "eraseOldestFiles": "True",
-        "stopSaveNewVideos": "False"
+        "spaceMaxDirVideosAllTime": "4",
+        "spaceMaxDirVideosOnAlarme": "4",
+        "eraseOldestFiles": "False",
+        "stopSaveNewVideos": "True"
     },
     "prob_threshold": 0.7,
     "emailConfig": {

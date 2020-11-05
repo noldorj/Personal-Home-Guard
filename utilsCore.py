@@ -55,7 +55,6 @@ def getNumDaysRecording():
 
 
 def getDiskUsageFreeGb():
-
     total, used, free = shutil.disk_usage("/")
     return (free / (2**30))
 
@@ -109,7 +108,6 @@ def freeDiskSpace(dirVideo):
      #dirVideo = 'videos_all_time'     
      
      dirVideo = os.getcwd() + '/' + dirVideo  
-     log.info('::freeDiskSpace dirVideo: {}'.format(dirVideo))
      
      dirListFull = glob(dirVideo + '/*')
      
@@ -123,24 +121,10 @@ def freeDiskSpace(dirVideo):
      for m in dirList:
         monthList.append(m.rsplit('-')[0])
 
-     log.info('::freeDiskSpace dirList: {}'.format(dirList))
-     log.info('::freeDiskSpace yearList: {}'.format(yearList))
-     log.info('::freeDiskSpace monthList: {}'.format(monthList))
-     
-     
-     log.info('::freeDiskSpace dirList len: {:d}'.format(len(dirList)))
-     
-     
-     log.info('::freeDiskSpace dirList: {}'.format(dirList))
      
      if (len(dirList) != 0):
 
         dirSorted = sorted(dirList, key=lambda dirList: datetime.strptime(dirList,'%b-%Y'))
-     
-     
-        log.info('len dirSorted: {:d}'.format(len(dirSorted)))
-        log.info('dirSorted: {:}'.format(dirSorted))
-
 
         daysDir = glob(dirVideo + '/' + dirSorted[0] + '/*')     
         
@@ -149,12 +133,7 @@ def freeDiskSpace(dirVideo):
         
 
         daysSorted = sorted(dayList, key=lambda dayList: datetime.strptime(dayList,'%d'))
-
-        log.info('daysSorted: {:}'.format(daysSorted))
-        log.info('len daysSorted: {:d}'.format(len(daysSorted)))
         
-        #oldestDir = dirVideo + '/' + dirSorted[0] + '/' + daysSorted[0]
-             
         iDirSorted = 0 
         iDaysSorted = 0  
 
@@ -167,10 +146,6 @@ def freeDiskSpace(dirVideo):
                 if iDaysSorted < len(daysSorted):
                 
                     oldestDir = dirVideo + '/' + dirSorted[iDirSorted] + '/' + daysSorted[iDaysSorted]                        
-                
-                    #log.info("Total: %d GiB" % (total // (2**30)))
-                    #print("Used: %d GiB" % (used // (2**30)))
-                    #log.info("Free: %d GiB" % (free // (2**30)))
                     
                     dirSpace = subprocess.check_output(['du','-sh', oldestDir]).split()[0].decode('utf-8')
                    
@@ -219,10 +194,7 @@ def freeDiskSpace(dirVideo):
 
 
 def getDate():
-    #locale.setlocale(locale.LC_ALL, 'pt_BR.utf-8')
     data = time.asctime().split(" ")
-    #print('getDate data before:' + str(data))
-    #print(' ')
     
     
     #if data[0] == 'Mon': data[0] = 'Seg'
@@ -266,10 +238,7 @@ def createDirectory(dirVideos):
     month_dir
     today_dir = '/' + date['day']
     current_dir =  dirVideos
-    #current_dir = os.getcwd() + '/video_alarmes'
-#    current_dir = '/Users/ijferrei/video_alarmes'
     status = False
-#    current_dir = '/Users/ijferrei/video_alarmes'
     status = False
 
     #checar se pasta do mes existe, ou cria-la
@@ -448,9 +417,6 @@ class StatusConfig:
 
 
 
-
-
-
     def addConfigGeral(self, name, port, smtp, user, password, subject, to, isRecordingAllTime, isRecordingOnAlarmes, dirVideosAllTime, dirVideosOnAlarmes, camSource, diskMinUsage):
         email = {'name':name,
                  'port':port,
@@ -469,9 +435,6 @@ class StatusConfig:
         self.data["emailConfig"] = email
         self.data["diskMaxUsage"] = "85" 
         self.data["diskMinUsage"] = diskMinUsage
-
-        #self.data["openVinoCpuExtension"] = openVinoCpuExtension 
-        #self.data["openVinoPluginDir"] = openVinoPluginDir 
 
         self.saveConfigFile()
 
@@ -621,12 +584,12 @@ class StatusConfig:
         i = 0
 
         if self.checkActiveModel() and len(self.data.get('openVinoModels')) == 1:
-                print('WARNING: deve haver ao menos 1 modelo ativo')
+                log.info('WARNING: deve haver ao menos 1 modelo ativo')
                 status = False
         else:
             for m in self.data.get('openVinoModels'):
                 if m.get('name') == modelName:
-                    print('deletando {}'.format(self.data.get('openVinoModels')[i].get('name')))
+                    log.info('deletando {}'.format(self.data.get('openVinoModels')[i].get('name')))
                     del self.data.get('openVinoModels')[i]
                     status = True
                 else:
@@ -642,7 +605,7 @@ class StatusConfig:
             if r.get("nameRegion") == nameRegion:
                 del self.regions[i]
                 self.saveRegionFile()
-                print("Regiao '{}' removido com sucesso".format(nameRegion))
+                log.info("Regiao '{}' removido com sucesso".format(nameRegion))
 
             i = i+1
         #return False
@@ -717,45 +680,8 @@ class StatusConfig:
 
 
 def playSound():
-   # campainha = pyglet.media.load('campainha.wav')
-   # campainha.play()
-    #log.info('Campainha tocada: {}'.format(os.getcwd()))
     pygame.init()
     pygame.mixer.music.load('campainha.mp3')
     pygame.mixer.init()
     pygame.mixer.music.play(0)
-
-
-#status = StatusConfig()
-
-#date = getDate()
-
-#print (date)
-
-
-
-#status.deleteEmail("email2")
-
-#status.addEmail('email3', '22', 'smtp.uol.com', 'user1', 'senha', 'assunto', 'destino@gmail.com')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
