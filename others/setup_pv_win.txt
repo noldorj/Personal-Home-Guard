@@ -65,3 +65,5 @@ urllib3==1.25.11
 websocket-client==0.57.0
 
 
+3. ModuleNotFoundError: No module named 'Crypto'  - só ocorre no Windows 
+pip install pycryptodome==3.4.3

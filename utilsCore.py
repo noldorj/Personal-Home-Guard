@@ -12,6 +12,15 @@ import subprocess
 import time
 import locale
 
+from pbkdf2 import PBKDF2
+from Crypto.Cipher import AES
+import os
+from cryptography.fernet import Fernet
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+import base64
+
 #locale.setlocale(locale.LC_ALL, 'pt_BR.utf-8')
 #timezone = pytz.timezone("America/Sao_Paulo")
     
@@ -19,12 +28,57 @@ import locale
 log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 
 def camSource(source = 'webcam'):
+    status = True
+    error = ''
+    ipCam = None
+
     if source == 'webcam':
+        
         log.info('imagem da WebCam')
-        return cv.VideoCapture(0)
+        ipCam = cv.VideoCapture(0)
+
     else:
-        log.info('imagem de camera rstp')
-        return cv.VideoCapture(source)
+
+        try:
+            ipCam = cv.VideoCapture(source)
+        except cv.error as e:
+            status = False
+            log.critical('camSource error: {}'.format(e))
+            error = e
+        else:
+            if ipCam.isOpened():
+                log.info('Imagem de camera rstp ok')
+            else:
+                error = 'rtsp'
+
+    return ipCam, error
+
+
+def decrypt(password):
+    
+    key = b'x-LhW_rs81XBzuFLq9jgUFOcGbjDWwWXS5A7lpV0onQ='
+    fernetKey = Fernet(key)
+    
+    f = open("kp.bin", "r")
+    token = f.read()    
+    password = fernetKey.decrypt(token.encode())
+    
+    
+    return password.decode() 
+
+
+def encrypt(password):
+    
+    key = b'x-LhW_rs81XBzuFLq9jgUFOcGbjDWwWXS5A7lpV0onQ='    
+    f = Fernet(key)
+    token = f.encrypt(password.encode())    
+  
+
+    f = open("kp.bin", "wb")
+    f.write(token)
+    f.close()
+
+    return token
 
 
 def getDirUsedSpace(start_path):
@@ -264,6 +318,13 @@ def createDirectory(dirVideos):
 
 class StatusConfig:
 
+    dataLogin = {
+    
+        "user"             : "nome@email.com",
+        "passwd"           : "senha",
+        "loginAutomatico"  : "False"
+    }
+
 
     data = {
             "isRecordingAllTime"    : "False",
@@ -416,6 +477,16 @@ class StatusConfig:
         self.saveConfigFile()
 
 
+    def addLoginConfig(self, userName, userPasswd, loginAutomatico):
+
+        self.dataLogin['user'] = userName
+        self.dataLogin['passwd'] = userPasswd
+        self.dataLogin['loginAutomatico'] = loginAutomatico 
+
+        self.saveConfigLogin()
+
+
+
 
     def addConfigGeral(self, name, port, smtp, user, password, subject, to, isRecordingAllTime, isRecordingOnAlarmes, dirVideosAllTime, dirVideosOnAlarmes, camSource, diskMinUsage):
         email = {'name':name,
@@ -510,23 +581,29 @@ class StatusConfig:
         #TO-DO try catch toleranca a falhas
 
 
-    def __init__(self, configFile='config.json', regionsFile='regions.json'):
+    def __init__(self, configFile='config.json', regionsFile='regions.json', configLogin='lconfig.json'):
+
         #configuracoes setadas pelo arquivo sobrescrevem as configuracoes padroes
         self.readConfigFile(configFile)
         self.readRegionsFile(regionsFile)
+        self.readConfigLogin(configLogin)
 
-    def readConfigFile(self, file = 'config.json'):
-        log.info('Lendo arquivo de configuração: ' + os.getcwd() + '/' + file)
-        self.data = json.load(open(file,'r'))
-        #self.printConfig()
+    def readConfigLogin(self, fileName = 'lconfig.json'):
+        log.info('Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
+        self.dataLogin = json.load(open(fileName,'r'))
 
-    def readRegionsFile(self, file = 'regions.json'):
-        log.info('Lendo arquivo de regiões: ' + os.getcwd() + '/' + file)
+
+    def readConfigFile(self, fileName = 'config.json'):
+        log.info('Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
+        self.data = json.load(open(fileName,'r'))
+
+    def readRegionsFile(self, fileName = 'regions.json'):
+        log.info('Lendo arquivo de regiões: ' + os.getcwd() + '/' + fileName)
         try:
-            self.regions = json.load(open(file,'r'))
+            self.regions = json.load(open(fileName,'r'))
         except OSError as ex:
 
-                log.critical('Arquivo de Regioes inexistente - será criado um novo arquivo') 
+            log.critical('Arquivo de Regioes inexistente - será criado um novo arquivo') 
         else:
             log.info('Arquivo de regiões lido com sucesso')
             #self.printRegions()
@@ -678,6 +755,25 @@ class StatusConfig:
         log.info('Salvando arquivo de configuração: {}/{}'.format(os.getcwd(), file))
         json.dump(self.data, open(file,'w'), indent=4)
 
+    def saveConfigLogin(self, fileName = 'lconfig.json'):
+        import simplejson as json
+        
+        #try:
+        #    fp = open("passwords.json","r")
+        #    obj = json.load(fp)
+        #except:
+        #    fp = open("passwords.json","r")
+        #    obj = json.load(fp)
+        #finally:
+        #    fp.close()
+        try:
+            fp = open(fileName,"w")
+            fp.write(json.dumps(self.dataLogin, indent = 4))
+        finally:
+            fp.close()
+
+        log.info('Salvando arquivo de configuração: {}/{}'.format(os.getcwd(), fileName))
+        #json.dump(self.dataLogin, open(file,'w'), indent=4)
 
 def playSound():
     pygame.init()

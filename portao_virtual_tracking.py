@@ -58,6 +58,10 @@ conectado = None
 conexao = False
 frame = None
 
+rtspStatus = True
+
+fernetKey = None
+
 CHECK_SESSION = 300 # checar sessao a cada 5 min
 GRAVANDO_TIME = 300 #gravar videos de 5min 
 
@@ -171,7 +175,7 @@ def initConfig():
     global statusConfig, pb, pbtxt, regions, emailConfig, portaoVirtualSelecionado
     global status_dir_criado_all_time, status_dir_criado_all_time, dir_video_trigger_on_alarmes, dir_video_trigger_all_time, source, ipCam, prob_threshold, hora, current_data_dir, isOpenVino
     global device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir, openVinoModelName, gravandoAllTime 
-    global spaceMaxDirVideosAllTime, spaceMaxDirVideosOnAlarme, eraseOldestFiles, stopSaveNewVideos, diskMaxUsage, diskMinUsage
+    global spaceMaxDirVideosAllTime, spaceMaxDirVideosOnAlarme, eraseOldestFiles, stopSaveNewVideos, diskMaxUsage, diskMinUsage, rtspStatus
     
     current_data_dir = utils.getDate()
     current_data_dir = [current_data_dir.get('day'), current_data_dir.get('month')]
@@ -218,7 +222,12 @@ def initConfig():
     #origem do stream do video
     source = statusConfig.data["camSource"]
     log.info('source: {}'.format(source))
-    ipCam = utils.camSource(source)
+    ipCam, error = utils.camSource(source)
+
+    if error != '':
+        ipCam = None
+        rtspStatus = False
+        log.critical('Erro camSource: {}'.format(error))
 
     prob_threshold = float(statusConfig.data["prob_threshold"])
 
@@ -1244,6 +1253,33 @@ def callbackButtonResumeSound(self, ret):
 #        #ui.txtUrlRstp.setEnabled(False)
 
 
+
+def checkBoxSalvarLogin(state):
+    global fernetKey
+
+    statusConfig = utils.StatusConfig()
+    
+    if state == 0:
+        
+        log.info('salvar login off')
+        statusConfig.addLoginConfig(uiLogin.txtEmail.text(),
+                                    '',
+                                    'False')
+        log.info('Login automatico desligado')
+
+    elif (state == 1 or state == 2):
+        
+
+        passEncrypted = utils.encrypt(uiLogin.txtPasswd.text())        
+        
+        statusConfig.addLoginConfig(uiLogin.txtEmail.text(),
+                                    passEncrypted,
+                                    'True')
+        
+        log.info('Login automatico ligado')
+
+
+
 def checkBoxWebcamStateChanged(state):
     if state == 0:
        ui.txtUrlRstp.setEnabled(True)
@@ -1272,13 +1308,26 @@ def checkBoxNoLimitsVideosOnAlarmes(state):
 
 def initFormLogin(self, ret):
 
-    global uiLogin, formLogin 
+    global uiLogin, formLogin, fernetKey 
+        
+    
+    statusConfig = utils.StatusConfig()
+
+    if statusConfig.dataLogin.get('loginAutomatico') == 'True':
+        
+        uiLogin.txtEmail.setText(statusConfig.dataLogin.get('user'))
+        
+        passwd = utils.decrypt(statusConfig.dataLogin.get('passwd')) 
+        
+        uiLogin.txtPasswd.setText(passwd)
+        uiLogin.checkBoxSalvarLogin.setCheckState(True)
 
     log.info('Iniciando tela de login')
 
     uiLogin.btnLogin.clicked.connect(btnLogin)
     uiLogin.btnExit.clicked.connect(btnExit)
     uiLogin.btnEsqueciSenha.clicked.connect(btnEsqueciSenha)
+    uiLogin.checkBoxSalvarLogin.stateChanged.connect(checkBoxSalvarLogin)
     
     uiLogin.btnAlterarSenha.clicked.connect(btnAlterarSenha)
 
@@ -1328,6 +1377,7 @@ def callbackButtonRegioes(self, ret):
     ui.btnSaveStorage.clicked.connect(btnSaveStorage)
     
     ui.checkBoxWebCam.stateChanged.connect(checkBoxWebcamStateChanged)
+
    
     ui.checkBoxNoLimitsVideosAllTime.stateChanged.connect(checkBoxNoLimitsVideosAllTime)
     ui.checkBoxNoLimitsVideosOnAlarmes.stateChanged.connect(checkBoxNoLimitsVideosOnAlarmes)
@@ -1381,69 +1431,78 @@ initFormLogin(None, ret)
 
 cv.namedWindow('frame')
 cv.setMouseCallback('frame', polygonSelection)
+log.critical('rtspStatus: {}'.format(rtspStatus))
 
 if statusLicence and conexao:
 
     #global conectado, frame
 
-    log.info('statusLicence on')
+    #log.info('statusLicence on')
     
     initConfig()
 
-    ### ---------------  OpenVino Init ----------------- ###
-    if isOpenVino:
+    if rtspStatus:
 
-        log.info('isOpenVino in')
-    
-        ret, frame = ipCam.read()
-        ret, next_frame = ipCam.read()
-    
-        #nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, statusConfig.data["openVinoModelXml"], statusConfig.data["openVinoModelBin"])
-        #log.info('CPU Extension    : {}'.format(openVinoCpuExtension))
-        #log.info('Plugin Diretorio : {}'.format(openVinoPluginDir))
-        cvNet = None
-    
-        try:
-            nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir)
-    
-        except:
-            log.critical('Erro ao iniciar OpenVino - checar arquivo de configuracao')
-            #abrindo janela de configuracao"
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Information)
-            msg.setWindowTitle("Erro ao abrir mómodulo OpenVino - checar aba de configurações")
-            msg.exec()
-            callbackButtonRegioes(None, ret)
-            initOpenVinoStatus = False
-            init_video = False
+        ### ---------------  OpenVino Init ----------------- ###
+        if isOpenVino:
+
+            #log.info('isOpenVino in')
+        
+            ret, frame = ipCam.read()
+            ret, next_frame = ipCam.read()
+        
+            #nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, statusConfig.data["openVinoModelXml"], statusConfig.data["openVinoModelBin"])
+            #log.info('CPU Extension    : {}'.format(openVinoCpuExtension))
+            #log.info('Plugin Diretorio : {}'.format(openVinoPluginDir))
+            cvNet = None
+        
+            try:
+                nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir)
+        
+            except:
+                log.critical('Erro ao iniciar OpenVino - checar arquivo de configuracao')
+                #abrindo janela de configuracao"
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Information)
+                msg.setWindowTitle("Erro ao abrir mómodulo OpenVino - checar aba de configurações")
+                msg.exec()
+                callbackButtonRegioes(None, ret)
+                initOpenVinoStatus = False
+                init_video = False
+            else:
+                cur_request_id = 0
+                next_request_id = 1
+                render_time = 0
+        
         else:
-            cur_request_id = 0
-            next_request_id = 1
-            render_time = 0
-    
+            log.info("TensorFlow on")
+            cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
+            cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
+        
+        
+        
+        conectado, frame = ipCam.read()
+        if frame is not None:
+            (h,w) = frame.shape[:2]
+
+
+        timeSessionInit = time.time()
+        timeGravandoAllInit = time.time()
+        
+        hora = utils.getDate()['hour'].replace(':','-')
+        nameVideoAllTime = dir_video_trigger_all_time + '/' + hora + '.avi'
+        
+        #primeiro arquivo fica zuado - bug
+        if out_video_all_time is not None: 
+            out_video_all_time = cv.VideoWriter(nameVideoAllTime, fourcc, FPS, (w,h))
     else:
-        log.info("TensorFlow on")
-        cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
-        cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
-    
-    
-    
-    conectado, frame = ipCam.read()
-    if frame is not None:
-        (h,w) = frame.shape[:2]
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setWindowTitle("Erro na configuração da camera. Checar configurações de RTSP")
+        msg.exec()
 
 
-timeSessionInit = time.time()
-timeGravandoAllInit = time.time()
 
-hora = utils.getDate()['hour'].replace(':','-')
-nameVideoAllTime = dir_video_trigger_all_time + '/' + hora + '.avi'
-
-#primeiro arquivo fica zuado - bug
-out_video_all_time = cv.VideoWriter(nameVideoAllTime, fourcc, FPS, (w,h))
-
-#def save_video(cap, saving_file_name):
-##def save_video(frame, saving_file_name):
 #    global FPS, nameVideoAllTime
 #
 #   # while cap.isOpened():
@@ -1467,7 +1526,7 @@ out_video_all_time = cv.VideoWriter(nameVideoAllTime, fourcc, FPS, (w,h))
 
 
 
-while init_video and sessionStatus:
+while init_video and sessionStatus and rtspStatus:
 
     #if counter == 0:
     #    startFps = time.time()

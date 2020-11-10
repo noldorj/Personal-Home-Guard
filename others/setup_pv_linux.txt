@@ -8,6 +8,9 @@ pip install websocket-client
 conda install scipy - instalou 1.2.1
 pip install pygame - instalou 1.9.6
 pip install pyqt5
+pip install cryptography
+pip install pbkdf2
+
 
 Drivers GPU Intel
 https://dgpu-docs.intel.com/installation-guides/ubuntu/ubuntu-bionic.html

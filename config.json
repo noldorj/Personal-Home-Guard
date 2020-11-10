@@ -33,8 +33,8 @@
     "storageConfig": {
         "diskMaxUsage": 85,
         "diskMinUsage": "10",
-        "spaceMaxDirVideosAllTime": "4",
-        "spaceMaxDirVideosOnAlarme": "4",
+        "spaceMaxDirVideosAllTime": "10.0",
+        "spaceMaxDirVideosOnAlarme": "10.0",
         "eraseOldestFiles": "False",
         "stopSaveNewVideos": "True"
     },
