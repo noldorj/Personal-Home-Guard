@@ -13,13 +13,13 @@ import time
 import locale
 
 from pbkdf2 import PBKDF2
-from Crypto.Cipher import AES
+#from Crypto.Cipher import AES
 import os
 from cryptography.fernet import Fernet
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-import base64
+#from cryptography.hazmat.backends import default_backend
+#from cryptography.hazmat.primitives import hashes
+#from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+#import base64
 
 #locale.setlocale(locale.LC_ALL, 'pt_BR.utf-8')
 #timezone = pytz.timezone("America/Sao_Paulo")
