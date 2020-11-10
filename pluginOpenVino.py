@@ -25,7 +25,8 @@ import logging as log
 from  openvino.inference_engine import IENetwork, IEPlugin
 
 #def main():
-log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
+#log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 labels_map = ["background", "car", "person", "bike"]
 #labels_map = ["background", "person", "car", "bike"]
 

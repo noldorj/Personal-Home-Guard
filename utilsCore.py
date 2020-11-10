@@ -25,7 +25,8 @@ from cryptography.fernet import Fernet
 #timezone = pytz.timezone("America/Sao_Paulo")
     
 
-log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
+#log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 
 def camSource(source = 'webcam'):
     status = True
@@ -56,11 +57,17 @@ def camSource(source = 'webcam'):
 
 def decrypt(password):
     
+     
+    statusConfig = StatusConfig()
+    
     key = b'x-LhW_rs81XBzuFLq9jgUFOcGbjDWwWXS5A7lpV0onQ='
     fernetKey = Fernet(key)
     
-    f = open("kp.bin", "r")
-    token = f.read()    
+    #f = open("kp.bin", "r")
+    #token = f.read()    
+
+    token = statusConfig.dataLogin.get('passwd')
+    
     password = fernetKey.decrypt(token.encode())
     
     
@@ -74,9 +81,9 @@ def encrypt(password):
     token = f.encrypt(password.encode())    
   
 
-    f = open("kp.bin", "wb")
-    f.write(token)
-    f.close()
+    #f = open("kp.bin", "wb")
+    #f.write(token)
+    #f.close()
 
     return token
 

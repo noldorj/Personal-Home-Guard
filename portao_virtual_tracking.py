@@ -38,8 +38,7 @@ from PyQt5.QtCore import QTime, QThread
 
 #import tensorflow as tf
 
-log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
-
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
 
 #variaveis globais
 
@@ -1952,8 +1951,10 @@ while init_video and sessionStatus and rtspStatus:
     else:
         if not conectado:
             log.warning('Reconectando em 5 segundos...')
+            init_video = False
             time.sleep(5)
-            ipCam = utils.camSource(source)
+            ipCam, error = utils.camSource(source)
+            #ipCam = utils.camSource(source)
 
 if out_video is not None:
     log.warning('Fim da captura de video')
