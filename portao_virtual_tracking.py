@@ -671,11 +671,14 @@ def btnSaveEmail():
         isRecordingAllTime = "True" if ui.checkBoxVideoRecordingAllTime.isChecked() else "False"
         isRecordingOnAlarmes = "True" if ui.checkBoxVideoRecordingOnAlarmes.isChecked() else "False"
 
+         
+        passwd = utils.encrypt(ui.txtEmailPassword.text())
+
         statusConfig.addConfigGeral(ui.txtEmailName.text(),
                               ui.txtEmailPort.text(),
                               ui.txtEmailSmtp.text(),
                               ui.txtEmailUser.text(),
-                              ui.txtEmailPassword.text(),
+                              passwd,
                               ui.txtEmailSubject.text(),
                               ui.txtEmailTo.text(),
                               isRecordingAllTime,
@@ -721,7 +724,10 @@ def fillTabGeral():
     ui.txtEmailPort.setText(statusConfig.data["emailConfig"].get('port'))
     ui.txtEmailSmtp.setText(statusConfig.data["emailConfig"].get('smtp'))
     ui.txtEmailUser.setText(statusConfig.data["emailConfig"].get('user'))
-    ui.txtEmailPassword.setText(statusConfig.data["emailConfig"].get('password'))
+
+    passwdEmail = utils.decrypt(statusConfig.data["emailConfig"].get('password')) 
+    ui.txtEmailPassword.setText(passwdEmail)
+    
     ui.txtEmailSubject.setText(statusConfig.data["emailConfig"].get('subject'))
     ui.txtEmailTo.setText(statusConfig.data["emailConfig"].get('to'))
 

@@ -67,3 +67,9 @@ websocket-client==0.57.0
 
 3. ModuleNotFoundError: No module named 'Crypto'  - só ocorre no Windows 
 pip install pycryptodome==3.4.3
+
+4. raceback (most recent call last):
+  File "portao_virtual_tracking.py", line 1537, in <module>
+AttributeError: 'tuple' object has no attribute 'read
+
+5. pip install simplejson

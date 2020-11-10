@@ -11,6 +11,7 @@ from datetime import datetime
 import subprocess
 import time
 import locale
+import simplejson as json
 
 from pbkdf2 import PBKDF2
 #from Crypto.Cipher import AES
@@ -758,12 +759,19 @@ class StatusConfig:
             log.info('Arquivo {} salvo'.format(file))
 
 
-    def saveConfigFile(self, file = 'config.json'):
-        log.info('Salvando arquivo de configuração: {}/{}'.format(os.getcwd(), file))
-        json.dump(self.data, open(file,'w'), indent=4)
+    def saveConfigFile(self, fileName = 'config.json'):
+        log.info('Salvando arquivo de configuração: {}/{}'.format(os.getcwd(), fileName))
+        #json.dump(self.data, open(file,'w'), indent=4)
+        
+        try:
+            fp = open(fileName,"w")
+            fp.write(json.dumps(self.data, indent = 4))
+        finally:
+            fp.close()
+
+        log.info('Salvando arquivo de configuração: {}/{}'.format(os.getcwd(), fileName))
 
     def saveConfigLogin(self, fileName = 'lconfig.json'):
-        import simplejson as json
         
         #try:
         #    fp = open("passwords.json","r")

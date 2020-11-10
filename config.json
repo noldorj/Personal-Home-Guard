@@ -44,10 +44,12 @@
         "port": "587",
         "smtp": "smtp.gmail.com",
         "user": "igorddf@gmail.com",
-        "password": "Pagode!6541",
+        "password": "gAAAAABfqs9HprH3yGiELWn1gg-hRTTiO04fte3hHi7RDG9r4GCV3lUnwT7uLQTSZGaB8DmNesCK_sWoyRCFkzAt5CfZ8Jm6yQ==",
         "subject": "PV",
         "to": "igorddf@gmail.com"
     },
     "dirVideosOnAlarmes": "videos_alarme_alterado",
-    "dirVideosAllTime": "videos_all_time"
+    "dirVideosAllTime": "videos_all_time",
+    "diskMaxUsage": "85",
+    "diskMinUsage": "10"
 }
