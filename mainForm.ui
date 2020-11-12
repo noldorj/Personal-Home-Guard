@@ -29,7 +29,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>2</number>
+    <number>1</number>
    </property>
    <property name="tabsClosable">
     <bool>true</bool>
@@ -441,7 +441,7 @@
       <rect>
        <x>2</x>
        <y>30</y>
-       <width>791</width>
+       <width>901</width>
        <height>511</height>
       </rect>
      </property>
@@ -630,8 +630,8 @@
     <widget class="QWidget" name="horizontalLayoutWidget_4">
      <property name="geometry">
       <rect>
-       <x>0</x>
-       <y>590</y>
+       <x>50</x>
+       <y>550</y>
        <width>791</width>
        <height>41</height>
       </rect>
@@ -646,6 +646,22 @@
       </item>
      </layout>
     </widget>
+    <widget class="QLabel" name="lblStatus">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>600</y>
+       <width>901</width>
+       <height>31</height>
+      </rect>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
    </widget>
    <widget class="QWidget" name="tabStorage">
     <attribute name="title">
@@ -655,9 +671,9 @@
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>10</y>
-       <width>750</width>
-       <height>325</height>
+       <y>4</y>
+       <width>891</width>
+       <height>331</height>
       </rect>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">

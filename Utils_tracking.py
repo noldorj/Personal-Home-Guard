@@ -41,7 +41,9 @@ def sendMail(subject, text):
     port = emailConfig['port']
     smtp = emailConfig['smtp']
     user = emailConfig['user']
-    password = emailConfig['password'] 
+    password = utils.decrypt(emailConfig['password'])
+
+    log.info('sendMail passwd: {}'.format(password))
 
     #data = utils.getDate()
     msg = MIMEMultipart()
@@ -78,7 +80,7 @@ def sendMail(subject, text):
 
 
 #envia alerta do portao virtual com imagem anexada ao email
-def sendMailAlert(sender, recipients, subject, port, smtp, user, password, frame, tipoObjetoDetectado, region):
+def sendMailAlert(sender, recipients, subject, port, smtp, user, frame, tipoObjetoDetectado, region):
 
     
 
@@ -131,6 +133,8 @@ def sendMailAlert(sender, recipients, subject, port, smtp, user, password, frame
     msg.attach(img_file)
 
 
+    password = utils.decrypt(emailConfig['password'])
+    
     #smtpObj = smtplib.SMTP('smtp.gmail.com', 587)
     smtpObj = smtplib.SMTP(smtp, int(port))
     try:

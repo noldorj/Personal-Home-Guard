@@ -61,8 +61,11 @@ rtspStatus = True
 
 fernetKey = None
 
-CHECK_SESSION = 300 # checar sessao a cada 5 min
+#CHECK_SESSION = 300 # checar sessao a cada 5 min
+CHECK_SESSION = 30 # checar sessao a cada 5 min
 GRAVANDO_TIME = 300 #gravar videos de 5min 
+INTERNET_OFF = 60 #3 horas apos queda de internet para o programa perder as funcoes
+#INTERNET_OFF = 7200 #3 horas apos queda de internet para o programa perder as funcoes
 
 
 token = secrets.token_urlsafe(20)
@@ -694,6 +697,8 @@ def btnSaveEmail():
         fillTabGeral()
 
         initConfig()
+        
+        
 
         #gravandoAllTime = statusConfig.data["isRecordingAllTime"] == 'True'
         #gravandoOnAlarmes= statusConfig.data["isRecordingOnAlarmes"] == 'True'
@@ -726,7 +731,12 @@ def fillTabGeral():
     ui.txtEmailUser.setText(statusConfig.data["emailConfig"].get('user'))
 
     passwdEmail = utils.decrypt(statusConfig.data["emailConfig"].get('password')) 
+
     ui.txtEmailPassword.setText(passwdEmail)
+    
+    if passwdEmail == 'error':
+        ui.lblStatus.setText('Cheque se sua senha do email está cadastrada corretamente')
+        ui.txtEmailPassword.setFocus()
     
     ui.txtEmailSubject.setText(statusConfig.data["emailConfig"].get('subject'))
     ui.txtEmailTo.setText(statusConfig.data["emailConfig"].get('to'))
@@ -1493,6 +1503,7 @@ if statusLicence and conexao:
 
         timeSessionInit = time.time()
         timeGravandoAllInit = time.time()
+        timeInternetOffStart = time.time()
         
         hora = utils.getDate()['hour'].replace(':','-')
         nameVideoAllTime = dir_video_trigger_all_time + '/' + hora + '.avi'
@@ -1555,6 +1566,7 @@ while init_video and sessionStatus and rtspStatus:
 
         if current_data_dir != currentData:
             status_dir_criado_on_alarmes, dir_video_trigger_on_alarmes = utils.createDirectory(statusConfig.data["dirVideosOnAlarmes"])
+            status_dir_criado_all_time, dir_video_trigger_all_time = utils.createDirectory(statusConfig.data["dirVideosAllTime"])
             current_data_dir = utils.getDate()
             current_data_dir = [current_data_dir.get('day'), current_data_dir.get('month')]
 
@@ -1709,19 +1721,22 @@ while init_video and sessionStatus and rtspStatus:
                                                             #saveImageBox(frame_no_label, str(box[6]))
 
                                                             #if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame_no_label_email, str(box[6]), r.get('nameRegion'))):
-                                                            log.info('Alerta enviado ID[' + str(objectID) + ']')
-                                                            threadEmail = Thread(target=sendMailAlert, args=(emailConfig['name'],
-                                                                                                               emailConfig['to'],
-                                                                                                               emailConfig['subject'],
-                                                                                                               emailConfig['port'],
-                                                                                                               emailConfig['smtp'],
-                                                                                                               emailConfig['user'],
-                                                                                                               emailConfig['password'],
-                                                                                                               frame_no_label_email,
-                                                                                                               str(box[6]),
-                                                                                                               r.get('nameRegion')))
-                                                            threadEmail.start()
-                                                            listObjectMailAlerted.append(objectID)
+                                                            if checkInternetAccess():
+
+                                                                log.info('Alerta enviado ID[' + str(objectID) + ']')
+                                                                threadEmail = Thread(target=sendMailAlert, args=(emailConfig['name'],
+                                                                                                                   emailConfig['to'],
+                                                                                                                   emailConfig['subject'],
+                                                                                                                   emailConfig['port'],
+                                                                                                                   emailConfig['smtp'],
+                                                                                                                   emailConfig['user'],
+                                                                                                                   frame_no_label_email,
+                                                                                                                   str(box[6]),
+                                                                                                                   r.get('nameRegion')))
+                                                                threadEmail.start()
+                                                                listObjectMailAlerted.append(objectID)
+                                                            else:
+                                                                log.critical('Sem conexao com a Internet - Alarmes serão enviados assim que houver conexao')
                                         #end loop alarms
                                     else:
 
@@ -1926,8 +1941,14 @@ while init_video and sessionStatus and rtspStatus:
             conexao = checkInternetAccess()
 
             if conexao: 
+
+                log.info('Conexao com a Internet estabelecida')
+
+                #ativar funcoes
                 
                 sessionStatus, error = checkSessionPv(login)
+
+                timeInternetOffStart = time.time() 
 
                 if error == 'servidorOut':
                     
@@ -1939,11 +1960,18 @@ while init_video and sessionStatus and rtspStatus:
 
             else:
                 log.info("Sem internet - sessao não checada")
+               
+                if (time.time() - timeInternetOffStart) >= INTERNET_OFF: 
+                    log.critical('Tempo maximo sem Internet permitido esgotado - Portao Virtual ficará inativo')
+                    #desativar funcoes
+
+
                 #emitir mensagem de aviso
                 sessionStatus = True
 
             timeSessionInit = time.time()
 
+        
         listObjects.clear()
         #listObjectsTracking.clear()
 
@@ -1957,7 +1985,7 @@ while init_video and sessionStatus and rtspStatus:
     else:
         if not conectado:
             log.warning('Reconectando em 5 segundos...')
-            init_video = False
+            #init_video = False
             time.sleep(5)
             ipCam, error = utils.camSource(source)
             #ipCam = utils.camSource(source)

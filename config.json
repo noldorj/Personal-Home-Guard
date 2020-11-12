@@ -44,7 +44,7 @@
         "port": "587",
         "smtp": "smtp.gmail.com",
         "user": "igorddf@gmail.com",
-        "password": "gAAAAABfqs9HprH3yGiELWn1gg-hRTTiO04fte3hHi7RDG9r4GCV3lUnwT7uLQTSZGaB8DmNesCK_sWoyRCFkzAt5CfZ8Jm6yQ==",
+        "password": "gAAAAABfrSvxc7zsAT5pKtkcyJFo2jmuiQ06W96u9MNgWajWILVw2qjorka6ErTPf-FR5mJs-uNar9d8rimNM0obrE7ncM63rg==",
         "subject": "PV",
         "to": "igorddf@gmail.com"
     },

@@ -56,36 +56,41 @@ def camSource(source = 'webcam'):
     return ipCam, error
 
 
-def decrypt(password):
+def decrypt(token):
     
      
+    password = b'error'
     statusConfig = StatusConfig()
     
     key = b'x-LhW_rs81XBzuFLq9jgUFOcGbjDWwWXS5A7lpV0onQ='
     fernetKey = Fernet(key)
+        
+    #token = statusConfig.dataLogin.get('passwd')
     
-    #f = open("kp.bin", "r")
-    #token = f.read()    
+    try:
+        password = fernetKey.decrypt(token.encode())
 
-    token = statusConfig.dataLogin.get('passwd')
+    except Exception as e:
+
+        log.error('utils.decrypt: error: {}'.format(e))
     
-    password = fernetKey.decrypt(token.encode())
-    
+    #log.info('decrypt passwd: {}'.format(password.decode()))
     
     return password.decode() 
 
 
 def encrypt(password):
     
+    token = 'error' 
     key = b'x-LhW_rs81XBzuFLq9jgUFOcGbjDWwWXS5A7lpV0onQ='    
     f = Fernet(key)
-    token = f.encrypt(password.encode())    
+
+    try:
+        token = f.encrypt(password.encode())    
+    except Exception as e:
+        
+        log.error('utils.encrypt: error: {}'.format(e))
   
-
-    #f = open("kp.bin", "wb")
-    #f.write(token)
-    #f.close()
-
     return token
 
 
@@ -220,6 +225,9 @@ def freeDiskSpace(dirVideo):
                         
                         log.critical('Diretorio nao encontrado')
                         log.crtical("Error: %s : %s" % (oldestDir, e.strerror))
+                        #se o diretorio foi apagado, pular para o proximo
+                        iDirSorted = iDirSorted + 1
+
                         
                     else:
                         log.info('Diretorio {} removido. Foi liberado {} de espaço'.format(oldestDir, dirSpace))             
