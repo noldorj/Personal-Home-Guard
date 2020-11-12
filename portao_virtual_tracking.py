@@ -9,6 +9,7 @@ from Utils_tracking import saveImageBox
 import utilsCore as utils
 import logging as log
 import sys
+from collections import deque
 
 #import ffmpeg
 
@@ -53,6 +54,8 @@ emailSentDiskFull = False
 emailSentdirVideosAllTimeEmpty = False
 emailSentdirVideosOnAlarmesEmpty = False
 
+pilhaAlertasNaoEnviados = deque() 
+
 conectado = None
 conexao = False
 frame = None
@@ -63,9 +66,12 @@ fernetKey = None
 
 #CHECK_SESSION = 300 # checar sessao a cada 5 min
 CHECK_SESSION = 30 # checar sessao a cada 5 min
-GRAVANDO_TIME = 300 #gravar videos de 5min 
-INTERNET_OFF = 60 #3 horas apos queda de internet para o programa perder as funcoes
-#INTERNET_OFF = 7200 #3 horas apos queda de internet para o programa perder as funcoes
+#GRAVANDO_TIME = 300 #gravar videos de 5min 
+GRAVANDO_TIME = 30 #gravar videos de 5min 
+
+#INTERNET_OFF = 60 #3 horas apos queda de internet para o programa perder as funcoes
+INTERNET_OFF = 7200 #3 horas apos queda de internet para o programa perder as funcoes
+STOP_ALL = False
 
 
 token = secrets.token_urlsafe(20)
@@ -83,8 +89,12 @@ stopSound = False
 initOpenVinoStatus = True
 
 nameVideo  = 'firstVideo'
+nameVideoAllTime  = 'firstVideo'
 newVideo = True
-releaseVideo = False 
+releaseVideoOnAlarmes = False 
+releaseVideoAllTime = False 
+h = None
+w = None
 #objects = None
 #FPS = ipCam.get(cv.CAP_PROP_FPS) #30.0 #frames per second
 FPS = 4  #de acordo com o manual da mibo ic5 intelbras
@@ -174,6 +184,10 @@ stopSaveNewVideos = False
 
 def initConfig():
 
+    log.info(' ')
+    log.info('initConfig')
+    log.info(' ')
+
     global statusConfig, pb, pbtxt, regions, emailConfig, portaoVirtualSelecionado
     global status_dir_criado_all_time, status_dir_criado_all_time, dir_video_trigger_on_alarmes, dir_video_trigger_all_time, source, ipCam, prob_threshold, hora, current_data_dir, isOpenVino
     global device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir, openVinoModelName, gravandoAllTime 
@@ -230,6 +244,13 @@ def initConfig():
         ipCam = None
         rtspStatus = False
         log.critical('Erro camSource: {}'.format(error))
+        ui.lblStatus.setText('Erro de conexao da camera. Tente configurar o endereço RTSP, e clique em "Salvar"')
+        ui.txtUrlRstp.setFocus()
+    else:
+        rtspStatus = True 
+        log.info('Conexao com camera restabelecida.')
+        ui.lblStatus.setText('Conexão com a camera estabelecida! Feche a janela para inciar o Portão Virtual')
+
 
     prob_threshold = float(statusConfig.data["prob_threshold"])
 
@@ -500,19 +521,16 @@ def btnSaveStorage():
     if ui.txtAvisoUtilizacaoHD.text() != '0' and len(ui.txtAvisoUtilizacaoHD.text()) != 0:
 
         if float(ui.txtAvisoUtilizacaoHD.text().replace(',', '.')) < discoLivrePorcentagem:
-            log.info('emailSentDiskFull False')
             emailSentDiskFull = False 
 
     if ui.txtDefinirMaximoOnAlarmes.text() != '0' and len(ui.txtDefinirMaximoOnAlarmes.text()) != 0:
 
         if float(ui.txtDefinirMaximoOnAlarmes.text().replace(',', '.')) < discoLivre:
-            log.info('emailSentFullVideosOnAlarmes = False')
             emailSentFullVideosOnAlarmes = False 
 
     if ui.txtDefinirMaximoAllTime.text() != '0' and len(ui.txtDefinirMaximoAllTime.text()) != 0:
 
         if float(ui.txtDefinirMaximoAllTime.text().replace(',', '.')) < discoLivre:
-            log.info('emailSentFullVideosAllTime= False')
             emailSentFullVideosAllTime = False 
 
     if statusFields:
@@ -539,6 +557,7 @@ def btnLogin():
     uiLogin.lblStatus.setText("Checando conexão com a Internet")
 
     conexao = checkInternetAccess()
+    #conexao = True
 
     if conexao:    
     
@@ -547,7 +566,7 @@ def btnLogin():
         
         #login = {'user':uiLogin.txtEmail.text(), 'passwd':uiLogin.txtPasswd.text(), 'token':'2'}
         login = {'user':uiLogin.txtEmail.text(), 'passwd':uiLogin.txtPasswd.text(), 'token':token}
-        log.info('token: {}'.format(token))
+        #log.info('token: {}'.format(token))
         
         statusLicence, error  = checkLoginPv(login) 
         #statusLicence = True ## testando apenas IJF
@@ -697,11 +716,7 @@ def btnSaveEmail():
         fillTabGeral()
 
         initConfig()
-        
-        
 
-        #gravandoAllTime = statusConfig.data["isRecordingAllTime"] == 'True'
-        #gravandoOnAlarmes= statusConfig.data["isRecordingOnAlarmes"] == 'True'
 
 
 
@@ -1437,16 +1452,79 @@ def callbackButtonRegioes(self, ret):
     ui.btnNewRegion.clicked.connect(btnNewRegion)
     ui.btnNewAlarm.clicked.connect(btnNewAlarm)
 
-    threadWindow = Thread(target=windowConfig.show())
-    threadWindow.start()
-    #windowConfig.show()
+    if ret == 2: 
+        log.info('windowConfig.show()')
+        windowConfig.show()
+        app.exec_()
+    else:
+        threadWindow = Thread(target=windowConfig.show())
+        threadWindow.start()
     
 ret = 1
 initFormLogin(None, ret)
 
 cv.namedWindow('frame')
 cv.setMouseCallback('frame', polygonSelection)
-log.critical('rtspStatus: {}'.format(rtspStatus))
+
+timeInternetOffStart = None
+
+def initOpenVino():
+    global isOpenVino, ret, frame, next_frame, cvNet, nchw, exec_net, input_blob, out_blob
+    global device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir
+    global initOpenVinoStatus, init_video, cur_request_id, next_request_id, render_time
+    global out_video_all_time, timeSessionInit, timeGravandoAllInit, timeGravandoAll, hora, nameVideoAllTime, dir_video_trigger_all_time, timeInternetOffStart, h, w
+    
+    ### ---------------  OpenVino Init ----------------- ###
+    if isOpenVino:
+    
+        ret, frame = ipCam.read()
+        ret, next_frame = ipCam.read()
+    
+        cvNet = None
+    
+        try:
+            nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir)
+    
+        except:
+            log.critical('Erro ao iniciar OpenVino - checar arquivo de configuracao')
+            #abrindo janela de configuracao"
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setWindowTitle("Erro ao abrir mómodulo OpenVino - checar aba de configurações")
+            msg.exec()
+            callbackButtonRegioes(None, 1)
+            initOpenVinoStatus = False
+            init_video = False
+        else:
+            log.info('Openvino carregado')
+            log.info(' ')
+            cur_request_id = 0
+            next_request_id = 1
+            render_time = 0
+    
+    else:
+        log.info("TensorFlow on")
+        cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
+        cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
+    
+    conectado, frame = ipCam.read()
+    if frame is not None:
+        (h,w) = frame.shape[:2]
+
+
+    timeSessionInit = time.time()
+    timeGravandoAllInit = time.time()
+    timeInternetOffStart = time.time()
+    
+    hora = utils.getDate()['hour'].replace(':','-')
+    nameVideoAllTime = dir_video_trigger_all_time + '/' + hora + '.avi'
+    
+    #primeiro arquivo fica zuado - bug
+    #if out_video_all_time is not None: 
+    #h = nchw[2]
+    #w = nchw[3]
+    out_video_all_time = cv.VideoWriter(nameVideoAllTime, fourcc, FPS, (w,h))
+
 
 if statusLicence and conexao:
 
@@ -1458,88 +1536,16 @@ if statusLicence and conexao:
 
     if rtspStatus:
 
-        ### ---------------  OpenVino Init ----------------- ###
-        if isOpenVino:
-
-            #log.info('isOpenVino in')
+        initOpenVino()
         
-            ret, frame = ipCam.read()
-            ret, next_frame = ipCam.read()
-        
-            #nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, statusConfig.data["openVinoModelXml"], statusConfig.data["openVinoModelBin"])
-            #log.info('CPU Extension    : {}'.format(openVinoCpuExtension))
-            #log.info('Plugin Diretorio : {}'.format(openVinoPluginDir))
-            cvNet = None
-        
-            try:
-                nchw, exec_net, input_blob, out_blob = pOpenVino.initOpenVino(device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir)
-        
-            except:
-                log.critical('Erro ao iniciar OpenVino - checar arquivo de configuracao')
-                #abrindo janela de configuracao"
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Information)
-                msg.setWindowTitle("Erro ao abrir mómodulo OpenVino - checar aba de configurações")
-                msg.exec()
-                callbackButtonRegioes(None, ret)
-                initOpenVinoStatus = False
-                init_video = False
-            else:
-                cur_request_id = 0
-                next_request_id = 1
-                render_time = 0
-        
-        else:
-            log.info("TensorFlow on")
-            cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
-            cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
-        
-        
-        
-        conectado, frame = ipCam.read()
-        if frame is not None:
-            (h,w) = frame.shape[:2]
-
-
-        timeSessionInit = time.time()
-        timeGravandoAllInit = time.time()
-        timeInternetOffStart = time.time()
-        
-        hora = utils.getDate()['hour'].replace(':','-')
-        nameVideoAllTime = dir_video_trigger_all_time + '/' + hora + '.avi'
-        
-        #primeiro arquivo fica zuado - bug
-        if out_video_all_time is not None: 
-            out_video_all_time = cv.VideoWriter(nameVideoAllTime, fourcc, FPS, (w,h))
     else:
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
-        msg.setWindowTitle("Erro na configuração da camera. Checar configurações de RTSP")
+        msg.setText("Camera não configurada ou com erro de configuração. Checar configurações de RTSP")
+        msg.setWindowTitle("Camera não configurada")
         msg.exec()
-
-
-
-#    global FPS, nameVideoAllTime
-#
-#   # while cap.isOpened():
-#   #     ret, frame = cap.read()
-#   #     if ret:
-#   #         i_width,i_height = frame.shape[1],frame.shape[0]
-#   #         break
-#
-#    if ret:
-#        i_width,i_height = frame.shape[1],frame.shape[0]
-#
-#    process = (
-#    ffmpeg
-#        .input('pipe:',format='rawvideo', pix_fmt='rgb24',s='{}x{}'.format(i_width,i_height))
-#        .output(saving_file_name, pix_fmt='yuv420p',vcodec='libx264',r=FPS,crf=37)
-#        .overwrite_output()
-#        .run_async(pipe_stdin=True)
-#    )
-#
-#    return process
-
+        #log.info('qmessageBox rtspStatus: {}'.format(rtspStatus))
+        callbackButtonRegioes(None, 2)
 
 
 while init_video and sessionStatus and rtspStatus:
@@ -1547,7 +1553,8 @@ while init_video and sessionStatus and rtspStatus:
     #if counter == 0:
     #    startFps = time.time()
 
-    #start = time.time()
+    start = time.time()
+    #log.info('while')
     
 
     conectado, frame = ipCam.read()
@@ -1584,7 +1591,7 @@ while init_video and sessionStatus and rtspStatus:
 
 
         #passando o Frame selecionado do portao para deteccao somente se o portao virtual estiver selecionado
-        if portaoVirtualSelecionado:
+        if portaoVirtualSelecionado and (STOP_ALL == False):
 
             #se eh openVino e este foi inicializado corretamente 
             if isOpenVino and initOpenVinoStatus:
@@ -1613,7 +1620,7 @@ while init_video and sessionStatus and rtspStatus:
                 #print('tempty > 10')
                 gravandoOnAlarmes = False
                 newVideo = True
-                releaseVideo = True
+                releaseVideoOnAlarmes = True
 
         #se tem objetos detectados pela CNN
         else:
@@ -1736,18 +1743,33 @@ while init_video and sessionStatus and rtspStatus:
                                                                 threadEmail.start()
                                                                 listObjectMailAlerted.append(objectID)
                                                             else:
+                                                                alertaNaoEnviado = [emailConfig['name'],
+                                                                                      emailConfig['to'],
+                                                                                      emailConfig['subject'],
+                                                                                      emailConfig['port'],
+                                                                                      emailConfig['smtp'],
+                                                                                      emailConfig['user'],
+                                                                                      frame_no_label_email,
+                                                                                      str(box[6]),
+                                                                                      r.get('nameRegion'), 
+                                                                                      objectID]
+
+                                                                pilhaAlertasNaoEnviados.append(alertaNaoEnviado)
+                                                                
+                                                                listObjectMailAlerted.append(objectID)
+
                                                                 log.critical('Sem conexao com a Internet - Alarmes serão enviados assim que houver conexao')
+                                                                log.critical('Numero de alarmes não enviados até o momento: {:d}'.format(len(pilhaAlertasNaoEnviados)))
                                         #end loop alarms
                                     else:
 
                                         tEmptyEnd = time.time()
                                         tEmpty = tEmptyEnd- tEmptyStart
-                                        #print('tEmpty {}'.format(tEmpty))
 
                                         if tEmpty > 10:
                                             gravandoOnAlarmes = False
                                             newVideo = True
-                                            releaseVideo = True
+                                            releaseVideoOnAlarmes = True
                                             #suspend_screensaver()
 
 
@@ -1771,31 +1793,27 @@ while init_video and sessionStatus and rtspStatus:
 
             if spaceMaxDirVideosOnAlarme == 0 or ( spaceMaxDirVideosOnAlarme >= utils.getDirUsedSpace(statusConfig.data["dirVideosOnAlarmes"]) ):
 
-                if newVideo and gravandoOnAlarmes:
+                if newVideo and gravandoOnAlarmes and (STOP_ALL == False):
                 
                     if out_video is not None:
                        out_video.release()
                        out_video = None
-                       releaseVideo = False
+                       releaseVideoOnAlarmes = False
 
                     #grava video novo se tiver um objeto novo na cena
                     hora = utils.getDate()['hour'].replace(':','-')
                     nameVideo = dir_video_trigger_on_alarmes + '/' + hora + '.avi'
-                    #process = save_video(ipCam, nameVideo)
-                    #process = save_video(frame, nameVideo)
                     
-                    #process.stdin.write(
-                    #                    cv.cvtColor(frame_no_label, cv.COLOR_BGR2RGB)
-                    #                    .astype(np.uint8)
-                    #                    .tobytes()
-                    #       )
+                    #if out_video is not None:
+                    #h = nchw[2]
+                    #w = nchw[3]
                     out_video = cv.VideoWriter(nameVideo, fourcc, FPS, (w,h))
                     out_video.write(frame_no_label)
                     newVideo = False
 
                 
                 #if gravando:
-                if gravandoOnAlarmes:
+                if gravandoOnAlarmes and (STOP_ALL == False):
                     if out_video is not None:
                         out_video.write(frame_no_label)
 
@@ -1803,11 +1821,29 @@ while init_video and sessionStatus and rtspStatus:
             else:
                 #avisar por email 1x a cada X tempo ? 
                 if not emailSentFullVideosOnAlarmes:  
+                    
+                    data = utils.getDate()
+                    data_email_sent = data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year']
                     log.critical('Espaço maximo na pasta {} atingido'.format(statusConfig.data["dirVideosOnAlarmes"]))
                     threadEmail = Thread(target=sendMail, args=(
 
                         'Portao Virtual - Falta de espaço  na pasta "Alarmes"',
-                        'Espaço maximo na pasta {} atingido'.format(statusConfig.data["dirVideosOnAlarmes"]) ) )
+                        'Espaço maximo na pasta " {} " atingido. \n\n \
+                        Status do armazenamento - {} \n \
+                        Espaço livre em disco em %       : {:3d}% \n \
+                        Espaço livre em disco em GB      : {:3.2f} GB \n \
+                        Espaço utilizado "Video Alarmes" : {:3.2f} GB \n \
+                        Espaço utilizado "Video 24hs"    : {:3.2f} GB \n \
+                        Número de dias estimados para gravação: {:3d} \n \
+                        '.format(statusConfig.data["dirVideosOnAlarmes"], 
+                            data_email_sent,
+                            utils.getDiskUsageFree(), 
+                            utils.getDiskUsageFreeGb(),
+                            utils.getDirUsedSpace(statusConfig.data['dirVideosOnAlarmes']),
+                            utils.getDirUsedSpace(statusConfig.data['dirVideosAllTime']), 
+                            utils.getNumDaysRecording()
+                            )) )
+                    
                     threadEmail.start()
                     emailSentFullVideosOnAlarmes = True
                     #avisar por email 1x a cada X tempo ? 
@@ -1815,46 +1851,56 @@ while init_video and sessionStatus and rtspStatus:
 
             if spaceMaxDirVideosAllTime == 0 or ( spaceMaxDirVideosAllTime >= utils.getDirUsedSpace(statusConfig.data["dirVideosAllTime"]) ):
             
-                if gravandoAllTime:
+                if gravandoAllTime and (STOP_ALL == False):
                     if out_video_all_time is not None:
                         out_video_all_time.write(frame_no_label)
                 
                 
-                if gravandoAllTime and (timeGravandoAll >= GRAVANDO_TIME):
+                if gravandoAllTime and (timeGravandoAll >= GRAVANDO_TIME) and (STOP_ALL == False):
 
                     if out_video_all_time is not None:
                          out_video_all_time.release()
                          out_video_all_time = None
                     
                     #if out_video_all_time is not None:
-
-                    log.info('Gravando video_all_time')
                     
                     hora = utils.getDate()['hour'].replace(':','-')
                     nameVideoAllTime = dir_video_trigger_all_time + '/' + hora + '.avi'
                     
+                    #if out_video_all_time is not None:
+                    #h = nchw[2]
+                    #w = nchw[3]
                     out_video_all_time = cv.VideoWriter(nameVideoAllTime, fourcc, FPS, (w,h))
                     out_video_all_time.write(frame_no_label)
 
                     timeGravandoAllInit = time.time()
                         
-                        #process = save_video(ipCam, nameVideoAllTime)
-                     
-                        #process.stdin.write(
-                        #                 cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                        #                 .astype(np.uint8)
-                        #                 .tobytes()
-                        #    )
-                        #process.stdin.close()
 
             else:
                 
                 if not emailSentFullVideosAllTime:  
                     log.critical('Espaço maximo na pasta {} atingido'.format(statusConfig.data["dirVideosAllTime"]))
-                    threadEmail = Thread( target=sendMail, args=(
 
-                    'Portao Virtual - Falta de espaço  na pasta "Gravação 24hs"',
-                    'Espaço maximo na pasta {} atingido'.format(statusConfig.data["dirVideosAllTime"])) )
+                    data = utils.getDate()
+                    data_email_sent = data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year']
+                    threadEmail = Thread(target=sendMail, args=(
+
+                        'Portao Virtual - Falta de espaço  na pasta "Videos 24hs"',
+                        'Espaço maximo na pasta " {} " atingido. \n\n \
+                        Status do armazenamento - {} \n \
+                        Espaço livre em disco em %       : {:3d}% \n \
+                        Espaço livre em disco em GB      : {:3.2f}GB \n \
+                        Espaço utilizado "Video Alarmes" : {:3.2f}GB \n \
+                        Espaço utilizado "Video 24hs"    : {:3.2f}GB \n \
+                        Número de dias estimados para gravação: {:3d} \n \
+                        '.format(statusConfig.data["dirVideosAllTime"], 
+                            data_email_sent,
+                            utils.getDiskUsageFree(), 
+                            utils.getDiskUsageFreeGb(),
+                            utils.getDirUsedSpace(statusConfig.data['dirVideosOnAlarmes']),
+                            utils.getDirUsedSpace(statusConfig.data['dirVideosAllTime']), 
+                            utils.getNumDaysRecording()
+                            )) )
 
                     threadEmail.start()
                     emailSentFullVideosAllTime = True
@@ -1922,10 +1968,10 @@ while init_video and sessionStatus and rtspStatus:
 
         cv.imshow('frame', frame_screen)
 
-        #end = time.time()
+        end = time.time()
 
-        #renderTime = (end-start)*1000
-        #FPS = 1000/renderTime
+        renderTime = (end-start)*1000
+        FPS = 1000/renderTime
         #print('render time: {:10.2f} ms'.format(renderTime))
         #print('FPS: {:10.2f} ms'.format(FPS))
 
@@ -1943,6 +1989,28 @@ while init_video and sessionStatus and rtspStatus:
             if conexao: 
 
                 log.info('Conexao com a Internet estabelecida')
+                STOP_ALL = False
+
+                while (len(pilhaAlertasNaoEnviados) > 0) and (STOP_ALL == False):  
+                    #enviando alerta de emails anteriores
+
+                    alertaEmail = pilhaAlertasNaoEnviados.popleft()
+
+                    threadEmail = Thread(target=sendMailAlert, args=(alertaEmail[0],
+                    alertaEmail[1],
+                    alertaEmail[2],
+                    alertaEmail[3],
+                    alertaEmail[4],
+                    alertaEmail[5],
+                    alertaEmail[6],
+                    alertaEmail[7],
+                    alertaEmail[8]))
+                    
+                    threadEmail.start()
+                    log.info('Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
+
+                    #listObjectMailAlerted.append(alertaEmail[9])
+
 
                 #ativar funcoes
                 
@@ -1960,11 +2028,33 @@ while init_video and sessionStatus and rtspStatus:
 
             else:
                 log.info("Sem internet - sessao não checada")
+                log.info("sessionStatus: {}".format(sessionStatus))
                
                 if (time.time() - timeInternetOffStart) >= INTERNET_OFF: 
-                    log.critical('Tempo maximo sem Internet permitido esgotado - Portao Virtual ficará inativo')
-                    #desativar funcoes
+                    
+                    STOP_ALL = True 
+                    log.info('STOP_ALL True') 
+                    #release dos videos
+                    if out_video is not None:
+                       out_video.release()
+                       out_video = None
+                       releaseVideoOnAlarmes = False
+                    
+                    if out_video_all_time is not None:
+                         out_video_all_time.release()
+                         out_video_all_time = None
+                         releaseVideoAllTime = False
 
+
+
+                    log.critical('Tempo maximo sem Internet permitido esgotado - Portao Virtual ficará inativo')
+                    msg = QMessageBox()
+                    msg.setIcon(QMessageBox.Information)
+                    msg.setWindowTitle("Sem conexão com a Internet")
+                    msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+                    msg.setText("Tempo maximo de 3 horas sem conexão com a Internet atingido - Portao Virtual ficará inativo, mostrando somente as imagens")
+                    msg.exec()
+                    #desativar funcoes
 
                 #emitir mensagem de aviso
                 sessionStatus = True
@@ -1989,19 +2079,22 @@ while init_video and sessionStatus and rtspStatus:
             time.sleep(5)
             ipCam, error = utils.camSource(source)
             #ipCam = utils.camSource(source)
+        else:
+            log.warning('Reconectando em 5 segundos...')
+            initOpenVino() 
+            time.sleep(5)
 
 if out_video is not None:
-    log.warning('Fim da captura de video')
-    #process.stdin.close()
-    #process.wait()
+    log.warning('Fim da captura de video out_video_all_time')
     out_video.release()
 
 if out_video_all_time is not None:
-    log.warning('Fim da captura de video')
+    log.warning('Fim da captura de video out_video_all_time')
     out_video_all_time.release()
 
 
 if ipCam and cv is not None:
+    log.info('ipCam release and cv.destroyAllWindows') 
     ipCam.release()
     cv.destroyAllWindows()
 

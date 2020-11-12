@@ -1,121 +1,9 @@
 [
     {
-        "nameRegion": "garagem",
+        "nameRegion": "quarto_bianca",
         "alarm": [
             {
-                "name": "dia-noite",
-                "time": {
-                    "start": {
-                        "hour": 0,
-                        "min": 0
-                    },
-                    "end": {
-                        "hour": 23,
-                        "min": 59
-                    }
-                },
-                "days": {
-                    "mon": "True",
-                    "tue": "True",
-                    "wed": "True",
-                    "thu": "True",
-                    "fri": "True",
-                    "sat": "True",
-                    "sun": "True"
-                },
-                "isEmailAlert": "True",
-                "isSoundAlert": "True"
-            }
-        ],
-        "objectType": {
-            "person": "True",
-            "car": "True",
-            "bike": "True",
-            "dog": "True"
-        },
-        "prob_threshold": 60.0,
-        "pointsPolygon": [
-            [
-                528,
-                350
-            ],
-            [
-                984,
-                493
-            ],
-            [
-                929,
-                656
-            ],
-            [
-                349,
-                420
-            ]
-        ]
-    },
-    {
-        "nameRegion": "rampa",
-        "alarm": [
-            {
-                "name": "dia",
-                "time": {
-                    "start": {
-                        "hour": 0,
-                        "min": 0
-                    },
-                    "end": {
-                        "hour": 23,
-                        "min": 59
-                    }
-                },
-                "days": {
-                    "mon": "True",
-                    "tue": "True",
-                    "wed": "True",
-                    "thu": "True",
-                    "fri": "True",
-                    "sat": "True",
-                    "sun": "True"
-                },
-                "isEmailAlert": "True",
-                "isSoundAlert": "True"
-            }
-        ],
-        "objectType": {
-            "person": "True",
-            "car": "True",
-            "bike": "True",
-            "dog": "True"
-        },
-        "prob_threshold": 60.0,
-        "pointsPolygon": [
-            [
-                488,
-                351
-            ],
-            [
-                349,
-                304
-            ],
-            [
-                280,
-                308
-            ],
-            [
-                290,
-                395
-            ],
-            [
-                292,
-                402
-            ]
-        ]
-    },
-    {
-        "nameRegion": "rua",
-        "alarm": [
-            {
-                "name": "noite",
+                "name": "sempre",
                 "time": {
                     "start": {
                         "hour": 0,
@@ -141,81 +29,27 @@
         ],
         "objectType": {
             "person": "True",
-            "car": "True",
-            "bike": "True",
-            "dog": "True"
-        },
-        "prob_threshold": 40.0,
-        "pointsPolygon": [
-            [
-                307,
-                251
-            ],
-            [
-                984,
-                416
-            ],
-            [
-                1043,
-                294
-            ],
-            [
-                307,
-                159
-            ]
-        ]
-    },
-    {
-        "nameRegion": "calcada",
-        "alarm": [
-            {
-                "name": "sempre",
-                "time": {
-                    "start": {
-                        "hour": 0,
-                        "min": 0
-                    },
-                    "end": {
-                        "hour": 23,
-                        "min": 59
-                    }
-                },
-                "days": {
-                    "mon": "True",
-                    "tue": "True",
-                    "wed": "True",
-                    "thu": "True",
-                    "fri": "True",
-                    "sat": "True",
-                    "sun": "True"
-                },
-                "isEmailAlert": "True",
-                "isSoundAlert": "True"
-            }
-        ],
-        "objectType": {
-            "person": "True",
-            "car": "True",
-            "bike": "True",
+            "car": "False",
+            "bike": "False",
             "dog": "True"
         },
         "prob_threshold": 60.0,
         "pointsPolygon": [
             [
-                985,
-                419
+                1101,
+                717
             ],
             [
-                986,
-                489
+                9,
+                712
             ],
             [
-                307,
-                291
+                13,
+                31
             ],
             [
-                311,
-                258
+                1104,
+                19
             ]
         ]
     }

@@ -2,7 +2,7 @@
     "isRecordingAllTime": "True",
     "isRecordingOnAlarmes": "True",
     "isOpenVino": "True",
-    "camSource": "rtsp://admin:WWYZRL@192.168.5.101/live/mpeg4:554",
+    "camSource": "rtsp://admin:123456@192.168.5.220:8554/profile0",
     "dnnModelPb": "dlModels/ssd-mobilenet/frozen_inference_graph_v1_coco_2017_11_17.pb",
     "dnnModelPbTxt": "dlModels/ssd-mobilenet/ssd_mobilenet_v1_coco_2017_11_17.pbtxt",
     "openVinoCpuExtension": "/home/igor/intel/openvino_2019.1.144/inference_engine/lib/intel64/libcpu_extension_avx2.so",
@@ -35,8 +35,8 @@
         "diskMinUsage": "10",
         "spaceMaxDirVideosAllTime": "10.0",
         "spaceMaxDirVideosOnAlarme": "10.0",
-        "eraseOldestFiles": "False",
-        "stopSaveNewVideos": "True"
+        "eraseOldestFiles": "True",
+        "stopSaveNewVideos": "False"
     },
     "prob_threshold": 0.7,
     "emailConfig": {
@@ -44,7 +44,7 @@
         "port": "587",
         "smtp": "smtp.gmail.com",
         "user": "igorddf@gmail.com",
-        "password": "gAAAAABfrSvxc7zsAT5pKtkcyJFo2jmuiQ06W96u9MNgWajWILVw2qjorka6ErTPf-FR5mJs-uNar9d8rimNM0obrE7ncM63rg==",
+        "password": "gAAAAABfrW3uh9BTnIk5i-Erwf3U2j6a09i4kSOW9UbiCOHVaI5m3q-l7WuLeElehYAS1pehrShX23WH4eF2xOCWAhKx7R6L1w==",
         "subject": "PV",
         "to": "igorddf@gmail.com"
     },

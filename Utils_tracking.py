@@ -27,9 +27,9 @@ def saveImageBox(frame, classe):
     try:
         cv.imwrite(os.getcwd() + '/dataset/training_set/' + classe + '/' + classe + '.' + str(idFoto) + '.jpg',frame)
     except OSError as error:
-        print("Erro em 'saveImageBox': " + str(error))
+        log.error("Erro em 'saveImageBox': " + str(error))
     else:
-        print('saveImageBox - imagem salva')
+        log.info('saveImageBox - imagem salva')
 
 
 def sendMail(subject, text):
@@ -43,11 +43,9 @@ def sendMail(subject, text):
     user = emailConfig['user']
     password = utils.decrypt(emailConfig['password'])
 
-    log.info('sendMail passwd: {}'.format(password))
 
     #data = utils.getDate()
     msg = MIMEMultipart()
-
 
     msg['Subject'] = subject 
     msg['From'] = sender
