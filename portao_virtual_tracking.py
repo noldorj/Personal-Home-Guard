@@ -267,13 +267,11 @@ def isIdInsideRegion(centroid, ref_point_polygon):
     return mask
 
 
-def polygonSelection(event, x, y, flags, param):
-
+def polygonSelection(event, x, y, flags, param): 
     global ref_point_polygon, cropPolygon, portaoVirtualSelecionado
 
     if event == cv.EVENT_LBUTTONDBLCLK and not portaoVirtualSelecionado:  
         
-        log.info('polygonSelection')
         ref_point_polygon.append([x, y])
         cropPolygon = True
 

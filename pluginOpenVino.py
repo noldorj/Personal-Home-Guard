@@ -85,6 +85,8 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
     log.info('Plugin Diretorio : {}'.format(plugin_dir))
     log.info(' ')
 
+    plugin_SO = 'linux' if cpu_extension.split('.')[1] == 'so' else 'windows'
+
     try: 
 
         log.info('IEPlugin inicializando...')
@@ -99,14 +101,55 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
         log.info('IEPlugin {} carregado'.format(device))
 
     if cpu_extension and 'CPU' in device:
-
+    
         try: 
             log.info('CPU_Extension sendo carregado...')
-            plugin.add_cpu_extension(cpu_extension)
+            plugin.add_cpu_extension(plugin_dir + '/' + cpu_extension)
+
         except Exception as e:
+
             log.critical('Erro adicionando CPU_Extension: {}'.format(e))
+            log.critical('cpu_extension usado: {}'.format(cpu_extension))
+
+            try:
+                log.info('Tentando AVX2 plugin')
+                if plugin_SO == 'linux':
+                    plugin.add_cpu_extension(plugin_dir + '/' + 'libcpu_extension_avx2.so')
+                else:
+                    plugin.add_cpu_extension(plugin_dir + '/' + 'libcpu_extension_avx2.dll')
+
+            except Exception as e:
+            
+                log.critical('Erro adicionando CPU_Extension {}'.format(e))
+                log.critical('cpu_extension usado: "libcpu_extension_avx2.so" ')
+                
+                try:
+                    if plugin_SO == 'linux':
+                        log.info('Tentando AVX-SSE4 plugin')
+                        plugin.add_cpu_extension(plugin_dir + '/' + 'libcpu_extension_sse4.so')
+                    else:
+                        plugin.add_cpu_extension(plugin_dir + '/' + 'libcpu_extension_sse4.dll')
+
+
+                except Exception as e:
+                    log.critical('Erro adicionando CPU_Extension {}'.format(e))
+                    log.critical('cpu_extension usado: "libcpu_extension_sse4.so" ')
+
+                #3 plugin SSE4                
+                else:
+                    log.info('CPU_Extension ok')
+                    log.info('cpu_extension utilizado: {}'.format(cpu_extension))
+            
+            #2 plugin AVX2 
+            else:
+                log.info('CPU_Extension ok')
+
+             
+        #1o plugin - AVX-512 ou plugin informado
         else:
+
             log.info('CPU_Extension ok')
+            log.info('cpu_extension utilizado: {}'.format(cpu_extension))
 
     # Read IR
     log.info("Reading IR...")
