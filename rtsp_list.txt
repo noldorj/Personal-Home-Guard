@@ -1,0 +1,8 @@
+IntelBras
+rtsp://admin:WWYZRL@192.168.5.101/live/mpeg4:554
+
+CareCam
+rtsp://admin:123456@192.168.5.220:8554/profile0
+
+iCSS
+rtsp://admin:123456@192.168.5.60/live/profile0

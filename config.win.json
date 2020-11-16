@@ -1,0 +1,55 @@
+{
+    "isRecordingAllTime": "True",
+    "isRecordingOnAlarmes": "True",
+    "isOpenVino": "True",
+    "camSource": "rtsp://admin:WWYZRL@192.168.5.101/live/mpeg4:554",
+    "dnnModelPb": "dlModels/ssd-mobilenet/frozen_inference_graph_v1_coco_2017_11_17.pb",
+    "dnnModelPbTxt": "dlModels/ssd-mobilenet/ssd_mobilenet_v1_coco_2017_11_17.pbtxt",
+    "openVinoCpuExtension": "openvino/inference_engine/bin/intel64/Release/cpu_extension_avx2.dll",
+    "openVinoPluginDir": "openvino/inference_engine/bin/intel64/Release",
+    "openVinoModels": [
+        {
+            "isActive": "False",
+            "name": "pedestre-veiculo-adas-001-GPU",
+            "openVinoModelXml": "dlModels/intel/pedestrian-and-vehicle-detector-adas-0001/FP16/pedestrian-and-vehicle-detector-adas-0001.xml",
+            "openVinoModelBin": "dlModels/intel/pedestrian-and-vehicle-detector-adas-0001/FP16/pedestrian-and-vehicle-detector-adas-0001.bin",
+            "openVinoDevice": "GPU"
+        },
+        {
+            "isActive": "True",
+            "name": "pedestre-veiculo-adas-001-CPU",
+            "openVinoModelXml": "dlModels/intel/pedestrian-and-vehicle-detector-adas-0001-old/FP32/pedestrian-and-vehicle-detector-adas-0001.xml",
+            "openVinoModelBin": "dlModels/intel/pedestrian-and-vehicle-detector-adas-0001-old/FP32/pedestrian-and-vehicle-detector-adas-0001.bin",
+            "openVinoDevice": "CPU"
+        },
+        {
+            "isActive": "False",
+            "name": "person-vehicle-bike-FP16-GPU",
+            "openVinoModelXml": "dlModels/intel/person-vehicle-bike-detection-crossroad-0078/FP16/person-vehicle-bike-detection-crossroad-0078.xml",
+            "openVinoModelBin": "dlModels/intel/person-vehicle-bike-detection-crossroad-0078/FP16/person-vehicle-bike-detection-crossroad-0078.bin",
+            "openVinoDevice": "GPU"
+        }
+    ],
+    "storageConfig": {
+        "diskMaxUsage": 85,
+        "diskMinUsage": "10",
+        "spaceMaxDirVideosAllTime": "10.0",
+        "spaceMaxDirVideosOnAlarme": "10.0",
+        "eraseOldestFiles": "True",
+        "stopSaveNewVideos": "False"
+    },
+    "prob_threshold": 0.7,
+    "emailConfig": {
+        "name": "igorddf@gmail.com",
+        "port": "587",
+        "smtp": "smtp.gmail.com",
+        "user": "igorddf@gmail.com",
+        "password": "gAAAAABfrm5cMj3yObf6x-u7jZmVYQTBeVOygwimyPU-rf6PPoDzVbBaJunn2aQi5mxnrrbfmJcUkVhapWXJnYar7cA23LrDHg==",
+        "subject": "PV-VM",
+        "to": "igorddf@gmail.com"
+    },
+    "dirVideosOnAlarmes": "videos_alarme_alterado",
+    "dirVideosAllTime": "videos_all_time",
+    "diskMaxUsage": "85",
+    "diskMinUsage": "10"
+}
