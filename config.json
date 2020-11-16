@@ -2,7 +2,7 @@
     "isRecordingAllTime": "True",
     "isRecordingOnAlarmes": "True",
     "isOpenVino": "True",
-    "camSource": "rtsp://admin:123456@192.168.5.220:8554/profile0",
+    "camSource": "rtsp://admin:123456@192.168.5.60",
     "dnnModelPb": "dlModels/ssd-mobilenet/frozen_inference_graph_v1_coco_2017_11_17.pb",
     "dnnModelPbTxt": "dlModels/ssd-mobilenet/ssd_mobilenet_v1_coco_2017_11_17.pbtxt",
     "openVinoCpuExtension": "libMKLDNNPlugin.so",
@@ -44,7 +44,7 @@
         "port": "587",
         "smtp": "smtp.gmail.com",
         "user": "igorddf@gmail.com",
-        "password": "gAAAAABfrW3uh9BTnIk5i-Erwf3U2j6a09i4kSOW9UbiCOHVaI5m3q-l7WuLeElehYAS1pehrShX23WH4eF2xOCWAhKx7R6L1w==",
+        "password": "gAAAAABfsm0vTFtq5qDg146kZMI07ed7hvf96jBRoJciFwqU7D8NUTcXME15qPkehU32fdHbcAPJP8f385OOlgtdPvipMNXTYA==",
         "subject": "PV",
         "to": "igorddf@gmail.com"
     },

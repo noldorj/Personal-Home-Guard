@@ -73,6 +73,12 @@ GRAVANDO_TIME = 30 #gravar videos de 5min
 INTERNET_OFF = 7200 #3 horas apos queda de internet para o programa perder as funcoes
 STOP_ALL = False
 
+#720p: 1280 x 720
+#480p: 854 x 480
+
+RES_X = 854 
+RES_Y = 480 
+
 
 token = secrets.token_urlsafe(20)
 gravandoAllTime = False
@@ -1461,7 +1467,7 @@ def callbackButtonRegioes(self, ret):
 ret = 1
 initFormLogin(None, ret)
 
-cv.namedWindow('frame')
+cv.namedWindow('frame', cv.WINDOW_FREERATIO)
 cv.setMouseCallback('frame', polygonSelection)
 
 timeInternetOffStart = None
@@ -1477,6 +1483,10 @@ def initOpenVino():
     
         ret, frame = ipCam.read()
         ret, next_frame = ipCam.read()
+        
+        frame = cv.resize(frame, (RES_X, RES_Y)) 
+        
+        next_frame = cv.resize(next_frame, (RES_X, RES_Y)) 
     
         cvNet = None
     
@@ -1507,6 +1517,7 @@ def initOpenVino():
     
     conectado, frame = ipCam.read()
     if frame is not None:
+        frame = cv.resize(frame, (RES_X, RES_Y)) 
         (h,w) = frame.shape[:2]
 
 
@@ -1556,6 +1567,7 @@ while init_video and sessionStatus and rtspStatus:
     
 
     conectado, frame = ipCam.read()
+    frame = cv.resize(frame, (RES_X, RES_Y)) 
     
 
     if (conectado and frame is not None and next_frame is not None):

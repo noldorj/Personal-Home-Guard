@@ -86,11 +86,13 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
     log.info(' ')
 
     plugin_SO = 'linux' if cpu_extension.split('.')[1] == 'so' else 'windows'
+    plugin = None
 
     try: 
 
         log.info('IEPlugin inicializando...')
-        plugin = IEPlugin(device=device, plugin_dirs=plugin_dir)
+        plugin = IEPlugin(device=device)
+        #plugin = IEPlugin(device=device, plugin_dirs=plugin_dir)
 
     except Exception as e:
         
@@ -100,40 +102,41 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
 
         log.info('IEPlugin {} carregado'.format(device))
 
+    #if 'CPU' in device:
     if cpu_extension and 'CPU' in device:
     
         try: 
-            log.info('CPU_Extension sendo carregado...')
+            log.info('CPU_Extension: "{}" sendo carregado...'.format(cpu_extension))
             plugin.add_cpu_extension(plugin_dir + '/' + cpu_extension)
 
         except Exception as e:
 
-            log.critical('Erro adicionando CPU_Extension: {}'.format(e))
             log.critical('cpu_extension usado: {}'.format(cpu_extension))
+            log.critical('Erro adicionando CPU_Extension: {}'.format(e))
 
             try:
                 log.info('Tentando AVX2 plugin')
                 if plugin_SO == 'linux':
                     plugin.add_cpu_extension(plugin_dir + '/' + 'libcpu_extension_avx2.so')
                 else:
-                    plugin.add_cpu_extension(plugin_dir + '/' + 'libcpu_extension_avx2.dll')
+                    plugin.add_cpu_extension(plugin_dir + '/' + 'cpu_extension_avx2.dll')
 
             except Exception as e:
             
+                log.critical('cpu_extension usado: "libcpu_extension_avx2" ')
                 log.critical('Erro adicionando CPU_Extension {}'.format(e))
-                log.critical('cpu_extension usado: "libcpu_extension_avx2.so" ')
                 
                 try:
                     if plugin_SO == 'linux':
                         log.info('Tentando AVX-SSE4 plugin')
                         plugin.add_cpu_extension(plugin_dir + '/' + 'libcpu_extension_sse4.so')
                     else:
-                        plugin.add_cpu_extension(plugin_dir + '/' + 'libcpu_extension_sse4.dll')
-
+                        plugin.add_cpu_extension(plugin_dir + '/' + 'cpu_extension_sse4.dll')
 
                 except Exception as e:
+                    log.critical('cpu_extension usado: "libcpu_extension_sse4" ')
                     log.critical('Erro adicionando CPU_Extension {}'.format(e))
-                    log.critical('cpu_extension usado: "libcpu_extension_sse4.so" ')
+                    plugin = None
 
                 #3 plugin SSE4                
                 else:
@@ -154,7 +157,7 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
     # Read IR
     log.info("Reading IR...")
     try:
-        log.info('Carregando IENetwork') 
+        log.info('Carregando IENetwork...') 
         net = IENetwork(model=model_xml, weights=model_bin)
 
     except Exception as e:
@@ -164,21 +167,39 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
     else:
         log.info('IENetwork carregada')
 
-    if plugin.device == "CPU":
+    #Loading Plugin 
+    if plugin.device == "CPU" and plugin is not None:
+
+        log.info('Layers suportadas...')
+        
         supported_layers = plugin.get_supported_layers(net)
         not_supported_layers = [l for l in net.layers.keys() if l not in supported_layers]
+        
         if len(not_supported_layers) != 0:
             log.error("Following layers are not supported by the plugin for specified device {}:\n {}".
                       format(plugin.device, ', '.join(not_supported_layers)))
             log.error("Please try to specify cpu extensions library path in demo's command line parameters using -l "
                       "or --cpu_extension command line argument")
-            sys.exit(1)
-    assert len(net.inputs.keys()) == 1, "Demo supports only single input topologies"
-    assert len(net.outputs) == 1, "Demo supports only single output topologies"
+            #sys.exit(1)
+
+    #assert len(net.inputs.keys()) == 1, "Demo supports only single input topologies"
+    #assert len(net.outputs) == 1, "Demo supports only single output topologies"
+    
     input_blob = next(iter(net.inputs))
     out_blob = next(iter(net.outputs))
-    log.info("Loading IR to the plugin...")
-    exec_net = plugin.load(network=net, num_requests=2)
+    
+    log.info('net.inputs: {}'.format(net.inputs))
+    log.info('net.outputs: {}'.format(net.outputs))
+    
+    if plugin is not None:
+        log.info("Loading IR to the plugin...")
+        try:
+            exec_net = plugin.load(network=net, num_requests=2)
+        except Exception as e:
+            log.error('Error plugin.load: {}'.format(str(e)))
+        else:
+            log.info('plugin.load ok') 
+
     n, c, h, w = net.inputs[input_blob].shape
     nchw = [n,c,h,w]
     del net

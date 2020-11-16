@@ -1,6 +1,6 @@
 [
     {
-        "nameRegion": "quarto_bianca",
+        "nameRegion": "copa",
         "alarm": [
             {
                 "name": "sempre",
@@ -31,25 +31,29 @@
             "person": "True",
             "car": "False",
             "bike": "False",
-            "dog": "True"
+            "dog": "False"
         },
         "prob_threshold": 60.0,
         "pointsPolygon": [
             [
-                1269,
-                711
+                537,
+                972
             ],
             [
-                13,
-                716
+                877,
+                637
             ],
             [
-                20,
-                21
+                1566,
+                659
             ],
             [
-                1266,
-                12
+                1914,
+                784
+            ],
+            [
+                1907,
+                990
             ]
         ]
     }
