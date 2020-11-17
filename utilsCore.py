@@ -416,6 +416,10 @@ class StatusConfig:
     def getEmailConfig(self):
         return self.data["emailConfig"]
 
+    def getLoginAutomatico(self):
+        return self.dataLogin["loginAutomatico"]
+
+
     def getRegions(self):
         return self.regions
 
@@ -493,15 +497,20 @@ class StatusConfig:
         self.saveConfigFile()
 
 
-    def addLoginConfig(self, userName, userPasswd, loginAutomatico):
+    def addLoginConfig(self, userName, userPasswd, salvarLogin, loginAutomatico):
 
         self.dataLogin['user'] = userName
         self.dataLogin['passwd'] = userPasswd
+        self.dataLogin['salvarLogin'] = salvarLogin 
         self.dataLogin['loginAutomatico'] = loginAutomatico 
 
         self.saveConfigLogin()
 
 
+    def setLoginAutomatico(self, status):
+
+        self.dataLogin['loginAutomatico'] = status 
+        self.saveConfigLogin()
 
 
     def addConfigGeral(self, name, port, smtp, user, password, subject, to, isRecordingAllTime, isRecordingOnAlarmes, dirVideosAllTime, dirVideosOnAlarmes, camSource, diskMinUsage):

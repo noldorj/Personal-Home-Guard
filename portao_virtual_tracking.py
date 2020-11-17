@@ -69,6 +69,8 @@ CHECK_SESSION = 30 # checar sessao a cada 5 min
 #GRAVANDO_TIME = 300 #gravar videos de 5min 
 GRAVANDO_TIME = 30 #gravar videos de 5min 
 
+LOGIN_AUTOMATICO = False
+
 #INTERNET_OFF = 60 #3 horas apos queda de internet para o programa perder as funcoes
 INTERNET_OFF = 7200 #3 horas apos queda de internet para o programa perder as funcoes
 STOP_ALL = False
@@ -197,13 +199,15 @@ def initConfig():
     global statusConfig, pb, pbtxt, regions, emailConfig, portaoVirtualSelecionado
     global status_dir_criado_all_time, status_dir_criado_all_time, dir_video_trigger_on_alarmes, dir_video_trigger_all_time, source, ipCam, prob_threshold, hora, current_data_dir, isOpenVino
     global device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir, openVinoModelName, gravandoAllTime 
-    global spaceMaxDirVideosAllTime, spaceMaxDirVideosOnAlarme, eraseOldestFiles, stopSaveNewVideos, diskMaxUsage, diskMinUsage, rtspStatus
+    global spaceMaxDirVideosAllTime, spaceMaxDirVideosOnAlarme, eraseOldestFiles, stopSaveNewVideos, diskMaxUsage, diskMinUsage, rtspStatus, LOGIN_AUTOMATICO
     
     current_data_dir = utils.getDate()
     current_data_dir = [current_data_dir.get('day'), current_data_dir.get('month')]
     hora = utils.getDate()['hour'].replace(':','-')
     
     statusConfig = utils.StatusConfig()
+
+    LOGIN_AUTOMATICO = True if statusConfig.getLoginAutomatico() == 'True' else False
     
     gravandoAllTime = True if statusConfig.data["isRecordingAllTime"] == 'True' else False
     gravandoOnAlarmes = True if statusConfig.data["isRecordingOnAlarmes"] == 'True' else False
@@ -551,7 +555,58 @@ def btnSaveStorage():
         refreshStatusConfig() 
         initConfig()
 
+
+def loginAutomatico():
+
+    global init_video, statusLicence, uiLogin, conexao, login 
+
+    log.info('Checando conexão com a Internet')
+    #uiLogin.lblStatus.setText("Checando conexão com a Internet")
+
+    conexao = checkInternetAccess()
+    #conexao = True
+
+    if conexao:    
     
+        log.info('Checando licença no servidor - Por favor aguarde')
+        
+        email = statusConfig.dataLogin['user']
+        passwd = utils.decrypt(statusConfig.dataLogin['passwd'])
+        log.info('email: {}'.format(email))
+        log.info('passwd: {}'.format(passwd))
+        
+        login = {'user':email, 'passwd':passwd, 'token':token}
+        
+        statusLicence, error  = checkLoginPv(login) 
+        #statusLicence = True ## testando apenas IJF
+        
+        if statusLicence:
+            
+            log.warning("Usuario logado")
+            init_video = True 
+            windowLogin.close()
+        
+        else:
+
+            #se o servidor estiver fora do ar - libera acesso ao sistema 
+            if error == "conexao":
+                log.warning("Erro de conexão com o servidor")
+
+                init_video = True
+                statusLicence = True
+                log.warning("Liberando acesso")
+                windowLogin.close()
+
+            elif error == "login":
+
+                init_video = False
+                log.warning("Usuario invalido")
+                #uiLogin.lblStatus.setText("Usuário ou senha inválida. Tente novamente")
+
+    else:
+
+        log.info("Erro de conexao com a Internet")
+        #uiLogin.lblStatus.setText("Cheque sua conexão com a Internet por favor e tente mais tarde")
 
 def btnLogin():
     #checando licenca de usuario no servidor
@@ -730,6 +785,8 @@ def fillTabGeral():
 
     clearFieldsTabGeralEmail()
     refreshStatusConfig()
+
+    ui.checkBoxDesabilitarLoginAutomatico.setCheckState( True if statusConfig.getLoginAutomatico() == "True" else False )
 
 
     ui.checkBoxVideoRecordingOnAlarmes.setCheckState( True if statusConfig.data.get("isRecordingOnAlarmes") == "True" else False )
@@ -1287,9 +1344,47 @@ def callbackButtonResumeSound(self, ret):
 #        #ui.txtUrlRstp.setEnabled(False)
 
 
+def checkBoxLoginAutomatico(state):
+    global LOGIN_AUTOMATICO, statusConfig
+
+    statusConfig = utils.StatusConfig()
+    
+    if state == 0:
+        
+        log.info('Login automatico off')
+        statusConfig.setLoginAutomatico('False')
+        LOGIN_AUTOMATICO = False
+
+
+    elif (state == 1 or state == 2):
+        
+        log.info('Login automatico on')
+        statusConfig.setLoginAutomatico('True')
+        LOGIN_AUTOMATICO = True 
+        
+
+def checkBoxDesabilitarLoginAutomatico(state):
+    global LOGIN_AUTOMATICO, statusConfig
+
+    statusConfig = utils.StatusConfig()
+    
+    if state == 0:
+        
+        log.info('Login automatico off')
+        statusConfig.setLoginAutomatico('False')
+        LOGIN_AUTOMATICO = False
+
+
+    elif (state == 1 or state == 2):
+        
+        log.info('Login automatico on')
+        statusConfig.setLoginAutomatico('True')
+        LOGIN_AUTOMATICO = True 
+
+
 
 def checkBoxSalvarLogin(state):
-    global fernetKey
+    global fernetKey, statusConfig
 
     statusConfig = utils.StatusConfig()
     
@@ -1298,8 +1393,9 @@ def checkBoxSalvarLogin(state):
         log.info('salvar login off')
         statusConfig.addLoginConfig(uiLogin.txtEmail.text(),
                                     '',
-                                    'False')
-        log.info('Login automatico desligado')
+                                    'False',
+                                    statusConfig.dataLogin['loginAutomatico'])
+        log.info('Salvar Login desligado')
 
     elif (state == 1 or state == 2):
         
@@ -1308,9 +1404,10 @@ def checkBoxSalvarLogin(state):
         
         statusConfig.addLoginConfig(uiLogin.txtEmail.text(),
                                     passEncrypted,
-                                    'True')
+                                    'True',
+                                    statusConfig.dataLogin['loginAutomatico'])
         
-        log.info('Login automatico ligado')
+        log.info('Salvar Login ligado')
 
 
 
@@ -1347,7 +1444,7 @@ def initFormLogin(self, ret):
     
     statusConfig = utils.StatusConfig()
 
-    if statusConfig.dataLogin.get('loginAutomatico') == 'True':
+    if statusConfig.dataLogin.get('salvarLogin') == 'True':
         
         uiLogin.txtEmail.setText(statusConfig.dataLogin.get('user'))
         
@@ -1362,6 +1459,7 @@ def initFormLogin(self, ret):
     uiLogin.btnExit.clicked.connect(btnExit)
     uiLogin.btnEsqueciSenha.clicked.connect(btnEsqueciSenha)
     uiLogin.checkBoxSalvarLogin.stateChanged.connect(checkBoxSalvarLogin)
+    uiLogin.checkBoxLoginAutomatico.stateChanged.connect(checkBoxLoginAutomatico)
     
     uiLogin.btnAlterarSenha.clicked.connect(btnAlterarSenha)
 
@@ -1411,6 +1509,7 @@ def callbackButtonRegioes(self, ret):
     ui.btnSaveStorage.clicked.connect(btnSaveStorage)
     
     ui.checkBoxWebCam.stateChanged.connect(checkBoxWebcamStateChanged)
+    ui.checkBoxDesabilitarLoginAutomatico.stateChanged.connect(checkBoxDesabilitarLoginAutomatico)
 
    
     ui.checkBoxNoLimitsVideosAllTime.stateChanged.connect(checkBoxNoLimitsVideosAllTime)
@@ -1465,7 +1564,18 @@ def callbackButtonRegioes(self, ret):
         threadWindow.start()
     
 ret = 1
-initFormLogin(None, ret)
+
+initConfig()
+
+statusConfig = utils.StatusConfig()
+
+LOGIN_AUTOMATICO = True if statusConfig.getLoginAutomatico() == 'True' else False
+
+if LOGIN_AUTOMATICO:
+    log.info('Iniciando login automatico')
+    loginAutomatico()
+else:
+    initFormLogin(None, ret)
 
 cv.namedWindow('frame', cv.WINDOW_FREERATIO)
 cv.setMouseCallback('frame', polygonSelection)
@@ -1541,7 +1651,7 @@ if statusLicence and conexao:
 
     #log.info('statusLicence on')
     
-    initConfig()
+    #initConfig()
 
     if rtspStatus:
 

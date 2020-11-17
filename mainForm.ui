@@ -29,7 +29,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>2</number>
+    <number>1</number>
    </property>
    <property name="tabsClosable">
     <bool>true</bool>
@@ -617,6 +617,13 @@
       </item>
       <item row="3" column="1">
        <widget class="QLineEdit" name="txtDirRecordingOnAlarmes"/>
+      </item>
+      <item row="6" column="0">
+       <widget class="QCheckBox" name="checkBoxDesabilitarLoginAutomatico">
+        <property name="text">
+         <string>Login Automatico</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
