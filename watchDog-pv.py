@@ -11,16 +11,17 @@ import time
 import sys
 import subprocess
 
-
 log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
 
 def getTasks(name):
     r = os.popen('tasklist /v').read().strip().split('\n')
-    print ('# of tasks is %s' % (len(r)))
+    log.info('Numero de processos: {} .'.format(len(r)) )
     for i in range(len(r)):
-        s = r[i]
-        if name in r[i]:
-            print ('%s in r[i]' %(name))
+        s = r[i]        
+        s = s.split('.')
+        
+        if name in s:
+            log.info('Processo: "{}" em execução'.format(s[0]))
             return r[i]
     return []
 
@@ -41,16 +42,16 @@ if __name__ == '__main__':
     
     timeInit = time.time()
     
-    
+    name = "portao_virtual_tracking"
    
     
     while True:
         
-        r = getTasks('portao_virtual_tracking.exe')        
+        r = getTasks(name)  
         
-        print(r)
-
         if not r:
+        #if not getProcess(name):
+            
             log.critical('Portão Virtual não está em execução')
             
             #cmds = shlex.split(app)
@@ -60,17 +61,15 @@ if __name__ == '__main__':
             
             log.critical('Portao Virtual inicializado pela {} vez '.format(timesRestarted))
             log.critical('Tempo de execução até o momento: {:03.1} hs' .format(timeRunning))
-            
-            #subprocess.call([app], close_fds=True)
+                        
             subprocess.Popen([app], creationflags=DETACHED_PROCESS)
             timesRestarted = timesRestarted + 1
             timeInit = time.time()
 
-    
         elif 'Not Responding' in r:
             log.critical('Portão Virtual não está respondendo ...')
                     
         else:
             log.info('Portão Virtual em execução')
             
-        time.sleep(60)
+        time.sleep(10)
