@@ -239,8 +239,9 @@ def initConfig():
     emailConfig = statusConfig.getEmailConfig()
     
     #se existirem regioes ja selecionadas, o portao virtual é mostrado
-    if len(regions) > 0:
-        portaoVirtualSelecionado = True
+    #if len(regions) > 0:
+    #    portaoVirtualSelecionado = True
+    portaoVirtualSelecionado = True
     
     #Criando diretorio para salvar videos de alarmes
     status_dir_criado_on_alarmes, dir_video_trigger_on_alarmes = utils.createDirectory(statusConfig.data["dirVideosOnAlarmes"])
@@ -676,6 +677,8 @@ def clearFieldsTabGeralEmail():
     ui.txtEmailTo.clear()
     ui.txtEmailUser.clear()
     ui.txtEmailPassword.clear()
+    ui.lblStatus.clear()
+    
 
 
 def btnSaveEmail():
@@ -1663,6 +1666,7 @@ else:
     #initWatchDog() 
 
 cv.namedWindow('frame', cv.WINDOW_FREERATIO)
+cv.setWindowTitle('frame', 'Portão Virtual')
 cv.setMouseCallback('frame', polygonSelection)
 
 timeInternetOffStart = None
@@ -1855,136 +1859,194 @@ while init_video and sessionStatus and rtspStatus:
 
 
                         #checando para varias regioes
-                        for r in regions:
+                        if len(regions) != 0:
+                            for r in regions:
 
-                            #checando tipo objeto
-                            typeObject = str(box[6])
+                                #checando tipo objeto
+                                typeObject = str(box[6])
 
-                            if r.get('objectType').get(typeObject) == "True":
+                                if r.get('objectType').get(typeObject) == "True":
 
+                                    if prob_threshold_returned >= int(r.get('prob_threshold')):
 
-                                if prob_threshold_returned >= int(r.get('prob_threshold')):
+                                        if isIdInsideRegion(centroid, r.get('pointsPolygon')):
 
-                                    if isIdInsideRegion(centroid, r.get('pointsPolygon')):
+                                            tEmptyEnd = time.time()
+                                            tEmpty = tEmptyEnd - tEmptyStart
 
-                                        tEmptyEnd = time.time()
-                                        tEmpty = tEmptyEnd - tEmptyStart
+                                            tEmptyStart = time.time()
 
-                                        tEmptyStart = time.time()
+                                            #enquanto tiver objetos dentro da regiao o video eh gravado, independente do alarme
+                                             
+                                            if statusConfig.data["isRecordingOnAlarmes"] == 'True':
+                                                gravandoOnAlarmes = True
 
-                                        #enquanto tiver objetos dentro da regiao o video eh gravado, independente do alarme
-                                         
-                                        if statusConfig.data["isRecordingOnAlarmes"] == 'True':
-                                            gravandoOnAlarmes = True
-                                        
-                                        #resume_screensaver()
+                                            #checando alarmes 
+                                            d = utils.getDate()
+                                            weekDay = d['weekDay']
+                                            minute = int(d['minute'])
+                                            hour = int(d['hourOnly'])
 
-                                        #checando alarmes 
-                                        d = utils.getDate()
-                                        weekDay = d['weekDay']
-                                        #print('weekDay {}'.format(weekDay))
-                                        minute = int(d['minute'])
-                                        hour = int(d['hourOnly'])
+                                            currentMinutes = (hour * 60) + minute
 
-                                        currentMinutes = (hour * 60) + minute
+                                            for a in r.get('alarm'):
 
-                                        for a in r.get('alarm'):
-                                            #log.info('for a in r.get(alarme)')
-
-
-                                            startMinutes = (int(a.get('time').get('start').get('hour'))*60) + int(a.get('time').get('start').get('min'))
-                                            endMinutes = (int(a.get('time').get('end').get('hour'))*60) + int(a.get('time').get('end').get('min'))
+                                                startMinutes = (int(a.get('time').get('start').get('hour'))*60) + int(a.get('time').get('start').get('min'))
+                                                endMinutes = (int(a.get('time').get('end').get('hour'))*60) + int(a.get('time').get('end').get('min'))
 
 
-                                            if a.get('days').get(weekDay) == "True":
-                                                
-                                                #log.info('currentMinutes: {}'.format(currentMinutes))
-                                                #log.info('startMinutes: {}'.format(startMinutes))
-                                                #log.info('weekDay: {}'.format(weekDay))
+                                                if a.get('days').get(weekDay) == "True":
 
-                                                if currentMinutes >= startMinutes and currentMinutes < endMinutes:
+                                                    if currentMinutes >= startMinutes and currentMinutes < endMinutes:
 
-                                                    if tSoundLimit > 0:
+                                                        if tSoundLimit > 0:
 
-                                                        tSoundEnd = time.time()
-                                                        tSound = tSoundEnd - tSoundStart
+                                                            tSoundEnd = time.time()
+                                                            tSound = tSoundEnd - tSoundStart
 
-                                                        if tSound < tSoundLimit:
-                                                            stopSound = True
-                                                        else:
-                                                            stopSound = False
-                                                            tSoundLimit = 0
-
-                                                    if a.get('isSoundAlert') == "True" and not stopSound:
-                                                        #evitar campainhas seguidas para mesmo objeto
-                                                        if listObjectSoundAlerted.count(objectID) == 0:
-                                                            utils.playSound()
-                                                            listObjectSoundAlerted.append(objectID)
-
-                                                    if a.get('isEmailAlert') == "True":
-                                                        #log.info('if a.get(isEmailAlert) == True')
-                                                        #evitar emails seguidos para mesmo objeto
-                                                        if listObjectMailAlerted.count(objectID) == 0:
-
-                                                            log.info('Enviando alerta por email')
-                                                            #salvando foto para treinamento
-                                                            #crop no box
-                                                            #left, top, right, bottom
-                                                            #frame_no_label = frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
-                                                            #saveImageBox(frame_no_label, str(box[6]))
-
-                                                            #if (sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', frame_no_label_email, str(box[6]), r.get('nameRegion'))):
-                                                            if checkInternetAccess():
-
-                                                                log.info('Alerta enviado ID[' + str(objectID) + ']')
-                                                                threadEmail = Thread(target=sendMailAlert, args=(emailConfig['name'],
-                                                                                                                   emailConfig['to'],
-                                                                                                                   emailConfig['subject'],
-                                                                                                                   emailConfig['port'],
-                                                                                                                   emailConfig['smtp'],
-                                                                                                                   emailConfig['user'],
-                                                                                                                   frame_no_label_email,
-                                                                                                                   str(box[6]),
-                                                                                                                   r.get('nameRegion')))
-                                                                threadEmail.start()
-                                                                listObjectMailAlerted.append(objectID)
+                                                            if tSound < tSoundLimit:
+                                                                stopSound = True
                                                             else:
-                                                                alertaNaoEnviado = [emailConfig['name'],
-                                                                                      emailConfig['to'],
-                                                                                      emailConfig['subject'],
-                                                                                      emailConfig['port'],
-                                                                                      emailConfig['smtp'],
-                                                                                      emailConfig['user'],
-                                                                                      frame_no_label_email,
-                                                                                      str(box[6]),
-                                                                                      r.get('nameRegion'), 
-                                                                                      objectID]
+                                                                stopSound = False
+                                                                tSoundLimit = 0
 
-                                                                pilhaAlertasNaoEnviados.append(alertaNaoEnviado)
-                                                                
-                                                                listObjectMailAlerted.append(objectID)
+                                                        if a.get('isSoundAlert') == "True" and not stopSound:
+                                                            #evitar campainhas seguidas para mesmo objeto
+                                                            if listObjectSoundAlerted.count(objectID) == 0:
+                                                                utils.playSound()
+                                                                listObjectSoundAlerted.append(objectID)
 
-                                                                log.critical('Sem conexao com a Internet - Alarmes serão enviados assim que houver conexao')
-                                                                log.critical('Numero de alarmes não enviados até o momento: {:d}'.format(len(pilhaAlertasNaoEnviados)))
-                                        #end loop alarms
+                                                        if a.get('isEmailAlert') == "True":
+
+                                                            #evitar emails seguidos para mesmo objeto
+                                                            if listObjectMailAlerted.count(objectID) == 0:
+
+                                                                log.info('Enviando alerta por email')
+                                                                #salvando foto para treinamento
+                                                                #crop no box
+                                                                #left, top, right, bottom
+                                                                #frame_no_label = frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
+                                                                #saveImageBox(frame_no_label, str(box[6]))
+
+                                                                if checkInternetAccess():
+
+                                                                    log.info('Alerta enviado ID[' + str(objectID) + ']')
+                                                                    threadEmail = Thread(target=sendMailAlert, args=(emailConfig['name'],
+                                                                                                                       emailConfig['to'],
+                                                                                                                       emailConfig['subject'],
+                                                                                                                       emailConfig['port'],
+                                                                                                                       emailConfig['smtp'],
+                                                                                                                       emailConfig['user'],
+                                                                                                                       frame_no_label_email,
+                                                                                                                       str(box[6]),
+                                                                                                                       r.get('nameRegion')))
+                                                                    threadEmail.start()
+                                                                    listObjectMailAlerted.append(objectID)
+                                                                else:
+                                                                    alertaNaoEnviado = [emailConfig['name'],
+                                                                                          emailConfig['to'],
+                                                                                          emailConfig['subject'],
+                                                                                          emailConfig['port'],
+                                                                                          emailConfig['smtp'],
+                                                                                          emailConfig['user'],
+                                                                                          frame_no_label_email,
+                                                                                          str(box[6]),
+                                                                                          r.get('nameRegion'), 
+                                                                                          objectID]
+
+                                                                    pilhaAlertasNaoEnviados.append(alertaNaoEnviado)
+                                                                    
+                                                                    listObjectMailAlerted.append(objectID)
+
+                                                                    log.critical('Sem conexao com a Internet - Alarmes serão enviados assim que houver conexao')
+                                                                    log.critical('Numero de alarmes não enviados até o momento: {:d}'.format(len(pilhaAlertasNaoEnviados)))
+                                            #end loop alarms
+                                        else:
+
+                                            tEmptyEnd = time.time()
+                                            tEmpty = tEmptyEnd- tEmptyStart
+
+                                            if tEmpty > 10:
+                                                gravandoOnAlarmes = False
+                                                newVideo = True
+                                                releaseVideoOnAlarmes = True
+                                                #suspend_screensaver()
+
+
+                                        #end if isIdInsideRegion
+
+                                    #end if prob_threshold_returned
+
+
+                            #end loop in Regions
+                        #se nao houver regiao configurada, enviar um alarme generico
+                        else:
+                            log.info('Sem regiao configurada')
+
+                            #evitar emails seguidos para mesmo objeto
+                            if listObjectMailAlerted.count(objectID) == 0:
+                                log.info('Enviando alerta por email')
+                                
+                                #60% acuracia padrao 
+                                if prob_threshold_returned >= 60:
+
+                                    tEmptyEnd = time.time()
+                                    tEmpty = tEmptyEnd - tEmptyStart
+
+                                    tEmptyStart = time.time()
+
+                                    #enquanto tiver objetos dentro da regiao o video eh gravado, independente do alarme
+                                     
+                                    if statusConfig.data["isRecordingOnAlarmes"] == 'True':
+                                        gravandoOnAlarmes = True
+                                    
+
+                                    #checando alarmes 
+                                    d = utils.getDate()
+                                    weekDay = d['weekDay']
+                                    #print('weekDay {}'.format(weekDay))
+                                    minute = int(d['minute'])
+                                    hour = int(d['hourOnly'])
+
+                                    currentMinutes = (hour * 60) + minute
+                                    
+                                    log.info('Enviando alerta por email')
+
+                                    if checkInternetAccess():
+
+                                        log.info('Alerta enviado ID[' + str(objectID) + ']')
+                                        threadEmail = Thread(target=sendMailAlert, args=(emailConfig['name'],
+                                                                                           emailConfig['to'],
+                                                                                           emailConfig['subject'],
+                                                                                           emailConfig['port'],
+                                                                                           emailConfig['smtp'],
+                                                                                           emailConfig['user'],
+                                                                                           frame_no_label_email,
+                                                                                           str(box[6]),
+                                                                                           'câmera (sem região definida)'))
+                                        threadEmail.start()
+                                        listObjectMailAlerted.append(objectID)
                                     else:
+                                        alertaNaoEnviado = [emailConfig['name'],
+                                                              emailConfig['to'],
+                                                              emailConfig['subject'],
+                                                              emailConfig['port'],
+                                                              emailConfig['smtp'],
+                                                              emailConfig['user'],
+                                                              frame_no_label_email,
+                                                              str(box[6]),
+                                                              'câmera (sem região definida)', 
+                                                              objectID]
 
-                                        tEmptyEnd = time.time()
-                                        tEmpty = tEmptyEnd- tEmptyStart
+                                        pilhaAlertasNaoEnviados.append(alertaNaoEnviado)
+                                        
+                                        listObjectMailAlerted.append(objectID)
 
-                                        if tEmpty > 10:
-                                            gravandoOnAlarmes = False
-                                            newVideo = True
-                                            releaseVideoOnAlarmes = True
-                                            #suspend_screensaver()
+                                        log.critical('Sem conexao com a Internet - Alarmes serão enviados assim que houver conexao')
+                                        log.critical('Numero de alarmes não enviados até o momento: {:d}'.format(len(pilhaAlertasNaoEnviados)))
 
 
-                                    #end if isIdInsideRegion
 
-                                #end if prob_threshold_returned
-
-
-                        #end loop in Regions
 
                     #end loop objectTracking.items()
             #end loop for box listObjects

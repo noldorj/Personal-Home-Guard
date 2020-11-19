@@ -25,9 +25,9 @@ import logging as log
 from  openvino.inference_engine import IENetwork, IEPlugin
 
 #def main():
-#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, filename='pv.log')
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, filename='pv.log')
 
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
+#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
 
 
 labels_map = ["background", "car", "person", "bike"]
@@ -40,45 +40,6 @@ listObjectsTracking = []
 
 def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
 
-    #cpu_extension = '/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_avx2.so'
-
-    #plugin_dir = '/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64'
-
-    #if device == 'MYRIAD':
-    #    log.info('loading MYRIAD plugins...')
-    #    log.info('Model XML: {}'.format(model_xml))
-    #    log.info('Model Bin: {}'.format(model_bin))
-        #model_xml = os.getcwd() + '/dlModels/openvino/pedestrian-and-vehicle-detector-adas-0001/FP16/pedestrian-and-vehicle-detector-adas-0001.xml'
-        #model_bin = os.getcwd() + '/dlModels/openvino/pedestrian-and-vehicle-detector-adas-0001/FP16/pedestrian-and-vehicle-detector-adas-0001.bin'
-
-        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP16/pedestrian-detection-adas-0002.xml'
-        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP16/pedestrian-detection-adas-0002.bin'
-
-    #elif device == 'CPU':
-    #    log.info('loading CPU plugins...')
-    #    log.info('Model XML: {}'.format(model_xml))
-    #    log.info('Model Bin: {}'.format(model_bin))
-        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP32/pedestrian-detection-adas-0002.xml'
-        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-detection-adas-0002/FP32/pedestrian-detection-adas-0002.bin'
-
-        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-and-vehicle-detector-adas-0001/FP32/pedestrian-and-vehicle-detector-adas-0001.bin'
-        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/pedestrian-and-vehicle-detector-adas-0001/FP32/pedestrian-and-vehicle-detector-adas-0001.xml'
-
-        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0002/FP32/person-detection-retail-0002.bin'
-        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0002/FP32/person-detection-retail-0002.xml'
-
-        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP32/person-vehicle-bike-detection-crossroad-0078.bin'
-        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP32/person-vehicle-bike-detection-crossroad-0078.xml'
-
-        #model_bin = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0013/FP32/person-detection-retail-0013.bin'
-        #model_xml = 'computer_vision_sdk/deployment_tools/intel_models/person-detection-retail-0013/FP32/person-detection-retail-0013.xml'
-
-   # elif device == 'GPU':
-   #     log.info('loading GPU plugins...')
-   #     log.info('Model XML: {}'.format(model_xml))
-   #     log.info('Model Bin: {}'.format(model_bin))
-
-
     # Plugin initialization for specified device and load extensions library if specified
     log.info(' ')
     log.info("Initializing plugin for {} device...".format(device))
@@ -90,7 +51,7 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
 
     plugin_SO = 'linux' if sys.platform == 'linux' else 'windows'
 
-    log.critical('pluginSO: {}'.format(plugin_SO))
+    #log.critical('pluginSO: {}'.format(plugin_SO))
 
     plugin = None
 
@@ -235,8 +196,12 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
     else:
 
         next_frame = cv2.resize(next_frame, (RES_X, RES_Y)) 
-        initial_w = cap.get(3)
-        initial_h = cap.get(4)
+        #initial_w = cap.get(3)
+        #initial_h = cap.get(4)
+        
+        initial_w = RES_X 
+        initial_h = RES_Y 
+
         in_frame = cv2.resize(next_frame, (w, h))
         #in_frame = cv2.resize(next_frame, (RES_X, RES_Y))
         in_frame = in_frame.transpose((2, 0, 1))  # Change data layout from HWC to CHW
@@ -251,13 +216,18 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
             for obj in res[0][0]:
                 # Draw only objects when probability more than specified threshold
                 if obj[2] > prob_threshold:
+
                     xmin = int(obj[3] * initial_w)
                     ymin = int(obj[4] * initial_h)
                     xmax = int(obj[5] * initial_w)
                     ymax = int(obj[6] * initial_h)
+                    
                     class_id = int(obj[1])
+                    
                     det_label = labels_map[class_id] if labels_map else str(class_id)
+                    
                     prob_threshold_returned = round(obj[2] * 100, 1)
+                    
                     label = det_label + ' ' + str(prob_threshold_returned) + ' %'
 
                     #teste para mais de um ID
