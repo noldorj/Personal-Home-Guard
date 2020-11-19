@@ -5,7 +5,7 @@
     "camSource": "rtsp://admin:123456@192.168.5.60",
     "dnnModelPb": "dlModels/ssd-mobilenet/frozen_inference_graph_v1_coco_2017_11_17.pb",
     "dnnModelPbTxt": "dlModels/ssd-mobilenet/ssd_mobilenet_v1_coco_2017_11_17.pbtxt",
-    "openVinoCpuExtension": "libMKLDNNPlugin.so",
+    "openVinoCpuExtension": "libMKLDNNPlugin.dll",
     "openVinoPluginDir": "/home/igor/intel/openvino_2019.1.144/inference_engine/lib/intel64/",
     "openVinoModels": [
         {

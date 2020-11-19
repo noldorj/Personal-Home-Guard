@@ -26,7 +26,7 @@ from cryptography.fernet import Fernet
 #timezone = pytz.timezone("America/Sao_Paulo")
     
 
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
+#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
 #log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 
 def camSource(source = 'webcam'):
@@ -318,11 +318,11 @@ def createDirectory(dirVideos):
     except OSError as ex:
 
         if ex.errno == 17:
-            log.critical('Diretorio ' + current_dir + month_dir + today_dir + ' existente.')
+            log.warning('Diretorio ' + current_dir + month_dir + today_dir + ' existente.')
             status = True
         else:
-            log.critical('Erro ao criar o diretorio: ' + current_dir + month_dir + today_dir)
-            log.critical(ex.__str__())
+            log.error('Erro ao criar o diretorio: ' + current_dir + month_dir + today_dir)
+            log.error(ex.__str__())
 
     else:
         log.info("Diretorio " + current_dir + month_dir + today_dir + " criado com sucesso")

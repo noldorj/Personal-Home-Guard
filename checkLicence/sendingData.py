@@ -2,7 +2,9 @@ import socketio
 import logging as log
 import sys
 
-log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.DEBUG, stream=sys.stdout)
+#log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.DEBUG, stream=sys.stdout)
+
+#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
 
 sio = socketio.Client()
 #sio = socketio.AsyncClient()
@@ -23,30 +25,30 @@ def connect():
 
 @sio.event
 def checkLogin(login):
-    log.info('Login de: ' + login['user']) 
+    #log.info('Login de: ' + login['user']) 
     sio.emit('checkLogin', login)
 
 
 @sio.event
 def checkSession(session):
-    log.info('Check session de: ' + session['user']) 
+    #log.info('Check session de: ' + session['user']) 
     sio.emit('checkSession', session)
 
 @sio.event
 def forgotPassword(email):
-    log.info('forgotPassword:: email: ' + email) 
+    #log.info('forgotPassword:: email: ' + email) 
     sio.emit('forgotPassword', email)
 
 
 @sio.event
 def changePasswd(login):
-    log.info('changePasswd:: alterando senha do usuario: ' + login['user']) 
+    #log.info('changePasswd:: alterando senha do usuario: ' + login['user']) 
     sio.emit('changePasswd', login)
 
 
 @sio.event
 def newUser(login):
-    log.info('Novo usuario: ' + login['user']) 
+    #log.info('Novo usuario: ' + login['user']) 
     sio.emit('newUser', login )
 
 @sio.event
@@ -66,13 +68,13 @@ def changePasswdPv(login):
 
     else:
         log.info('changePasswd:: Conexao efetuada')
-        log.info('changePasswd:: Alterando a senha do usuario: ' + login['user']) 
+        #log.info('changePasswd:: Alterando a senha do usuario: ' + login['user']) 
         error = ''
 
         changePasswd(login)  
         sio.wait()
     
-        log.info('changePasswd:: changePasswdStatus: ' + str(changePasswdStatus))
+        #log.info('changePasswd:: changePasswdStatus: ' + str(changePasswdStatus))
         #sio.disconnect()
     
     return changePasswdStatus, error
@@ -96,7 +98,7 @@ def forgotPasswordPv(email):
         log.info('forgotPasswordPv:: Conexao efetuada ')
         forgotPassword(email)
         sio.wait()
-        log.info('forgotPasswordPv:: statusForgotPasswd: ' + str(statusForgotPasswd))
+        #log.info('forgotPasswordPv:: statusForgotPasswd: ' + str(statusForgotPasswd))
         error = ''
         #sio.disconnect()
     
@@ -123,7 +125,7 @@ def checkSessionPv(session):
         error = ''
         checkSession(session)
         sio.wait()
-        log.info('checkSessionPv: ' + str(sessionStatus))
+        #log.info('checkSessionPv: ' + str(sessionStatus))
 
         #sio.disconnect()
     
@@ -150,7 +152,7 @@ def checkLoginPv(login):
         log.info('checkLoginPv:: Conexao efetuada')
         checkLogin(login)
         sio.wait()
-        log.info('checkLoginPv:: loginStatus: ' + str(loginStatus))
+        #log.info('checkLoginPv:: loginStatus: ' + str(loginStatus))
         #sio.disconnect()
     
     return loginStatus, error
@@ -164,7 +166,7 @@ def replyChangePasswd(status):
     if not status:
         error = 'login'
 
-    log.info('replyChangePasswd: ' + str(changePasswdStatus))
+    #log.info('replyChangePasswd: ' + str(changePasswdStatus))
     sio.disconnect()
 
 
@@ -173,7 +175,7 @@ def replyForgotPassword(status):
     global statusForgotPasswd
     
     statusForgotPasswd = status
-    log.info('replyForgotPassword:: statusForgotPasswd: ' + str(statusForgotPasswd))
+    #log.info('replyForgotPassword:: statusForgotPasswd: ' + str(statusForgotPasswd))
 
     sio.disconnect() 
 
@@ -183,7 +185,7 @@ def replyForgotPassword(status):
 def replyLogin(status):
     global loginStatus, error
     
-    log.info('replyLogin:: Login status: ' + str(status))
+    #log.info('replyLogin:: Login status: ' + str(status))
     
     loginStatus = status
 
@@ -191,33 +193,25 @@ def replyLogin(status):
     if not status:
         error = 'login'
 
-    log.info('replyLogin:: loginStatus: ' + str(loginStatus))
+    #log.info('replyLogin:: loginStatus: ' + str(loginStatus))
     sio.disconnect()
     sio.wait()
 
 
 @sio.event 
 def replyNewUser(status):
-    log.info('Novo Usuario status: ' + str(status))
+    #log.info('Novo Usuario status: ' + str(status))
     sio.disconnect()
 
 @sio.event 
 def replyCheckSession(status):
     global sessionStatus
 
-    print ('replyCheckSession:: sessionStatus: ' + str(status))
+    #print ('replyCheckSession:: sessionStatus: ' + str(status))
     sessionStatus = status 
     sio.disconnect()
 
 @sio.event 
 def disconnect(sid):
     log.info('disconnect:: sid: {}'.format(sid))
-
-
-#testes
-#login = {'user':'igor1', 'passwd':'senha2', 'token':'2'}
-#statusLicence, error  = checkLoginPv(login) 
-
-#statusSession = checkSessionPv(login)
-
 

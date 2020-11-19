@@ -14,14 +14,13 @@ statusConfig = utils.StatusConfig()
 
 emailConfig = statusConfig.getEmailConfig()
 
-#log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, filename='pv.log')
 
 def saveImageBox(frame, classe):
 
-    print('classe: ' + classe)
+    #print('classe: ' + classe)
     idFoto = len(os.listdir(os.getcwd() + '/dataset/training_set/' + classe)) + 1
-    print('numero fotos: ' + str(idFoto))
+    #print('numero fotos: ' + str(idFoto))
 
 
     try:
@@ -151,35 +150,4 @@ def sendMailAlert(sender, recipients, subject, port, smtp, user, frame, tipoObje
         status = True
 
     return status
-
-#sendMailAlert('igorddf@gmail.com', 'igorddf@gmail.com', 'foto_alarme.png')
-
-#def isMotionDetected(width, height, frame):
-#    cv.CvtColor(frame, self.frame2gray, cv.CV_RGB2GRAY)
-#
-#    #Absdiff to get the difference between to the frames
-#    cv.AbsDiff(self.frame1gray, self.frame2gray, self.res)
-#
-#    #Remove the noise and do the threshold
-#    cv.Smooth(self.res, self.res, cv.CV_BLUR, 5,5)
-#    element = cv.CreateStructuringElementEx(5*2+1, 5*2+1, 5, 5,  cv.CV_SHAPE_RECT)
-#    cv.MorphologyEx(self.res, self.res, None, None, cv.CV_MOP_OPEN)
-#    cv.MorphologyEx(self.res, self.res, None, None, cv.CV_MOP_CLOSE)
-#    cv.Threshold(self.res, self.res, 10, 255, cv.CV_THRESH_BINARY_INV)
-#
-#
-#    nb=0 #Will hold the number of black pixels
-#
-#    for y in range(height): #Iterate the hole image
-#        for x in range(width):
-#            if self.res[y,x] == 0.0: #If the pixel is black keep it
-#                nb += 1
-#    avg = (nb*100.0)/self.nb_pixels #Calculate the average of black pixel in the image
-#    #print "Average: ",avg, "%\r",
-#    if avg > self.ceil:#If over the ceil trigger the alarm
-#        return True
-#    else:
-#        return False
-
-
 

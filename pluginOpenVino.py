@@ -25,8 +25,11 @@ import logging as log
 from  openvino.inference_engine import IENetwork, IEPlugin
 
 #def main():
+#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, filename='pv.log')
+
 log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
-#log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+
+
 labels_map = ["background", "car", "person", "bike"]
 #labels_map = ["background", "person", "car", "bike"]
 
@@ -85,7 +88,10 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
     log.info('Plugin Diretorio : {}'.format(plugin_dir))
     log.info(' ')
 
-    plugin_SO = 'linux' if cpu_extension.split('.')[1] == 'so' else 'windows'
+    plugin_SO = 'linux' if sys.platform == 'linux' else 'windows'
+
+    log.critical('pluginSO: {}'.format(plugin_SO))
+
     plugin = None
 
     try: 
@@ -96,7 +102,7 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
 
     except Exception as e:
         
-        log.critical('IEPlugin error: {}'.format(e))
+        log.error('IEPlugin error: {}'.format(e))
 
     else:
 
@@ -111,8 +117,8 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
 
         except Exception as e:
 
-            log.critical('cpu_extension usado: {}'.format(cpu_extension))
-            log.critical('Erro adicionando CPU_Extension: {}'.format(e))
+            log.error('cpu_extension usado: {}'.format(cpu_extension))
+            log.error('Erro adicionando CPU_Extension: {}'.format(e))
 
             try:
                 log.info('Tentando AVX2 plugin')
@@ -123,8 +129,8 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
 
             except Exception as e:
             
-                log.critical('cpu_extension usado: "libcpu_extension_avx2" ')
-                log.critical('Erro adicionando CPU_Extension {}'.format(e))
+                log.error('cpu_extension usado: "libcpu_extension_avx2" ')
+                log.error('Erro adicionando CPU_Extension {}'.format(e))
                 
                 try:
                     if plugin_SO == 'linux':
@@ -134,8 +140,8 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
                         plugin.add_cpu_extension(plugin_dir + '/' + 'cpu_extension_sse4.dll')
 
                 except Exception as e:
-                    log.critical('cpu_extension usado: "libcpu_extension_sse4" ')
-                    log.critical('Erro adicionando CPU_Extension {}'.format(e))
+                    log.error('cpu_extension usado: "libcpu_extension_sse4" ')
+                    log.error('Erro adicionando CPU_Extension {}'.format(e))
                     plugin = None
 
                 #3 plugin SSE4                
@@ -162,7 +168,7 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
 
     except Exception as e:
 
-        log.critical('IENetwork error: {}'.format(e))
+        log.error('IENetwork error: {}'.format(e))
 
     else:
         log.info('IENetwork carregada')
@@ -210,7 +216,7 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
     return nchw, exec_net, input_blob, out_blob
 
 
-def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, prob_threshold):
+def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, prob_threshold, RES_X, RES_Y):
 
 
     prob_threshold_returned, xmin, xmax, ymin, ymax, det_label, class_id, label  = 0,0, 0, 0, 0, ' ', 0, ' '
@@ -228,9 +234,11 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
 
     else:
 
+        next_frame = cv2.resize(next_frame, (RES_X, RES_Y)) 
         initial_w = cap.get(3)
         initial_h = cap.get(4)
         in_frame = cv2.resize(next_frame, (w, h))
+        #in_frame = cv2.resize(next_frame, (RES_X, RES_Y))
         in_frame = in_frame.transpose((2, 0, 1))  # Change data layout from HWC to CHW
         in_frame = in_frame.reshape((n, c, h, w))
         exec_net.start_async(request_id=next_request_id, inputs={input_blob: in_frame})
@@ -262,16 +270,6 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
                         listObjectsTracking.append(boxTracking)
                         listRectanglesDetected.append(box)
 
-
-
-            #if det_label is 'person' or \
-            #            det_label is 'cat' or \
-            #            det_label is 'car' or \
-            #            det_label is 'dog':
-
-                #boxTracking = (xmin, ymin, xmax, ymax)
-                #listObjectsTracking.append(boxTracking)
-                #listRectanglesDetected.append(box)
 
     listReturn = [frame, next_frame, cur_request_id, next_request_id, listRectanglesDetected, listObjectsTracking, prob_threshold_returned]
 

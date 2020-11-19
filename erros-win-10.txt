@@ -2,3 +2,8 @@ Traceback (most recent call last):
   File "portao_virtual_tracking.py", line 1349, in <module>
     FPS = 1000/renderTime
 ZeroDivisionError: float division by zero
+
+
+Traceback (most recent call last):
+  File "portao_virtual_tracking.py", line 1734, in <module>
+cv2.error: OpenCV(4.4.0) C:\Users\appveyor\AppData\Local\Temp\1\pip-req-build-52oirelq\opencv\modules\imgproc\src\resize.cpp:3929: error: (-215:Assertion failed) !ssize.empty() in function 'cv::resize'

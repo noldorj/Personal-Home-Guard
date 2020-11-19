@@ -10,6 +10,8 @@ import utilsCore as utils
 import logging as log
 import sys
 from collections import deque
+import os
+import subprocess
 
 #import ffmpeg
 
@@ -22,8 +24,8 @@ from checkLicence.sendingData import forgotPasswordPv
 from objectDetectionTensorFlow import objectDetection 
 
 import secrets
+import psutil
 
-#import tkinter
 
 from matplotlib.path import Path
 import pluginOpenVino as pOpenVino
@@ -39,8 +41,9 @@ from PyQt5.QtCore import QTime, QThread
 
 #import tensorflow as tf
 
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, filename='pv.log')
 
+#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
 #variaveis globais
 
 
@@ -371,6 +374,9 @@ def btnExit():
     log.info('Login Cancelado')
     statusLicence = False
     init_video = False
+
+    stopWatchDog()
+
     windowLogin.close()
 
 
@@ -572,8 +578,6 @@ def loginAutomatico():
         
         email = statusConfig.dataLogin['user']
         passwd = utils.decrypt(statusConfig.dataLogin['passwd'])
-        log.info('email: {}'.format(email))
-        log.info('passwd: {}'.format(passwd))
         
         login = {'user':email, 'passwd':passwd, 'token':token}
         
@@ -582,7 +586,7 @@ def loginAutomatico():
         
         if statusLicence:
             
-            log.warning("Usuario logado")
+            log.info("Usuario logado")
             init_video = True 
             windowLogin.close()
         
@@ -634,6 +638,7 @@ def btnLogin():
             
             log.warning("Usuario logado")
             init_video = True 
+            initWatchDog()
             windowLogin.close()
         
         else:
@@ -1466,6 +1471,84 @@ def initFormLogin(self, ret):
     windowLogin.show()
     app.exec_()
 
+#import shlex
+
+def getProcessId(name):
+    for proc in psutil.process_iter():
+        if proc.name() == name:            
+            log.info('Pid: {:d}'.format(proc.pid))
+            log.info('name: {}'.format(proc.name()))
+            return proc.pid
+    return 0
+
+
+def killProcessId(name):
+    for proc in psutil.process_iter():
+        if proc.name() == name:            
+            log.info('Pid: {:d}'.format(proc.pid))
+            log.info('name: {}'.format(proc.name()))
+            proc.kill()
+            return True 
+    return False 
+
+
+def initWatchDog():
+
+    DETACHED_PROCESS = 0x00000008
+    log.info('initWatchDog...')
+
+    
+    if sys.platform == 'linux':    
+        app = os.getcwd() + '/' + 'watchDog-pv'
+    else:
+        log.info('Windows WatchDog')
+        app = 'watchDog-pv.exe'
+
+    pid = getProcessId('watchDog-pv.exe')
+    if  pid == 0:
+        try: 
+            #subprocess.Popen(app, creationflags=DETACHED_PROCESS)
+            #cmd = "<full filepath plus arguments of child process>"
+            #cmds = shlex.split(app)
+            #log.info('cmds: {}'.format(cmds))
+            subprocess.Popen(app.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, start_new_session=True, close_fds=True)
+            #p = subprocess.Popen(app.split(), shell=False)
+            #(output, err) = p.communicate()
+            #log.info("Command output: {}".format(output))
+            #p_status = p.wait()
+            #log.info('p_status: {}'.format(p_status))
+
+        except Exception as e: 
+            log.critical('Erro initWatchDog: {}'.format(e))
+        else:
+            log.info('WatchDog carregado. PID: {:d}'.format(getProcessId('watchDog-pv.exe')))
+    else:
+        log.info('WatchDog rodando. Pid: {:d}'.format(pid))
+
+
+def stopWatchDog():
+    log.info('Encerrando Watchdog')
+
+    if sys.platform == 'linux':    
+        namePid = 'watchDog-pv' 
+    else:
+        namePid = 'watchDog-pv.exe' 
+
+    pid = getProcessId(namePid) 
+    while pid != 0:
+        try:
+            log.inf('kill name: {}'.format(namePid))
+            #os.kill(pid, 9)
+            os.system("taskkill /f /im " + namePid)
+        except Exception as e:
+            log.error('Erro matando processo: {:d}'.format(pid))
+            log.error('Error: {}'.format(e))
+            killProcessId(namePid)
+        else:
+            lof.info('WatchDog encerrado. PId: {:d}'.format(pid))
+
+        pid = getProcessId(namePid) 
+
 
 
 def callbackButtonRegioes(self, ret):
@@ -1574,8 +1657,10 @@ LOGIN_AUTOMATICO = True if statusConfig.getLoginAutomatico() == 'True' else Fals
 if LOGIN_AUTOMATICO:
     log.info('Iniciando login automatico')
     loginAutomatico()
+    initWatchDog() 
 else:
     initFormLogin(None, ret)
+    #initWatchDog() 
 
 cv.namedWindow('frame', cv.WINDOW_FREERATIO)
 cv.setMouseCallback('frame', polygonSelection)
@@ -1677,7 +1762,8 @@ while init_video and sessionStatus and rtspStatus:
     
 
     conectado, frame = ipCam.read()
-    frame = cv.resize(frame, (RES_X, RES_Y)) 
+    if frame is not None:
+        frame = cv.resize(frame, (RES_X, RES_Y)) 
     
 
     if (conectado and frame is not None and next_frame is not None):
@@ -1717,7 +1803,7 @@ while init_video and sessionStatus and rtspStatus:
             if isOpenVino and initOpenVinoStatus:
             ### ---------------  OpenVino Get Objects ----------------- ###
 
-                ret, listReturn  = pOpenVino.getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, prob_threshold)
+                ret, listReturn  = pOpenVino.getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, prob_threshold, RES_X, RES_Y)
 
                 if ret:
                     frame = next_frame
@@ -2190,6 +2276,7 @@ while init_video and sessionStatus and rtspStatus:
             callbackButtonRegioes(None, ret)
         
         if cv.waitKey(1) & 0xFF == ord('q'):
+            stopWatchDog()
             break
 
     else:
