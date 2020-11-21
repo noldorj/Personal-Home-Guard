@@ -12,6 +12,8 @@ import sys
 from collections import deque
 import os
 import subprocess
+import getpass
+import shutil
 
 #import ffmpeg
 
@@ -28,6 +30,17 @@ import psutil
 
 
 from matplotlib.path import Path
+
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log', encoding='utf-8')
+
+OS_PLATFORM = 'windows'
+
+if sys.platform == 'linux':
+    OS_PLATFORM = 'linux'
+    #subprocess.call([r'openvino/bin/setupvars.sh'])
+#else:
+    #subprocess.call([r'openvino\bin\setupvars.bat'])
+
 import pluginOpenVino as pOpenVino
 
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -41,7 +54,6 @@ from PyQt5.QtCore import QTime, QThread
 
 #import tensorflow as tf
 
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, filename='pv.log')
 
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
 #variaveis globais
@@ -1352,6 +1364,39 @@ def callbackButtonResumeSound(self, ret):
 #        #ui.txtUrlRstp.setEnabled(False)
 
 
+
+
+def checkBoxLoginAutoStart(state):
+    global statusConfig
+
+    statusConfig = utils.StatusConfig()
+
+    if OS_PLATFORM == 'windows':
+        ATALHO_PATH = 'PortaoVirtual.lnk'
+        USER_NAME = getpass.getuser()       
+        ROOT_PATH = os.path.splitdrive(os.environ['WINDIR'])[0]    
+        AUTO_START_PATH = ROOT_PATH + '/Users/' + USER_NAME + '/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup' 
+       
+    
+    if state == 0:
+        
+        log.info('Auto start login off')
+        statusConfig.setLoginAutoStart('False')
+        
+        if os.path.exists(AUTO_START_PATH + '/' + ATALHO_PATH):
+            os.remove(AUTO_START_PATH + '/' + ATALHO_PATH)
+        else:
+            log.info("Atalho na pasta de Inicialização do sistema não existe")
+
+    elif (state == 1 or state == 2):
+        
+        log.info('Auto start login On')
+        statusConfig.setLoginAutoStart('True')  
+        
+        if not os.path.exists(AUTO_START_PATH + '/' + ATALHO_PATH):              
+            shutil.copy2(ATALHO_PATH, AUTO_START_PATH) # complete target filename given
+        
+
 def checkBoxLoginAutomatico(state):
     global LOGIN_AUTOMATICO, statusConfig
 
@@ -1402,7 +1447,9 @@ def checkBoxSalvarLogin(state):
         statusConfig.addLoginConfig(uiLogin.txtEmail.text(),
                                     '',
                                     'False',
-                                    statusConfig.dataLogin['loginAutomatico'])
+                                    statusConfig.dataLogin['loginAutomatico'],
+                                    statusConfig.dataLogin['autoStart']
+                                    )
         log.info('Salvar Login desligado')
 
     elif (state == 1 or state == 2):
@@ -1413,7 +1460,8 @@ def checkBoxSalvarLogin(state):
         statusConfig.addLoginConfig(uiLogin.txtEmail.text(),
                                     passEncrypted,
                                     'True',
-                                    statusConfig.dataLogin['loginAutomatico'])
+                                    statusConfig.dataLogin['loginAutomatico'],
+                                    statusConfig.dataLogin['autoStart'])
         
         log.info('Salvar Login ligado')
 
@@ -1452,6 +1500,11 @@ def initFormLogin(self, ret):
     
     statusConfig = utils.StatusConfig()
 
+    if statusConfig.dataLogin.get('autoStart') == 'True':
+        uiLogin.checkBoxLoginAutoStart.setCheckState(True)
+    else:
+        uiLogin.checkBoxLoginAutoStart.setCheckState(False)
+    
     if statusConfig.dataLogin.get('salvarLogin') == 'True':
         
         uiLogin.txtEmail.setText(statusConfig.dataLogin.get('user'))
@@ -1468,6 +1521,7 @@ def initFormLogin(self, ret):
     uiLogin.btnEsqueciSenha.clicked.connect(btnEsqueciSenha)
     uiLogin.checkBoxSalvarLogin.stateChanged.connect(checkBoxSalvarLogin)
     uiLogin.checkBoxLoginAutomatico.stateChanged.connect(checkBoxLoginAutomatico)
+    uiLogin.checkBoxLoginAutoStart.stateChanged.connect(checkBoxLoginAutoStart)
     
     uiLogin.btnAlterarSenha.clicked.connect(btnAlterarSenha)
 
@@ -1659,8 +1713,11 @@ LOGIN_AUTOMATICO = True if statusConfig.getLoginAutomatico() == 'True' else Fals
 
 if LOGIN_AUTOMATICO:
     log.info('Iniciando login automatico')
+
+
     loginAutomatico()
     initWatchDog() 
+
 else:
     initFormLogin(None, ret)
     #initWatchDog() 
@@ -2293,15 +2350,15 @@ while init_video and sessionStatus and rtspStatus:
 
                 else:
                     log.info('sessionStatus: {}'.format(sessionStatus))
+                    stopWatchDog()
 
             else:
-                log.info("Sem internet - sessao não checada")
-                log.info("sessionStatus: {}".format(sessionStatus))
+                log.critical("Sem internet - sessao não checada")
+                log.critical("sessionStatus: {}".format(sessionStatus))
                
                 if (time.time() - timeInternetOffStart) >= INTERNET_OFF: 
                     
                     STOP_ALL = True 
-                    log.info('STOP_ALL True') 
                     #release dos videos
                     if out_video is not None:
                        out_video.release()

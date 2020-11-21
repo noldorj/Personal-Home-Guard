@@ -338,7 +338,8 @@ class StatusConfig:
     
         "user"             : "nome@email.com",
         "passwd"           : "senha",
-        "loginAutomatico"  : "False"
+        "loginAutomatico"  : "False",
+        "autoStart"        : "False"
     }
 
 
@@ -497,16 +498,27 @@ class StatusConfig:
         self.saveConfigFile()
 
 
-    def addLoginConfig(self, userName, userPasswd, salvarLogin, loginAutomatico):
+    def addLoginConfig(self, userName, userPasswd, salvarLogin, loginAutomatico, autoStart):
 
         self.dataLogin['user'] = userName
         self.dataLogin['passwd'] = userPasswd
         self.dataLogin['salvarLogin'] = salvarLogin 
         self.dataLogin['loginAutomatico'] = loginAutomatico 
+        self.dataLogin['autoStart'] = autoStart 
 
         self.saveConfigLogin()
 
 
+    def setLoginAutomatico(self, status):
+
+        self.dataLogin['loginAutomatico'] = status 
+        self.saveConfigLogin()
+    
+    def setLoginAutoStart(self, status):
+
+        self.dataLogin['autoStart'] = status 
+        self.saveConfigLogin()
+    
     def setLoginAutomatico(self, status):
 
         self.dataLogin['loginAutomatico'] = status 

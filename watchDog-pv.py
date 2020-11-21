@@ -11,11 +11,11 @@ import subprocess
 #from subprocess import check_output
 import psutil
 
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, filename='watchDog.log')
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.ERROR, filename='watchDog.log')
 
 def getTasks(nameProcess):
     r = os.popen('tasklist /v').read().strip().split('\n')
-    log.info('Numero de processos: {} .'.format(len(r)) )
+    #log.info('Numero de processos: {} .'.format(len(r)) )
     for i in range(len(r)):
         s = r[i]
         s = s.split('.')
@@ -28,8 +28,8 @@ def getTasks(nameProcess):
 def getTasksPid(nameProcess):
     for eachProcess in psutil.process_iter():
         if nameProcess == eachProcess.name():
-            log.info('proc.name: {}'.format(eachProcess.name()))
-            log.info('proc.pid: {:d}'.format(eachProcess.pid))
+            #log.info('proc.name: {}'.format(eachProcess.name()))
+            #log.info('proc.pid: {:d}'.format(eachProcess.pid))
             return eachProcess.pid
     return 0
 
@@ -70,10 +70,10 @@ while True:
         
         log.critical('Portão Virtual não está em execução')
         
-        timeRunning = (time.time() - timeInit) / 3600 #em horas
+        timeRunning = (time.time() - timeInit) / 60 #em minutos
         
         log.critical('Portao Virtual inicializado pela {} vez '.format(timesRestarted))
-        log.critical('Tempo de execução até o momento: {:03.1} hs' .format(timeRunning))
+        log.critical('Tempo de execução até o momento: {:f} min' .format(timeRunning))
 
         #subprocess.Popen([app], creationflags=DETACHED_PROCESS)
         subprocess.Popen(app.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, start_new_session=True, close_fds=True)
@@ -85,8 +85,8 @@ while True:
         log.critical('Portão Virtual não está respondendo ...')
 
     else:
-        log.info('Portão Virtual em execução')
+        #log.info('Portão Virtual em execução')
         pid = getTasksPid(namePid)
-        log.info('ProcessID: {:d}'.format(pid))
+        #log.info('ProcessID: {:d}'.format(pid))
 
     time.sleep(15)

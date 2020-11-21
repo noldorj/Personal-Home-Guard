@@ -6,3 +6,5 @@ rtsp://admin:123456@192.168.5.220:8554/profile0
 
 iCSS
 rtsp://admin:123456@192.168.5.60/live/profile0
+
+C:\Users\pv\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
