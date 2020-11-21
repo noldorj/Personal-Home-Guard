@@ -1,10 +1,11 @@
 import socketio
 import logging as log
 import sys
+import utilsCore as utils
 
 #log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.DEBUG, stream=sys.stdout)
 
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, filename='pv.log')
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
 
 sio = socketio.Client()
 #sio = socketio.AsyncClient()
@@ -62,7 +63,7 @@ def changePasswdPv(login):
 
     except socketio.exceptions.ConnectionError as  err:
 
-        log.info('Erro na conexao: ' + str(err))
+        log.error('Erro na conexao: ' + str(err))
         error = 'conexao' 
         changePasswdStatus = False
 
@@ -90,7 +91,7 @@ def forgotPasswordPv(email):
 
     except socketio.exceptions.ConnectionError as  err:
 
-        log.critical('forgotPasswordPv:: Erro na conexao: ' + str(err))
+        log.error('forgotPasswordPv:: Erro na conexao: ' + str(err))
         error = 'conexao' 
         statusForgotPasswd = False
 
@@ -98,7 +99,6 @@ def forgotPasswordPv(email):
         log.info('forgotPasswordPv:: Conexao efetuada ')
         forgotPassword(email)
         sio.wait()
-        #log.info('forgotPasswordPv:: statusForgotPasswd: ' + str(statusForgotPasswd))
         error = ''
         #sio.disconnect()
     
@@ -116,7 +116,7 @@ def checkSessionPv(session):
 
     except socketio.exceptions.ConnectionError as  err:
 
-        log.critical('checkSessionPv:: Erro na conexao: ' + str(err))
+        log.error('checkSessionPv:: Erro na conexao: ' + str(err))
         error = 'servidorOut' 
         sessionStatus = False
 

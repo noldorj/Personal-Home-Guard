@@ -14,19 +14,16 @@ import locale
 import simplejson as json
 
 from pbkdf2 import PBKDF2
-#from Crypto.Cipher import AES
+
 import os
 from cryptography.fernet import Fernet
-#from cryptography.hazmat.backends import default_backend
-#from cryptography.hazmat.primitives import hashes
-#from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-#import base64
+
 
 #locale.setlocale(locale.LC_ALL, 'pt_BR.utf-8')
 #timezone = pytz.timezone("America/Sao_Paulo")
     
 
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, filename='pv.log')
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
 #log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 
 def camSource(source = 'webcam'):
@@ -56,14 +53,16 @@ def camSource(source = 'webcam'):
     return ipCam, error
 
 
-def decrypt(token):
-    
+def decrypt(token): 
      
     password = b'error'
     statusConfig = StatusConfig()
     
     key = b'x-LhW_rs81XBzuFLq9jgUFOcGbjDWwWXS5A7lpV0onQ='
     fernetKey = Fernet(key)
+    
+    #Fernet.generate_key()
+    
         
     #token = statusConfig.dataLogin.get('passwd')
     

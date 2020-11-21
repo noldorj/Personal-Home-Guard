@@ -2,12 +2,16 @@ import eventlet
 import socketio
 import logging as log
 import sys
+import os
 
 from pvLicenceChecker import checkLogin as cl 
 from pvLicenceChecker import newUser as nu 
 from pvLicenceChecker import checkSession as cs 
 from pvLicenceChecker import changePasswd as passwd 
 from pvLicenceChecker import forgotPassword as forgotPasswd 
+
+from pbkdf2 import PBKDF2
+from cryptography.fernet import Fernet
 
 sio = socketio.Server()
 
@@ -16,8 +20,42 @@ app = socketio.WSGIApp(sio, static_files={
 })
 
 
+def decrypt(token): 
+     
+    password = b'error'
+    
+    key = b'x-LhW_rs81XBzuFLq9jgUFOcGbjDWwWXS5A7lpV0onQ='
+    fernetKey = Fernet(key)
+    
+    #Fernet.generate_key()
+        
+    
+    try:
+        #password = fernetKey.decrypt(token.encode())
+        password = fernetKey.decrypt(token)
 
-log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.DEBUG, stream=sys.stdout)
+    except Exception as e:
+
+        log.error('decrypt: error: {}'.format(e))
+    
+    return password.decode() 
+
+
+def encrypt(password):
+    
+    token = 'error' 
+    key = b'x-LhW_rs81XBzuFLq9jgUFOcGbjDWwWXS5A7lpV0onQ='    
+    f = Fernet(key)
+
+    try:
+        token = f.encrypt(password.encode())    
+    except Exception as e:
+        
+        log.error('utils.encrypt: error: {}'.format(e))
+  
+    return token
+
+log.basicConfig(format="[ %(levelname)s ] %(message)s", stream=sys.stdout)
 
 @sio.event
 def connect(sid, environ):
@@ -25,44 +63,32 @@ def connect(sid, environ):
 
 @sio.event
 def checkLogin(sid, login):
-    log.info('checkLogin of: ' + login['user']) 
-    #log.info('sid: ' + sid) 
-    status = cl(login['user'], login['passwd'], login['token']) 
+    status = cl(decrypt(login['user']), decrypt(login['passwd']), decrypt(login['token'])) 
     sio.emit('replyLogin', status, room=sid)
-    #sio.disconnect(sid)
 
 
 @sio.event
 def forgotPassword(sid, email):
-
-    log.info('forgotPassword:: email: {}'.format(email))
     status = forgotPasswd(email)
     sio.emit('replyForgotPassword', status, room=sid)
 
 
 @sio.event
 def changePasswd(sid, login):
-    log.info('changePasswd of: ' + login['user']) 
-    #log.info('sid: ' +  sid) 
-    status = passwd(login['user'], login['passwd'], login['token'])
+    status = passwd(decrypt(login['user']), decrypt(login['passwd']), decrypt(login['token']))
     sio.emit('replyChangePasswd', status, room=sid)
-    #sio.disconnect(sid)
 
 
 @sio.event
 def newUser(sid, login):
-    log.info('newUser of: ' + login['user']) 
     status = nu(login['user'], login['passwd'], login['userEmail'], login['numCameras']) 
     sio.emit('replyNewUser', status, room=sid)
             
 
 @sio.event
 def checkSession(sid, session):
-    log.info('checkSession of: ' + session['user']) 
-    #log.info('sid: ' + sid) 
-    status = cs(session['user'], session['token'])
+    status = cs(decrypt(session['user']), decrypt(session['token']))
     sio.emit('replyCheckSession', status, room=sid)
-    #sio.disconnect(sid)
 
 
 @sio.event

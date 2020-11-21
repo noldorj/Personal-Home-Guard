@@ -14,7 +14,7 @@ statusConfig = utils.StatusConfig()
 
 emailConfig = statusConfig.getEmailConfig()
 
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, filename='pv.log')
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
 
 def saveImageBox(frame, classe):
 

@@ -421,7 +421,7 @@ def btnAlterarSenha():
 
         if (uiLogin.txtNovaSenha.text() == uiLogin.txtNovaSenha2.text()):
         
-            login = {'user':uiLogin.txtEmail_minhaConta.text(), 'passwd':uiLogin.txtNovaSenha.text(), 'token':token} 
+            login = {'user':utils.encrypt(uiLogin.txtEmail_minhaConta.text()), 'passwd':utils.encrypt(uiLogin.txtNovaSenha.text()), 'token':utils.encrypt(token)} 
             
 
             statusPasswd, error = changePasswdPv(login)
@@ -592,7 +592,7 @@ def loginAutomatico():
         email = statusConfig.dataLogin['user']
         passwd = utils.decrypt(statusConfig.dataLogin['passwd'])
         
-        login = {'user':email, 'passwd':passwd, 'token':token}
+        login = {'user':utils.encrypt(email), 'passwd':utils.encrypt(passwd), 'token':utils.encrypt(token)}
         
         statusLicence, error  = checkLoginPv(login) 
         #statusLicence = True ## testando apenas IJF
@@ -640,8 +640,7 @@ def btnLogin():
         log.info('Checando licença no servidor - Por favor aguarde')
         uiLogin.lblStatus.setText("Conectando com o servidor")
         
-        #login = {'user':uiLogin.txtEmail.text(), 'passwd':uiLogin.txtPasswd.text(), 'token':'2'}
-        login = {'user':uiLogin.txtEmail.text(), 'passwd':uiLogin.txtPasswd.text(), 'token':token}
+        login = {'user':utils.encrypt(uiLogin.txtEmail.text()), 'passwd':utils.encrypt(uiLogin.txtPasswd.text()), 'token':utils.encrypt(token)}
         #log.info('token: {}'.format(token))
         
         statusLicence, error  = checkLoginPv(login) 
@@ -649,7 +648,7 @@ def btnLogin():
         
         if statusLicence:
             
-            log.warning("Usuario logado")
+            log.info("Usuario logado")
             init_video = True 
             initWatchDog()
             windowLogin.close()
