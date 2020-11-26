@@ -5,8 +5,8 @@
     "camSource": "rtsp://admin:WWYZRL@192.168.5.101:554/profile0",
     "dnnModelPb": "dlModels/ssd-mobilenet/frozen_inference_graph_v1_coco_2017_11_17.pb",
     "dnnModelPbTxt": "dlModels/ssd-mobilenet/ssd_mobilenet_v1_coco_2017_11_17.pbtxt",
-    "openVinoCpuExtension": "libMKLDNNPlugin.dll",
-    "openVinoPluginDir": "/home/igor/intel/openvino_2019.1.144/inference_engine/lib/intel64/",
+    "openVinoCpuExtension": "cpu_extension_avx2.dll",
+    "openVinoPluginDir": "C:/Program Files (x86)/Intel/openvino_2019.1.148/inference_engine/bin/intel64Release",
     "openVinoModels": [
         {
             "isActive": "False",
@@ -30,7 +30,6 @@
             "openVinoDevice": "GPU"
         }
     ],
-    "camList": []
     "storageConfig": {
         "diskMaxUsage": 85,
         "diskMinUsage": "10",
@@ -45,12 +44,60 @@
         "port": "587",
         "smtp": "smtp.gmail.com",
         "user": "igorddf@gmail.com",
-        "password": "gAAAAABfu_ZXVQep0pJzqaA-pj-rQvimPEMJ1-VNyFdd1wg7loLkEAH20IcgkGbQxH0LBKxOUJt3KLdeqBeC650F9qyZtWpomA==",
-        "subject": "PV",
+        "password": "gAAAAABfuC70Uz4k-OBDW3OCaqQMaDcbzvscDORcyE8AqdQ3--Jec7-yMlM-2ADdR0uIHx8dUy-8EdEOdBux1z9emxxj-UEVCw==",
+        "subject": "PV-VM",
         "to": "igorddf@gmail.com"
     },
     "dirVideosOnAlarmes": "videos_alarme_alterado",
     "dirVideosAllTime": "videos_all_time",
     "diskMaxUsage": "85",
-    "diskMinUsage": "10"
+    "diskMinUsage": "10",
+    "camListEncontradas": [
+        {
+            "id": "Cam_0",
+            "ip": "192.168.5.101",
+            "mac": "58:10:8c:67:62:69",
+            "port": "554",
+            "user": "admin",
+            "passwd": "123456",
+            "channel": "profile0",
+            "source": "rtsp://admin:123456@192.168.5.101:554/profile0",
+            "emUso": "False"
+        }
+    ],
+    "camListAtivas": [
+        {
+            "id": "Cam_1",
+            "ip": "192.168.5.60",
+            "mac": "30:ff:f6:77:40:a0",
+            "port": "554",
+            "user": "admin",
+            "passwd": "123456",
+            "channel": "profile0",
+            "source": "rtsp://admin:123456@192.168.5.60:554/profile0",
+            "emUso": "False"
+        },
+        {
+            "id": "Cam_2",
+            "ip": "192.168.5.220",
+            "mac": "00:0c:43:1f:61:6e",
+            "port": "8554",
+            "user": "admin",
+            "passwd": "123456",
+            "channel": "profile0",
+            "source": "rtsp://admin:123456@192.168.5.220:8554/profile0",
+            "emUso": "False"
+        },
+        {
+            "id": "Cam_3",
+            "ip": "192.168.5.213",
+            "mac": "30:ff:f6:77:40:a0",
+            "port": "554",
+            "user": "admin",
+            "passwd": "123456",
+            "channel": "profile0",
+            "source": "rtsp://admin:123456@192.168.5.213:554/profile0",
+            "emUso": "False"
+        }
+    ]
 }

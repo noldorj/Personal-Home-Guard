@@ -5,13 +5,14 @@ import utilsCore as utils
 
 #log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.DEBUG, stream=sys.stdout)
 
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
+#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
 
 sio = socketio.Client()
 #sio = socketio.AsyncClient()
 #ip fixo instancia AWS
 #host = "http://ec2-18-230-53-22.sa-east-1.compute.amazonaws.com:5000"
-host = "http://ec2-18-230-50-38.sa-east-1.compute.amazonaws.com:5000"
+#host = "http://ec2-18-230-50-38.sa-east-1.compute.amazonaws.com:5000"
+host = "http://pvSessionLB-1827991081.sa-east-1.elb.amazonaws.com:5000"
 
 loginStatus = False
 sessionStatus = False
@@ -22,7 +23,7 @@ statusForgotPasswd = False
 
 @sio.event
 def connect():
-    log.info('connect: conexao efetuada')
+    log.debug('connect: conexao efetuada')
 
 @sio.event
 def checkLogin(login):
@@ -68,7 +69,7 @@ def changePasswdPv(login):
         changePasswdStatus = False
 
     else:
-        log.info('changePasswd:: Conexao efetuada')
+        #log.error('changePasswd:: Conexao efetuada')
         #log.info('changePasswd:: Alterando a senha do usuario: ' + login['user']) 
         error = ''
 
@@ -96,7 +97,7 @@ def forgotPasswordPv(email):
         statusForgotPasswd = False
 
     else:
-        log.info('forgotPasswordPv:: Conexao efetuada ')
+        log.debug('forgotPasswordPv:: Conexao efetuada ')
         forgotPassword(email)
         sio.wait()
         error = ''
@@ -111,7 +112,7 @@ def checkSessionPv(session):
     #sessionStatus = True
 
     try: 
-        log.info("checkSessionPv:: conectando...")
+        log.debug("checkSessionPv:: conectando...")
         sio.connect(host)
 
     except socketio.exceptions.ConnectionError as  err:
@@ -121,7 +122,7 @@ def checkSessionPv(session):
         sessionStatus = False
 
     else:
-        log.info('checkSessionPv:: Conexao efetuada checkSessionPv')
+        #log.info('checkSessionPv:: Conexao efetuada checkSessionPv')
         error = ''
         checkSession(session)
         sio.wait()
@@ -144,12 +145,12 @@ def checkLoginPv(login):
 
     except socketio.exceptions.ConnectionError as  err:
 
-        log.info('checkLoginPv:: Erro na conexao: ' + str(err))
+        log.error('checkLoginPv:: Erro na conexao: ' + str(err))
         error = 'conexao' 
         loginStatus = False
 
     else:
-        log.info('checkLoginPv:: Conexao efetuada')
+        log.warning('checkLoginPv:: Conexao efetuada')
         checkLogin(login)
         sio.wait()
         #log.info('checkLoginPv:: loginStatus: ' + str(loginStatus))
@@ -213,5 +214,5 @@ def replyCheckSession(status):
 
 @sio.event 
 def disconnect(sid):
-    log.info('disconnect:: sid: {}'.format(sid))
+    log.debug('disconnect:: sid: {}'.format(sid))
 

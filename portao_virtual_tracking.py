@@ -14,7 +14,6 @@ import os
 import subprocess
 import getpass
 import shutil
-import rtsp_discover as camUtils
 from rtsp_discover.rtsp_discover import getListCam
 
 #import ffmpeg
@@ -34,7 +33,10 @@ import psutil
 from matplotlib.path import Path
 
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', encoding='utf-8')
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log', encoding='utf-8') 
+#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log', encoding='utf-8', level=log.DEBUG)
+
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S',  encoding='utf-8', level=log.DEBUG)
+
 OS_PLATFORM = 'windows'
 
 if sys.platform == 'linux':
@@ -213,9 +215,9 @@ stopSaveNewVideos = False
 
 def initConfig():
 
-    log.info(' ')
-    log.info('initConfig')
-    log.info(' ')
+    log.debug(' ')
+    log.debug('initConfig')
+    log.debug(' ')
 
     global statusConfig, pb, pbtxt, regions, emailConfig, portaoVirtualSelecionado
     global status_dir_criado_all_time, status_dir_criado_all_time, dir_video_trigger_on_alarmes, dir_video_trigger_all_time, source, ipCam, prob_threshold, hora, current_data_dir, isOpenVino
@@ -283,7 +285,30 @@ def initConfig():
         log.critical('Erro camSource: {}'.format(error))
         ui.lblStatus.setText('Erro de conexao da camera. Tente configurar o endereço RTSP, e clique em "Salvar"')
         ui.lblStatusProcurarCam.setText('Erro de conexao da camera. Tente configurar uma nova câmera ou fazer uma nova varredura por câmeras clicando em "Procurar Câmeras". ')
-        #ui.txtUrlRstp.setFocus()
+        
+        #checar se houve mudança de IP
+        camEmUso = statusConfig.getCamEmUsoConfig()
+
+        camListEncontradas, camListAtivas = getListCam() 
+
+        #checar se o mac address camEmUso vs nova cam ativa
+        for cam in camListAtivas:
+            if cam.get('mac') == camEmUso.get('mac'):
+                if cam.get('ip') != camEmUso.get('ip'):
+                    log.debug('Camera em uso mudou de IP')
+                    log.debug('Camera em uso IP: {}'.format(camEmUso.get('ip')))
+                    log.debug('Novo IP: {}'.format(cam.get('ip')))
+                    
+                    ipCam, error = utils.camSource(source)
+
+                    if error != '':
+                        ipCam = None
+                        rtspStatus = False
+                        log.critical('Erro camSource: {}'.format(error))
+                        ui.lblStatus.setText('Falha em localizar novo IP automaticamente. Tente configurar o endereço RTSP, e clique em "Salvar"')
+                        ui.lblStatusProcurarCam.setText('Falha em localizar o novo IP automaticamente. Tente configurar uma nova câmera ou fazer uma nova varredura por câmeras clicando em "Procurar Câmeras". ')
+
+
     else:
         rtspStatus = True 
         ipCam.set(3, RES_X)
@@ -369,7 +394,7 @@ class FormProc(QWidget):
             event.ignore()
 
         elif not statusConfig.checkDuplicatedActiveModels():
-            print("Existe mais de um modelo 'Ativo'")
+            log.debug("Existe mais de um modelo 'Ativo'")
             msg.setText("Existe mais de um modelo como 'Ativo'")
             msg.exec()
             event.ignore()
@@ -400,7 +425,7 @@ posConfigPv = 255
 def btnExit():
     global statusLicence, init_video
 
-    log.info('Login Cancelado')
+    log.debug('Login Cancelado')
     statusLicence = False
     init_video = False
 
@@ -497,14 +522,13 @@ def btnEsqueciSenha():
 def btnAtivarCam():
     global listCamAtivas, ui, statusConfig
 
-    print('btnAtivarCam')
+    log.debug('Ativando camera selecionada')
     
     if len(listCamAtivas) > 0: 
         idCombo = ui.comboBoxCamAtivas.currentText().split(':')[0]
         idCombo = idCombo.replace('[','')
         idCombo = idCombo.replace(']','')
-        print('idCombo: ' + idCombo)
-        print('currentIndex: ' + str(ui.comboBoxCamAtivas.currentIndex()))
+        log.debug('idCombo: ' + idCombo)
 
         i = 0 
         #zerando a camera ativada anteriormente 
@@ -516,15 +540,12 @@ def btnAtivarCam():
         for cam in listCamAtivas:
             if cam.get('id') == idCombo:
                 listCamAtivas[i]['emUso'] = 'True'
-                print('cam source: ' + cam.get('source'))
+                log.debug('cam source: ' + cam.get('source'))
                 ui.txtUrlRstp.setText(cam.get('source'))
                 statusConfig.setRtspConfig(cam.get('source'))
                 ui.lblStatusProcurarCam.setText('Camera ativada')
             i = i + 1
 
-        #for cam in listCamAtivas:
-        #    print('camId: ' + cam.get('id'))
-        #    print('emUso: ' + cam.get('emUso'))
 
         statusConfig.addListCamAtivasConfig(listCamAtivas)
         initConfig()
@@ -536,49 +557,55 @@ def btnAtivarCam():
 def btnTestarConfigCam():
 
     global listCamAtivas, listCamEncontradas, statusconfig
+    log.debug('Testando configuracao de camera encontrada na rede')
 
     camConfigurada = None
-    
-    idCombo = ui.comboBoxCamEncontradas.currentText().split(':')[0]
-    idCombo = idCombo.replace('[','')
-    idCombo = idCombo.replace(']','')
-    
-    i = 0 
+    source = None
+   
+    if ui.comboBoxCamEncontradas.currentIndex() != -1: 
 
-    for cam in listCamEncontradas:
-        if cam.get('id') == idCombo:
-            source = 'rtsp://' + ui.txtUserCamDisponivel.text() + ':' + ui.txtPasswdCamDisponivel.text() + '@' + cam.get('ip') + ':' + ui.txtPortaCamDisponivel.text() + '/' + ui.txtCanalCamDiponivel.text()
-            camConfigurada = cam
-            break
-        i = i + 1
+        idCombo = ui.comboBoxCamEncontradas.currentText().split(':')[0]
+        idCombo = idCombo.replace('[','')
+        idCombo = idCombo.replace(']','')
     
-    ipCam, error = utils.camSource(source)                   
-    
-    if error != '':                                                                    
-        log.info('Erro camSource: {}'.format(error))
-        ui.lblStatusTestarCam.setText('Configuração inválida, tente outro usuario, senha, porta ou canal')
+        i = 0 
 
-    else:                                    
-        log.info('Cam ativa encontrada')
-        ui.lblStatusTestarCam.setText('Câmera configurada corretamente. Pronto para uso')
-        listCamEncontradas.pop(i)
-
-        camConfigurada['user'] = ui.txtUserCamDisponivel.text()
-        camConfigurada['passwd'] = ui.txtPasswdCamDisponivel.text()
-        camConfigurada['channel'] = ui.txtCanalCamDiponivel.text()
-        camConfigurada['source'] = source 
-        camConfigurada['emUso'] = 'False' 
+        for cam in listCamEncontradas:
+            if cam.get('id') == idCombo:
+                source = 'rtsp://' + ui.txtUserCamDisponivel.text() + ':' + ui.txtPasswdCamDisponivel.text() + '@' + cam.get('ip') + ':' + ui.txtPortaCamDisponivel.text() + '/' + ui.txtCanalCamDiponivel.text()
+                camConfigurada = cam
+                break
+            i = i + 1
         
-        listCamAtivas.append(camConfigurada)
-
-        statusConfig.addListCamAtivasConfig(listCamAtivas)
-        statusConfig.addListCamEncontradasConfig(listCamEncontradas)
+        ipCam, error = utils.camSource(source)                   
         
-        initConfig()
-        fillTabGeral()
+        if error != '':                                                                    
+            log.info('Erro camSource: {}'.format(error))
+            ui.lblStatusTestarCam.setText('Configuração inválida, tente outro usuario, senha, porta ou canal')
+
+        else:                                    
+            log.info('Cam ativa encontrada')
+            ui.lblStatusTestarCam.setText('Câmera configurada corretamente. Pronto para uso')
+            listCamEncontradas.pop(i)
+
+            camConfigurada['user'] = ui.txtUserCamDisponivel.text()
+            camConfigurada['passwd'] = ui.txtPasswdCamDisponivel.text()
+            camConfigurada['channel'] = ui.txtCanalCamDiponivel.text()
+            camConfigurada['source'] = source 
+            camConfigurada['emUso'] = 'False' 
+            
+            listCamAtivas.append(camConfigurada)
+
+            statusConfig.addListCamAtivasConfig(listCamAtivas)
+            statusConfig.addListCamEncontradasConfig(listCamEncontradas)
+            
+            initConfig()
+            fillTabGeral()
 
 
 def btnProcurarCam():
+    
+    log.debug('Procurando cameras na rede')
     global listCamAtivas, listCamEncontradas, statusconfig
 
     clearListCameras() 
@@ -586,11 +613,9 @@ def btnProcurarCam():
     listCamEncontradas.clear()
     listCamAtivas.clear()
 
-    print('btnProcurarCam') 
     ui.lblStatusProcurarCam.setText('Procurando cameras na rede... aguarde')
 
     listCamEncontradas, listCamAtivas = getListCam()
-    #print('listCamAtivas: \n' + str(len(listCamAtivas)))
 
     for cam in listCamAtivas:
         ui.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']:' + cam.get('ip') + ' : ' + cam.get('port'))
@@ -603,6 +628,9 @@ def btnProcurarCam():
 
     statusConfig.addListCamAtivasConfig(listCamAtivas)
     statusConfig.addListCamEncontradasConfig(listCamEncontradas)
+    
+    initConfig()
+    fillTabGeral()
 
 
 def btnSaveStorage():
@@ -705,7 +733,7 @@ def loginAutomatico():
 
     global init_video, statusLicence, uiLogin, conexao, login 
 
-    log.info('Checando conexão com a Internet')
+    log.debug('Checando conexão com a Internet')
     #uiLogin.lblStatus.setText("Checando conexão com a Internet")
 
     conexao = checkInternetAccess()
@@ -713,7 +741,7 @@ def loginAutomatico():
 
     if conexao:    
     
-        log.info('Checando licença no servidor - Por favor aguarde')
+        log.debug('Checando licença no servidor - Por favor aguarde')
         
         email = statusConfig.dataLogin['user']
         passwd = utils.decrypt(statusConfig.dataLogin['passwd'])
@@ -725,7 +753,7 @@ def loginAutomatico():
         
         if statusLicence:
             
-            log.info("Usuario logado")
+            log.debug("Usuario logado")
             init_video = True 
             windowLogin.close()
         
@@ -774,7 +802,7 @@ def btnLogin():
         
         if statusLicence:
             
-            log.info("Usuario logado")
+            log.debug("Usuario logado")
             init_video = True 
             initWatchDog()
             windowLogin.close()
@@ -1709,10 +1737,11 @@ def getProcessId(name):
 
 
 def killProcessId(name):
+    log.debug('killProcessId chamado')
     for proc in psutil.process_iter():
         if proc.name() == name:            
-            log.info('Pid: {:d}'.format(proc.pid))
-            log.info('name: {}'.format(proc.name()))
+            log.debug('Pid: {:d}'.format(proc.pid))
+            log.debug('name: {}'.format(proc.name()))
             proc.kill()
             return True 
     return False 
@@ -1721,16 +1750,16 @@ def killProcessId(name):
 def initWatchDog():
 
     DETACHED_PROCESS = 0x00000008
-    log.info('initWatchDog...')
+    log.debug('initWatchDog...')
 
     
     if sys.platform == 'linux':    
-        app = os.getcwd() + '/' + 'watchDog-pv'
+        app = os.getcwd() + '/' + 'wd'
     else:
         log.info('Windows WatchDog')
-        app = 'watchDog-pv.exe'
+        app = 'wd.exe'
 
-    pid = getProcessId('watchDog-pv.exe')
+    pid = getProcessId('wd.exe')
     if  pid == 0:
         try: 
             #subprocess.Popen(app, creationflags=DETACHED_PROCESS)
@@ -1747,31 +1776,35 @@ def initWatchDog():
         except Exception as e: 
             log.critical('Erro initWatchDog: {}'.format(e))
         else:
-            log.info('WatchDog carregado. PID: {:d}'.format(getProcessId('watchDog-pv.exe')))
+            log.debug('WatchDog carregado. PID: {:d}'.format(getProcessId('wd.exe')))
     else:
-        log.info('WatchDog rodando. Pid: {:d}'.format(pid))
+        log.debug('WatchDog rodando. Pid: {:d}'.format(pid))
 
 
 def stopWatchDog():
-    log.info('Encerrando Watchdog')
+    log.debug('Encerrando Watchdog')
 
     if sys.platform == 'linux':    
-        namePid = 'watchDog-pv' 
+        namePid = 'wd' 
     else:
-        namePid = 'watchDog-pv.exe' 
+        namePid = 'wd.exe' 
 
     pid = getProcessId(namePid) 
     while pid != 0:
         try:
-            log.inf('kill name: {}'.format(namePid))
-            #os.kill(pid, 9)
-            os.system("taskkill /f /im " + namePid)
+            log.debug('kill name: {}'.format(namePid))
+
+            if OS_PLATFORM == 'linux':
+                os.kill(pid, 9)
+            else:
+                os.system("taskkill /f /im " + namePid)
+
         except Exception as e:
             log.error('Erro matando processo: {:d}'.format(pid))
             log.error('Error: {}'.format(e))
             killProcessId(namePid)
         else:
-            lof.info('WatchDog encerrado. PId: {:d}'.format(pid))
+            lof.debug('WatchDog encerrado. PId: {:d}'.format(pid))
 
         pid = getProcessId(namePid) 
 
@@ -1863,7 +1896,7 @@ def callbackButtonRegioes(self, ret):
     ui.btnNewAlarm.clicked.connect(btnNewAlarm)
 
     if ret == 2: 
-        log.info('windowConfig.show()')
+        log.debug('windowConfig.show()')
         windowConfig.show()
         app.exec_()
     else:
@@ -1879,8 +1912,7 @@ statusConfig = utils.StatusConfig()
 LOGIN_AUTOMATICO = True if statusConfig.getLoginAutomatico() == 'True' else False
 
 if LOGIN_AUTOMATICO:
-    log.info('Iniciando login automatico')
-
+    log.debug('Iniciando login automatico')
 
     loginAutomatico()
     initWatchDog() 
@@ -2480,7 +2512,7 @@ while init_video and sessionStatus and rtspStatus :
 
             if conexao: 
 
-                log.info('Conexao com a Internet estabelecida')
+                log.debug('Conexao com a Internet estabelecida')
                 STOP_ALL = False
 
                 while (len(pilhaAlertasNaoEnviados) > 0) and (STOP_ALL == False):  
@@ -2499,7 +2531,7 @@ while init_video and sessionStatus and rtspStatus :
                     alertaEmail[8]))
                     
                     threadEmail.start()
-                    log.info('Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
+                    log.debug('Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
 
                     #listObjectMailAlerted.append(alertaEmail[9])
 
@@ -2511,13 +2543,14 @@ while init_video and sessionStatus and rtspStatus :
                 timeInternetOffStart = time.time() 
 
                 if error == 'servidorOut':
-                    
                     log.critical('Servidor não respondendo. Ignorando checkSession')
                     sessionStatus = True
-
-                else:
-                    log.info('sessionStatus: {}'.format(sessionStatus))
+               
+                if sessionStatus == False:
+                    log.warning('sessionStatus: {}'.format(sessionStatus))
+                    log.warning('stopWatchDog chamado')
                     stopWatchDog()
+
 
             else:
                 log.critical("Sem internet - sessao não checada")
@@ -2536,7 +2569,6 @@ while init_video and sessionStatus and rtspStatus :
                          out_video_all_time.release()
                          out_video_all_time = None
                          releaseVideoAllTime = False
-
 
 
                     log.critical('Tempo maximo sem Internet permitido esgotado - Portao Virtual ficará inativo')

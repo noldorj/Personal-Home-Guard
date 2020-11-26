@@ -9,7 +9,9 @@ from threading import Thread
 
 from utilsServer import sendMailForgotPasswd
 
-log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+#log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pvLicenceServer.log', encoding='utf-8', level=log.DEBUG)
 
 #tempo de expiracao da sessao em minutos
 TIME_SESSION = 5

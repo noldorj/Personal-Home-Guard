@@ -23,7 +23,7 @@ from cryptography.fernet import Fernet
 #timezone = pytz.timezone("America/Sao_Paulo")
     
 
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
+#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
 #log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 
 def camSource(source = 'webcam'):
@@ -599,6 +599,17 @@ class StatusConfig:
     def getListCamAtivas(self):
         return self.data["camListAtivas"]
 
+    
+    def getCamEmUsoConfig(self):
+        
+        for cam in self.data['camListAtivas']:
+            if cam['emUso'] == 'True':
+                return cam
+        
+        return None
+
+
+    
     def addCamAtivaConfig(self, idCam, ip, mac, port, user, passwd, channel, source, emUso):
 
         cam = {
@@ -612,7 +623,7 @@ class StatusConfig:
             "emUso"          : emUso,
         }
 
-        self.dataCam.append(cam)
+        #self.dataCam.append(cam)
         self.data["camListAtivas"] = self.dataCam 
         self.saveConfigFile()
 

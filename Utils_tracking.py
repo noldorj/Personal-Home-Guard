@@ -14,7 +14,7 @@ statusConfig = utils.StatusConfig()
 
 emailConfig = statusConfig.getEmailConfig()
 
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
+#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
 
 def saveImageBox(frame, classe):
 
@@ -28,7 +28,7 @@ def saveImageBox(frame, classe):
     except OSError as error:
         log.error("Erro em 'saveImageBox': " + str(error))
     else:
-        log.info('saveImageBox - imagem salva')
+        log.debug('saveImageBox - imagem salva')
 
 
 def sendMail(subject, text):
@@ -64,10 +64,10 @@ def sendMail(subject, text):
         smtpObj.quit()
 
     except SMTPException as e:
-        log.info("sendMail: Error: unable to send email" + str(e))
+        log.error("sendMail: Error: unable to send email" + str(e))
 
     else:
-        log.info('sendMail: {} enviado.'.format(subject))
+        log.debug('sendMail: {} enviado.'.format(subject))
         status = True
 
     return status
@@ -92,7 +92,7 @@ def sendMailAlert(sender, recipients, subject, port, smtp, user, frame, tipoObje
         log.critical('Erro ao salvar a foto: ' + str(error))
         return status
     else:
-        log.info('Foto alarme salva')
+        log.debug('Foto alarme salva')
 
 
     try:
@@ -102,7 +102,7 @@ def sendMailAlert(sender, recipients, subject, port, smtp, user, frame, tipoObje
         log.critical('Erro ao anexar foto no email: ' + str(error))
         return status
     else:
-        log.info('Foto anexada')
+        log.debug('Foto anexada')
 
     data = utils.getDate()
     msg = MIMEMultipart()
@@ -146,7 +146,7 @@ def sendMailAlert(sender, recipients, subject, port, smtp, user, frame, tipoObje
         log.critical("Error: unable to send email" + str(e))
 
     else:
-        log.info('Email de alerta enviado')
+        log.debug('Email de alerta enviado')
         status = True
 
     return status
