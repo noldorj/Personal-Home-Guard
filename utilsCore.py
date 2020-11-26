@@ -333,6 +333,11 @@ def createDirectory(dirVideos):
 
 class StatusConfig:
 
+    
+    camListAtivas = list() 
+    
+    camListEncontradas = list() 
+    
     dataLogin = {
     
         "user"             : "nome@email.com",
@@ -362,7 +367,8 @@ class StatusConfig:
                               'password':'password', 
                               'subject':'Alarme PV',
                               'to':'destiny@server.com'}],
-            "dirVideos"      : "/home/igor/videos_alarmes"
+            "dirVideos"      : "/home/igor/videos_alarmes",
+            "camListAtivas" : []
     }
 
     region = {
@@ -523,6 +529,8 @@ class StatusConfig:
         self.dataLogin['loginAutomatico'] = status 
         self.saveConfigLogin()
 
+    def setRtspConfig(self, camSource):
+        self.data["camSource"] = camSource
 
     def addConfigGeral(self, name, port, smtp, user, password, subject, to, isRecordingAllTime, isRecordingOnAlarmes, dirVideosAllTime, dirVideosOnAlarmes, camSource, diskMinUsage):
         email = {'name':name,
@@ -568,6 +576,47 @@ class StatusConfig:
         #self.data["emailConfig"]["password"]  = emailConfig["password"]
         #self.data["emailConfig"]["subject"]   = emailConfig["subject"]
         #self.data["emailConfig"]["to"]        = emailConfig["to"]
+
+    def zerarListCamEncontradasConfig(self):
+        self.data["camListEncontradas"] = [] 
+        self.saveConfigFile()
+    
+    def zerarListCamAtivasConfig(self):
+        self.data["camListAtivas"] = [] 
+        self.saveConfigFile()
+    
+    def addListCamEncontradasConfig(self, listCam):
+        self.data["camListEncontradas"] = listCam 
+        self.saveConfigFile()
+
+    def addListCamAtivasConfig(self, listCam):
+        self.data["camListAtivas"] = listCam 
+        self.saveConfigFile()
+    
+    def getListCamEncontradas(self):
+        return self.data["camListEncontradas"]
+    
+    def getListCamAtivas(self):
+        return self.data["camListAtivas"]
+
+    def addCamAtivaConfig(self, idCam, ip, mac, port, user, passwd, channel, source, emUso):
+
+        cam = {
+            "idCam"          : idCam,
+            "ip"             : ip,
+            "mac"            : mac,
+            "user"           : user,
+            "passwd"         : passwd,
+            "channel"        : channel,
+            "source"         : source,
+            "emUso"          : emUso,
+        }
+
+        self.dataCam.append(cam)
+        self.data["camListAtivas"] = self.dataCam 
+        self.saveConfigFile()
+
+
 
     def addRegion(self, nameRegion, alarm, objectType, prob_threshold, pointsPolygon):
 

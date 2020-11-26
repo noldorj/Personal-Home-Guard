@@ -1,37 +1,6 @@
-# RTSP Auth Grinder
-# USAGE: rtsp_authgrind [-l username | -L username_file] [-p password | -P password_file] <target ip[:port]>
-# Author: TekTengu
-# Copyright (C) 2014 Luke Stephens and Tek Security Group, LLC - all rights reserved
 
-"""
-    rtsp_discover.py - A quick tool to run the DESCRIBE and OPTIONS verbs against an RTSP
-    connection. Will provide key information or clue the auditor into this
-    possibly not being a true RTSP connection.
-
-    Copyright (C) 2014 Luke Stephens and Tek Security Group, LLC - all rights reserved
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-    RTSP Discover is provided for testing purposes only and is not
-    authorized for use to conduct malicious, illegal or other nefarious activities.
-
-    Standard usage is:
-
-    python rtsp_discover <target ip [:port]>
-
-"""
 import utilsCore as utils
+import logging as log
 
 import socket
 import sys
@@ -45,6 +14,9 @@ from getmac import get_mac_address
 import os
 import subprocess
 
+#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", stream=sys.stdout, datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO)
+#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log', encoding='utf-8') 
 
 LIST_PORT = [554, 8554]
 LIST_IP = []
@@ -60,8 +32,8 @@ OPTIONSPACKET = ""
 TIMEOUT = 10
 
 LIST_CHANNEL = ['profile0', '', 'profile1', 'Streaming/Channels/01', 'h264?channel=1', 'onvif1']
-
-LIST_PASSWORD = ['WWYZRL', '123456', '1234', '12345', 'admin', '9999', 'pass', 'none',
+#'WWYZRL'
+LIST_PASSWORD = ['123456', '1234', '12345', 'admin', '9999', 'pass', 'none',
                  'service', '888888', '666666', 'fliradmin', 'system', 'jvc',
                  '1111', 'meinsm', '4321', '1111111', 'ikwd', 'supervisor',
                  'ubnt', 'wbox123', '']
@@ -92,7 +64,7 @@ def describe(ip):
 def options():
     return (create_options_packet() + "\r\n").encode()
 
-def createListIps():
+def getListCam():
   
     #definindo IP Local
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -103,16 +75,15 @@ def createListIps():
     s.close()
     
     listCamEncontradas = []
-    listCamRtspOk = []
-    listCamRefused = []
-    listCamTimeout = []
+    listCamAtivas = []
     dataDescribe = None
+    idCam = 0
     
    
-    if OS_PLATFORM == 'linux':
-        cmd = 'arp -a'
-    else:
-        cmd = 'arp /a'
+    #if OS_PLATFORM == 'linux':
+    #    cmd = 'arp -a'
+    #else:
+    #    cmd = 'arp /a'
         
     myNetwork = IP_LOCAL + '.0/24' 
     myScan = networkscan.Networkscan(myNetwork) 
@@ -120,8 +91,8 @@ def createListIps():
     
     for ip in myScan.list_of_hosts_found:
         mac = get_mac_address(ip=ip)
-        LIST_IP.append({'ip':ip, 'mac':mac, 'port':'0', 'user':'user', 
-                        'passwd':'passwd', 'channel':'channel'})
+        LIST_IP.append({'id':'0', 'ip':ip, 'mac':mac, 'port':'0', 'user':'user', 
+            'passwd':'passwd', 'channel':'channel', 'source':'0', 'emUso':'False'})
 
     #for ipLocal in os.popen(cmd):     
     #    ipLocal = ipLocal.split(' ')
@@ -131,96 +102,115 @@ def createListIps():
         
     
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)    
-    #ip = '192.168.5.60'
-    #port = 554
         
     for ip in LIST_IP: 
         
-        if ip not in listCamEncontradas:
+        if ip not in listCamAtivas:
             
-            #ip = IP_LOCAL + '.' + str(i)
             pktDescribe = describe(ip.get('ip'))
             
-            for port in LIST_PORT:    
+            for port in LIST_PORT:
+
+                if ip not in listCamAtivas:
            
-                print ('-------')
-                print("IP: {}:{}".format(ip.get('ip'), str(port)))
-                
-                try:
-                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)    
-                    s.settimeout(TIMEOUT)
-                    s.connect((ip.get('ip'), port))
-                    #s.connect((ip, port))
-    
-                except socket.timeout:
-                    print("Timeout IP: {}:{}".format(ip.get('ip'), str(port)))
-                    listCamTimeout.append(ip.get('ip'))
-    
-                except socket.error as e:
-                    if e.errno == errno.ECONNREFUSED:
-                        print('Conenction Refused IP: {}:{}'.format(ip.get('ip'), str(port)))
-                        listCamRefused.append(ip.get('ip'))
-                        
-                else:
-                                
-                    s.sendall(pktDescribe)            
-                    dataDescribe = s.recv(1024)                    
+                    log.debug('-------')
+                    log.debug("IP: {}:{}".format(ip.get('ip'), str(port)))
                     
-                    if dataDescribe is not None:
-                        resp = dataDescribe.decode()
-                        print('Camera encontrada IP: {}:{}'.format(ip.get('ip'), str(port)))
-                        print('Mac: {}'.format(ip.get('mac')))
-                        #print('Data: \n' + dataDescribe.decode())                    
-                        for passwd in LIST_PASSWORD:
-                            if (ip not in listCamEncontradas):
-                                for user in LIST_USERNAME:
-                                    if (ip not in listCamEncontradas):
-                                        for channel in LIST_CHANNEL:
-                                            
-                                            if (ip not in listCamEncontradas):
-                                                
-                                                source = 'rtsp://' + user + ':' + passwd + '@' + ip.get('ip') + ':' + str(port) + '/' + channel 
-                                                print('source: {}'.format(source))
-                                                ipCam, error = utils.camSource(source)                   
-                                                
-                                                if error != '':                                                                    
-                                                    print('Erro camSource: {}'.format(error))
-                                                else:                                    
-                                                    print('Conexao com camera restabelecida.')
-                                                    ip['port'] = str(port)
-                                                    ip['user'] = user
-                                                    ip['passwd'] = passwd
-                                                    ip['channel'] = channel
-                                                    listCamEncontradas.append(ip)                                    
-            s.close()
+                    try:
+                        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)    
+                        s.settimeout(TIMEOUT)
+                        s.connect((ip.get('ip'), port))
+    
+                    except socket.timeout:
+                        log.debug("Timeout IP: {}:{}".format(ip.get('ip'), str(port)))
+    
+                    except socket.error as e:
+                        if e.errno == errno.ECONNREFUSED:
+                            log.debug('Conenction Refused IP: {}:{}'.format(ip.get('ip'), str(port)))
+                            
+                    else:
+                                    
+                        s.sendall(pktDescribe)            
+                        dataDescribe = s.recv(1024)                    
+                        
+                        if dataDescribe is not None:
+                            resp = dataDescribe.decode()
+                            #print('Camera encontrada IP: {}:{}'.format(ip.get('ip'), str(port)))
+                            #print('Mac: {}'.format(ip.get('mac')))
+                            if (ip not in listCamAtivas):
+                                for passwd in LIST_PASSWORD:
+                                    if (ip not in listCamAtivas):
+                                        for user in LIST_USERNAME:
+                                            if (ip not in listCamAtivas):
+                                                for channel in LIST_CHANNEL:
+                                                    
+                                                    if ip not in listCamAtivas:
+                                                        
+                                                        source = 'rtsp://' + user + ':' + passwd + '@' + ip.get('ip') + ':' + str(port) + '/' + channel 
+                                                        ipCam, error = utils.camSource(source)                   
+                                                        
+                                                        if error != '':                                                                    
+                                                            log.info('Erro camSource: {}'.format(error))
+
+                                                            if ip not in listCamEncontradas and ip not in listCamAtivas: 
+
+                                                                ip['id'] = 'Cam_' + str(idCam)
+                                                                ip['port'] = str(port)
+                                                                ip['port'] = str(port)
+                                                                ip['user'] = user
+                                                                ip['passwd'] = passwd
+                                                                ip['channel'] = channel
+                                                                ip['source'] = source 
+                                                                listCamEncontradas.append(ip)
+                                                                print('resp encontradas: ' + resp)
+                                                                print(' ')
+                                                                idCam = idCam + 1
+
+                                                        else:                                    
+                                                            log.info('Cam ativa encontrada')
+                                                            log.info('source: {}'.format(source))
+                                                            log.info('Data: \n {}'.format(dataDescribe.decode()))
+                                                            log.info(' ')
+
+                                                            ip['id'] = 'Cam_' + str(idCam)
+                                                            ip['port'] = str(port)
+                                                            ip['user'] = user
+                                                            ip['passwd'] = passwd
+                                                            ip['channel'] = channel
+                                                            ip['source'] = source 
+                                                            print('resp ativas: ' + resp)
+                                                            print(' ')
+                                                            listCamAtivas.append(ip)                                    
+                                                            idCam = idCam + 1
+                s.close()
         # end for in LIST_PORT                            
     s.close()
     
-    return listCamEncontradas, listCamRtspOk, listCamRefused, listCamTimeout
+    return listCamEncontradas, listCamAtivas 
             
 
 
-if __name__ == '__main__':
-    
-    #print "   or https://github.com/tektengu/rtsp_discover/license.txt\n\n"
-
-    listCam, listRtsp, listRefused, listTimeout = createListIps()
-
-    print('List Cameras encontradas')
-    for cam in listCam:
-        print ('IP: ' + str(cam))
-        
-        
-    print('List Cameras Refused')
-    for cam in listRefused:
-        print ('IP: ' + str(cam))
-        
-    print('List Cameras Timeout')
-    for cam in listTimeout:
-        print ('IP: ' + str(cam))
-        
-    print('List Cameras Refused')
-    for cam in listRtsp:
-        print ('IP: ' + str(cam))        
+#if __name__ == '__main__':
+#    
+#    #print "   or https://github.com/tektengu/rtsp_discover/license.txt\n\n"
+#
+#    listCam, listRtsp, listRefused, listTimeout = createListIps()
+#
+#    print('List Cameras encontradas')
+#    for cam in listCam:
+#        print ('IP: ' + str(cam))
+#        
+#        
+#    print('List Cameras Refused')
+#    for cam in listRefused:
+#        print ('IP: ' + str(cam))
+#        
+#    print('List Cameras Timeout')
+#    for cam in listTimeout:
+#        print ('IP: ' + str(cam))
+#        
+#    print('List Cameras Refused')
+#    for cam in listRtsp:
+#        print ('IP: ' + str(cam))        
     
     

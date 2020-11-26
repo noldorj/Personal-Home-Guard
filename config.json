@@ -30,6 +30,7 @@
             "openVinoDevice": "GPU"
         }
     ],
+    "camList": []
     "storageConfig": {
         "diskMaxUsage": 85,
         "diskMinUsage": "10",

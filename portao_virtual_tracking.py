@@ -14,6 +14,8 @@ import os
 import subprocess
 import getpass
 import shutil
+import rtsp_discover as camUtils
+from rtsp_discover.rtsp_discover import getListCam
 
 #import ffmpeg
 
@@ -31,8 +33,8 @@ import psutil
 
 from matplotlib.path import Path
 
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log', encoding='utf-8')
-
+#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', encoding='utf-8')
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log', encoding='utf-8') 
 OS_PLATFORM = 'windows'
 
 if sys.platform == 'linux':
@@ -70,6 +72,9 @@ emailSentdirVideosAllTimeEmpty = False
 emailSentdirVideosOnAlarmesEmpty = False
 
 pilhaAlertasNaoEnviados = deque() 
+
+listCamEncontradas = []
+listCamAtivas = []
 
 conectado = None
 conexao = False
@@ -130,6 +135,7 @@ out_video = None
 out_video_all_time = None
 
 init_video = False 
+pausaConfig = False
 
 statusPasswd = False
 statusLicence = False
@@ -215,6 +221,7 @@ def initConfig():
     global status_dir_criado_all_time, status_dir_criado_all_time, dir_video_trigger_on_alarmes, dir_video_trigger_all_time, source, ipCam, prob_threshold, hora, current_data_dir, isOpenVino
     global device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir, openVinoModelName, gravandoAllTime 
     global spaceMaxDirVideosAllTime, spaceMaxDirVideosOnAlarme, eraseOldestFiles, stopSaveNewVideos, diskMaxUsage, diskMinUsage, rtspStatus, LOGIN_AUTOMATICO
+    global listCamAtivas, listCamEncontradas
     
     current_data_dir = utils.getDate()
     current_data_dir = [current_data_dir.get('day'), current_data_dir.get('month')]
@@ -229,6 +236,10 @@ def initConfig():
     diskMinUsage = int(statusConfig.data["storageConfig"]["diskMinUsage"])
     
     isOpenVino = statusConfig.data["isOpenVino"] == 'True'
+
+    listCamAtivas = statusConfig.getListCamAtivas()
+
+    listCamEncontradas = statusConfig.getListCamEncontradas()
 
     spaceMaxDirVideosOnAlarme = float(statusConfig.data["storageConfig"]["spaceMaxDirVideosOnAlarme"])  
     spaceMaxDirVideosAllTime = float(statusConfig.data["storageConfig"]["spaceMaxDirVideosAllTime"])  
@@ -271,11 +282,15 @@ def initConfig():
         rtspStatus = False
         log.critical('Erro camSource: {}'.format(error))
         ui.lblStatus.setText('Erro de conexao da camera. Tente configurar o endereço RTSP, e clique em "Salvar"')
-        ui.txtUrlRstp.setFocus()
+        ui.lblStatusProcurarCam.setText('Erro de conexao da camera. Tente configurar uma nova câmera ou fazer uma nova varredura por câmeras clicando em "Procurar Câmeras". ')
+        #ui.txtUrlRstp.setFocus()
     else:
         rtspStatus = True 
+        ipCam.set(3, RES_X)
+        ipCam.set(4, RES_Y)
         log.info('Conexao com camera restabelecida.')
         ui.lblStatus.setText('Conexão com a camera estabelecida! Feche a janela para inciar o Portão Virtual')
+        ui.lblStatusProcurarCam.setText('Conexão com a câmera estabelecida! Feche a janela para inciar o Portão Virtual')
 
 
     prob_threshold = float(statusConfig.data["prob_threshold"])
@@ -341,6 +356,7 @@ class FormProc(QWidget):
 
     def closeEvent(self, event):
         statusFields = True
+        pausaConfig = False
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
         msg.setWindowTitle("Campo 'Ativo'")
@@ -477,6 +493,116 @@ def btnEsqueciSenha():
         log.warning("Erro de conexao com a Internet")
         uiLogin.lblStatus.setText("Cheque sua conexão com a Internet.")
 
+
+def btnAtivarCam():
+    global listCamAtivas, ui, statusConfig
+
+    print('btnAtivarCam')
+    
+    if len(listCamAtivas) > 0: 
+        idCombo = ui.comboBoxCamAtivas.currentText().split(':')[0]
+        idCombo = idCombo.replace('[','')
+        idCombo = idCombo.replace(']','')
+        print('idCombo: ' + idCombo)
+        print('currentIndex: ' + str(ui.comboBoxCamAtivas.currentIndex()))
+
+        i = 0 
+        #zerando a camera ativada anteriormente 
+        for cam in listCamAtivas:
+            listCamAtivas[i]['emUso'] = 'False'
+            i = i + 1
+
+        i = 0 
+        for cam in listCamAtivas:
+            if cam.get('id') == idCombo:
+                listCamAtivas[i]['emUso'] = 'True'
+                print('cam source: ' + cam.get('source'))
+                ui.txtUrlRstp.setText(cam.get('source'))
+                statusConfig.setRtspConfig(cam.get('source'))
+                ui.lblStatusProcurarCam.setText('Camera ativada')
+            i = i + 1
+
+        #for cam in listCamAtivas:
+        #    print('camId: ' + cam.get('id'))
+        #    print('emUso: ' + cam.get('emUso'))
+
+        statusConfig.addListCamAtivasConfig(listCamAtivas)
+        initConfig()
+
+
+    else:
+        ui.lblStatusProcurarCam.setText('Sem câmeras ativas. Clique em "Procurar Câmeras" para uma nova varredura')
+
+def btnTestarConfigCam():
+
+    global listCamAtivas, listCamEncontradas, statusconfig
+
+    camConfigurada = None
+    
+    idCombo = ui.comboBoxCamEncontradas.currentText().split(':')[0]
+    idCombo = idCombo.replace('[','')
+    idCombo = idCombo.replace(']','')
+    
+    i = 0 
+
+    for cam in listCamEncontradas:
+        if cam.get('id') == idCombo:
+            source = 'rtsp://' + ui.txtUserCamDisponivel.text() + ':' + ui.txtPasswdCamDisponivel.text() + '@' + cam.get('ip') + ':' + ui.txtPortaCamDisponivel.text() + '/' + ui.txtCanalCamDiponivel.text()
+            camConfigurada = cam
+            break
+        i = i + 1
+    
+    ipCam, error = utils.camSource(source)                   
+    
+    if error != '':                                                                    
+        log.info('Erro camSource: {}'.format(error))
+        ui.lblStatusTestarCam.setText('Configuração inválida, tente outro usuario, senha, porta ou canal')
+
+    else:                                    
+        log.info('Cam ativa encontrada')
+        ui.lblStatusTestarCam.setText('Câmera configurada corretamente. Pronto para uso')
+        listCamEncontradas.pop(i)
+
+        camConfigurada['user'] = ui.txtUserCamDisponivel.text()
+        camConfigurada['passwd'] = ui.txtPasswdCamDisponivel.text()
+        camConfigurada['channel'] = ui.txtCanalCamDiponivel.text()
+        camConfigurada['source'] = source 
+        camConfigurada['emUso'] = 'False' 
+        
+        listCamAtivas.append(camConfigurada)
+
+        statusConfig.addListCamAtivasConfig(listCamAtivas)
+        statusConfig.addListCamEncontradasConfig(listCamEncontradas)
+        
+        initConfig()
+        fillTabGeral()
+
+
+def btnProcurarCam():
+    global listCamAtivas, listCamEncontradas, statusconfig
+
+    clearListCameras() 
+    
+    listCamEncontradas.clear()
+    listCamAtivas.clear()
+
+    print('btnProcurarCam') 
+    ui.lblStatusProcurarCam.setText('Procurando cameras na rede... aguarde')
+
+    listCamEncontradas, listCamAtivas = getListCam()
+    #print('listCamAtivas: \n' + str(len(listCamAtivas)))
+
+    for cam in listCamAtivas:
+        ui.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']:' + cam.get('ip') + ' : ' + cam.get('port'))
+
+    for cam2 in listCamEncontradas:
+        ui.comboBoxCamEncontradas.addItem('[' + cam2.get('id') + ']:' + cam2.get('ip') + ' : ' + cam2.get('port'))
+
+    statusConfig.zerarListCamAtivasConfig() 
+    statusConfig.zerarListCamEncontradasConfig()
+
+    statusConfig.addListCamAtivasConfig(listCamAtivas)
+    statusConfig.addListCamEncontradasConfig(listCamEncontradas)
 
 
 def btnSaveStorage():
@@ -679,8 +805,22 @@ def btnLogin():
 
 #---------------- gui  tab configuração geral -------------------
 
+def clearListCameras():
+    global ui
+
+    ui.comboBoxCamAtivas.clear()
+    ui.comboBoxCamEncontradas.clear()
+    
+    ui.txtUserCamDisponivel.clear()
+    ui.txtPasswdCamDisponivel.clear()
+    ui.txtPortaCamDisponivel.clear()
+    ui.txtCanalCamDiponivel.clear()
+    ui.lblStatusTestarCam.clear()
+
 
 def clearFieldsTabGeralEmail():
+    global ui
+
     ui.txtEmailName.clear()
     ui.txtEmailPort.clear()
     ui.txtEmailSmtp.clear()
@@ -689,10 +829,13 @@ def clearFieldsTabGeralEmail():
     ui.txtEmailUser.clear()
     ui.txtEmailPassword.clear()
     ui.lblStatus.clear()
+    ui.lblStatusProcurarCam.clear()
     
 
 
 def btnSaveEmail():
+    global ui
+
     statusFields = True 
     msg = QMessageBox()
     msg.setIcon(QMessageBox.Information)
@@ -803,6 +946,9 @@ def fillTabGeral():
     global emailConfig, statusConfig
 
     clearFieldsTabGeralEmail()
+    
+    clearListCameras()
+
     refreshStatusConfig()
 
     ui.checkBoxDesabilitarLoginAutomatico.setCheckState( True if statusConfig.getLoginAutomatico() == "True" else False )
@@ -836,6 +982,18 @@ def fillTabGeral():
     ui.txtEmailSubject.setText(statusConfig.data["emailConfig"].get('subject'))
     ui.txtEmailTo.setText(statusConfig.data["emailConfig"].get('to'))
 
+    #carregar cams previamente escaneadas na rede
+
+    for cam in listCamAtivas:
+        if cam.get('emUso') == 'True':
+            ui.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']:' + cam.get('ip') + ' : ' + cam.get('port') + ' [em uso]')
+        else:
+            ui.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']:' + cam.get('ip') + ' : ' + cam.get('port'))
+
+    for cam in listCamEncontradas:
+        ui.comboBoxCamEncontradas.addItem(cam.get('ip') + ' : ' + cam.get('port'))
+    
+    
     #configuracoes de armazenamento
     if spaceMaxDirVideosAllTime == 0:
         
@@ -1211,6 +1369,8 @@ def btnSaveAlarm():
 
 
 def btnDeleteAlarm():
+    global statusConfig, ui
+
     statusConfig.deleteAlarm(ui.comboRegions.currentText(), ui.comboAlarms.currentText())
     refreshStatusConfig()
     comboRegionsUpdate(0)
@@ -1218,6 +1378,8 @@ def btnDeleteAlarm():
 
 
 def btnDeleteRegion():
+    global statusConfig, ui
+
     statusConfig.deleteRegion(ui.comboRegions.currentText())
     refreshStatusConfig()
     comboRegionsUpdate(0)
@@ -1234,9 +1396,15 @@ def fillComboAlarm(regionId):
             #print('name alarm added : {}'.format(a.get('name')))
             ui.comboAlarms.addItem(a.get('name'))
 
+
+def comboBoxCamAtivasUpdate(i):
+    global ui
+
+
+
+
 def comboRegionsUpdate(i):
-    #print('combo regions update')
-    #print('comboBox id: {}'.format(i))
+    global ui
 
     clearFieldsTabRegiao()
     #r = regions[i]
@@ -1517,6 +1685,8 @@ def initFormLogin(self, ret):
 
     uiLogin.btnLogin.clicked.connect(btnLogin)
     uiLogin.btnExit.clicked.connect(btnExit)
+    
+    
     uiLogin.btnEsqueciSenha.clicked.connect(btnEsqueciSenha)
     uiLogin.checkBoxSalvarLogin.stateChanged.connect(checkBoxSalvarLogin)
     uiLogin.checkBoxLoginAutomatico.stateChanged.connect(checkBoxLoginAutomatico)
@@ -1625,15 +1795,7 @@ def callbackButtonRegioes(self, ret):
                 currentIndex = currentIndex + 1
             else:
                 break
-    #comboListModelsUpdate(currentIndex)
 
-    #slots
-    #ui.comboListModels.activated['int'].connect(comboListModelsUpdate)
-    #ui.btnNewModel.clicked.connect(btnNewModel)
-    #ui.btnDeleteOpenVino.clicked.connect(btnDeleteOpenVino)
-    #ui.btnSaveOpenVino.clicked.connect(btnSaveOpenVino)
-    #ui.btnCancelOpenVino.clicked.connect(btnCancelOpenVino)
-    #windowConfig.destroyed.connect(tabClose)
 
     # ----------- init tab configuração geral --------------- 
 
@@ -1646,7 +1808,13 @@ def callbackButtonRegioes(self, ret):
     #slots
     ui.btnSaveEmail.clicked.connect(btnSaveEmail)
     ui.btnSaveStorage.clicked.connect(btnSaveStorage)
-    
+
+
+
+    ui.btnAtivarCam.clicked.connect(btnAtivarCam)
+    ui.btnProcurarCam.clicked.connect(btnProcurarCam)
+    ui.btnTestarConfigCam.clicked.connect(btnTestarConfigCam)
+
     ui.checkBoxWebCam.stateChanged.connect(checkBoxWebcamStateChanged)
     ui.checkBoxDesabilitarLoginAutomatico.stateChanged.connect(checkBoxDesabilitarLoginAutomatico)
 
@@ -1739,9 +1907,9 @@ def initOpenVino():
         ret, frame = ipCam.read()
         ret, next_frame = ipCam.read()
         
-        frame = cv.resize(frame, (RES_X, RES_Y)) 
+        #frame = cv.resize(frame, (RES_X, RES_Y)) 
         
-        next_frame = cv.resize(next_frame, (RES_X, RES_Y)) 
+        #next_frame = cv.resize(next_frame, (RES_X, RES_Y)) 
     
         cvNet = None
     
@@ -1772,7 +1940,7 @@ def initOpenVino():
     
     conectado, frame = ipCam.read()
     if frame is not None:
-        frame = cv.resize(frame, (RES_X, RES_Y)) 
+        #frame = cv.resize(frame, (RES_X, RES_Y)) 
         (h,w) = frame.shape[:2]
 
 
@@ -1812,7 +1980,7 @@ if statusLicence and conexao:
         callbackButtonRegioes(None, 2)
 
 
-while init_video and sessionStatus and rtspStatus:
+while init_video and sessionStatus and rtspStatus :
 
     #if counter == 0:
     #    startFps = time.time()
@@ -1822,8 +1990,8 @@ while init_video and sessionStatus and rtspStatus:
     
 
     conectado, frame = ipCam.read()
-    if frame is not None:
-        frame = cv.resize(frame, (RES_X, RES_Y)) 
+    #if frame is not None:
+    #    frame = cv.resize(frame, (RES_X, RES_Y)) 
     
 
     if (conectado and frame is not None and next_frame is not None):
@@ -2391,6 +2559,7 @@ while init_video and sessionStatus and rtspStatus:
 
         #chamando callbackButtonRegioes  
         if cv.waitKey(1) & 0xFF == ord('c'):
+            pausaConfig = True
             callbackButtonRegioes(None, ret)
         
         if cv.waitKey(1) & 0xFF == ord('q'):
@@ -2403,6 +2572,8 @@ while init_video and sessionStatus and rtspStatus:
             #init_video = False
             time.sleep(5)
             ipCam, error = utils.camSource(source)
+            ipCam.set(3, RES_X)
+            ipCam.set(4, RES_Y)
             #ipCam = utils.camSource(source)
         else:
             log.warning('Reconectando em 5 segundos...')
