@@ -35,8 +35,7 @@ from matplotlib.path import Path
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', encoding='utf-8')
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log', encoding='utf-8', level=log.DEBUG)
 
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S',  encoding='utf-8', level=log.DEBUG)
-
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S',  encoding='utf-8', level=log.CRITICAL, stream=sys.stdout ) 
 OS_PLATFORM = 'windows'
 
 if sys.platform == 'linux':
@@ -276,7 +275,7 @@ def initConfig():
     
     #origem do stream do video
     source = statusConfig.data["camSource"]
-    log.info('source: {}'.format(source))
+    log.debug('source: {}'.format(source))
     ipCam, error = utils.camSource(source)
 
     if error != '':
@@ -295,11 +294,12 @@ def initConfig():
         for cam in camListAtivas:
             if cam.get('mac') == camEmUso.get('mac'):
                 if cam.get('ip') != camEmUso.get('ip'):
+                    
                     log.debug('Camera em uso mudou de IP')
                     log.debug('Camera em uso IP: {}'.format(camEmUso.get('ip')))
                     log.debug('Novo IP: {}'.format(cam.get('ip')))
                     
-                    ipCam, error = utils.camSource(source)
+                    ipCam, error = utils.camSource(cam.get('source'))
 
                     if error != '':
                         ipCam = None
@@ -307,27 +307,51 @@ def initConfig():
                         log.critical('Erro camSource: {}'.format(error))
                         ui.lblStatus.setText('Falha em localizar novo IP automaticamente. Tente configurar o endereço RTSP, e clique em "Salvar"')
                         ui.lblStatusProcurarCam.setText('Falha em localizar o novo IP automaticamente. Tente configurar uma nova câmera ou fazer uma nova varredura por câmeras clicando em "Procurar Câmeras". ')
+                    else:
 
+                        statusConfig.setRtspConfig(cam.get('source'))
+                        statusConfig.addListCamAtivasConfig(listCamAtivas)
+                        statusConfig.addListCamEncontradasConfig(listCamEncontradas)
+                        ui.txtUrlRstp.setText(cam.get('source'))
+
+                        rtspStatus = True 
+                        ipCam.set(3, RES_X)
+                        ipCam.set(4, RES_Y)
+                        log.debug('Conexao com camera restabelecida.')
+                        ui.lblStatus.setText('Conexão com a camera estabelecida! Feche a janela para inciar o Portão Virtual')
+                        ui.lblStatusProcurarCam.setText('Conexão com a câmera estabelecida! Feche a janela para inciar o Portão Virtual')
+                        break
+
+
+
+        #checar se o mac address camEmUso vs nova cam encontrada 
+        for cam in camListEncontradas:
+            if cam.get('mac') == camEmUso.get('mac'):
+                if cam.get('ip') != camEmUso.get('ip'):
+                    log.debug('Camera em uso mudou de IP')
+                    log.debug('Camera em uso IP: {}'.format(camEmUso.get('ip')))
+                    log.debug('Novo IP: {}'.format(cam.get('ip')))
+                    
+                    #ipCam, error = utils.camSource(source)
+
+                    ui.lblStatus.setText('Câmera previamente configurada trocou de IP, localizamos o novo IP com sucesso. Porém a senha, porta ou canal precisam ser novamente configurados !')
+                    ui.lblStatusProcurarCam.setText('Câmera previamente configurada trocou de IP, localizamos o novo IP com sucesso. Porém a senha, porta ou canal precisam ser novamente configurados !')
+                    break 
 
     else:
         rtspStatus = True 
         ipCam.set(3, RES_X)
         ipCam.set(4, RES_Y)
-        log.info('Conexao com camera restabelecida.')
+        log.debug('Conexao com camera restabelecida.')
         ui.lblStatus.setText('Conexão com a camera estabelecida! Feche a janela para inciar o Portão Virtual')
         ui.lblStatusProcurarCam.setText('Conexão com a câmera estabelecida! Feche a janela para inciar o Portão Virtual')
-
 
     prob_threshold = float(statusConfig.data["prob_threshold"])
 
     #configuracoes de armazenamento
     
 
-
-
-
 def isIdInsideRegion(centroid, ref_point_polygon):
-
     path = Path(ref_point_polygon)
     mask = path.contains_points([(centroid[0], centroid[1])])
     return mask
@@ -361,7 +385,6 @@ class FormLogin(QWidget):
 
     def closeEvent(self, event):
         log.info('close formLogin')
-
 
 
 #uiLogin = Ui_formLogin()
@@ -571,16 +594,20 @@ def btnTestarConfigCam():
         i = 0 
 
         for cam in listCamEncontradas:
+
             if cam.get('id') == idCombo:
-                source = 'rtsp://' + ui.txtUserCamDisponivel.text() + ':' + ui.txtPasswdCamDisponivel.text() + '@' + cam.get('ip') + ':' + ui.txtPortaCamDisponivel.text() + '/' + ui.txtCanalCamDiponivel.text()
+                source = 'rtsp://' + ui.txtUserCamDisponivel.text() + ':' + ui.txtPasswdCamDisponivel.text() + '@' \
+                                + cam.get('ip') + ':' + ui.txtPortaCamDisponivel.text() + '/' + ui.txtCanalCamDiponivel.text()
+
                 camConfigurada = cam
                 break
             i = i + 1
         
+
         ipCam, error = utils.camSource(source)                   
         
         if error != '':                                                                    
-            log.info('Erro camSource: {}'.format(error))
+            log.warning('Erro camSource: {}'.format(error))
             ui.lblStatusTestarCam.setText('Configuração inválida, tente outro usuario, senha, porta ou canal')
 
         else:                                    
@@ -1019,7 +1046,7 @@ def fillTabGeral():
             ui.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']:' + cam.get('ip') + ' : ' + cam.get('port'))
 
     for cam in listCamEncontradas:
-        ui.comboBoxCamEncontradas.addItem(cam.get('ip') + ' : ' + cam.get('port'))
+        ui.comboBoxCamEncontradas.addItem('[' + cam.get('id') + ']:' + cam.get('ip') + ' : ' + cam.get('port'))
     
     
     #configuracoes de armazenamento
@@ -1303,11 +1330,6 @@ def btnSaveRegion():
         msg.exec()
         portaoVirtualSelecionado = False
 
-    #print('statusFields: {}'.format(statusFields))
-    #print('campos: person: {}'.format(ui.checkPerson.isChecked()))
-    #print('campos: person: {}'.format(ui.checkCar.isChecked()))
-    #print('campos: person: {}'.format(ui.checkBike.isChecked()))
-    #print('campos: person: {}'.format(ui.checkDog.isChecked()))
 
     points = []
 
@@ -1332,7 +1354,6 @@ def btnSaveRegion():
                   'bike':'True' if ui.checkBike.isChecked() else 'False',
                   'dog':'True' if ui.checkDog.isChecked() else 'False'}
 
-    #print('objectType: {}'.format(objectType))
 
     if statusFields:
 
@@ -1420,8 +1441,6 @@ def fillComboAlarm(regionId):
     #preenchendo lista de alarmes
     if not statusConfig.isAlarmEmpty(regionId):
         for a in regions[regionId].get('alarm'):
-            #print('size alarm list: {}'.format(len(r.get('alarm'))))
-            #print('name alarm added : {}'.format(a.get('name')))
             ui.comboAlarms.addItem(a.get('name'))
 
 
@@ -1457,7 +1476,6 @@ def comboRegionsUpdate(i):
             fillComboAlarm(i)
             #comboAlarmsUpdate(0)
             #ui.comboAlarms.setCurrentIndex(0)
-            #print('alarm update from regionupdate')
 
         ui.comboRegions.setCurrentIndex(i)
         comboAlarmsUpdate(0)
@@ -1489,7 +1507,6 @@ def btnNewAlarm():
     ui.comboAlarms.setEnabled(False)
 
 def comboAlarmsUpdate(i):
-    #print('alarmUpdate i: {}'.format(i))
     clearFieldsAlarm()
 
     #preenchendo lista de alarmes
@@ -1525,7 +1542,6 @@ def callbackButton1min(self, ret):
     global tSoundLimit, tSoundStart
     tSoundLimit = tSoundLimit + 60
     tSoundStart = time.time()
-    #print('tSoundLimit button: {}'.format(tSoundLimit))
 
 def callbackButton30min(self, ret):
     global tSoundLimit, tSoundStart
@@ -1804,7 +1820,7 @@ def stopWatchDog():
             log.error('Error: {}'.format(e))
             killProcessId(namePid)
         else:
-            lof.debug('WatchDog encerrado. PId: {:d}'.format(pid))
+            log.debug('WatchDog encerrado. PId: {:d}'.format(pid))
 
         pid = getProcessId(namePid) 
 
@@ -1991,12 +2007,6 @@ def initOpenVino():
 
 
 if statusLicence and conexao:
-
-    #global conectado, frame
-
-    #log.info('statusLicence on')
-    
-    #initConfig()
 
     if rtspStatus:
 

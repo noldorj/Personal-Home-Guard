@@ -33,7 +33,7 @@ def camSource(source = 'webcam'):
 
     if source == 'webcam':
         
-        log.info('imagem da WebCam')
+        log.debug('imagem da WebCam')
         ipCam = cv.VideoCapture(0)
 
     else:
@@ -46,7 +46,7 @@ def camSource(source = 'webcam'):
             error = e
         else:
             if ipCam.isOpened():
-                log.info('Imagem de camera rstp ok')
+                log.debug('Imagem de camera rstp ok')
             else:
                 error = 'rtsp'
 
@@ -138,16 +138,6 @@ def isDiskFull(diskMinUsage):
     if ((free / total)*100) <= float(diskMinUsage):
        
         isFull = True 
-        #log.info(' ')
-        
-        #log.critical('Disco cheio - atingiu {} % da capacidade'.format(diskMaxUsage))
-
-        #log.info("Total: %d GiB" % (total // (2**30)))
-        #log.info("Used: %d GiB" % (used // (2**30)))
-        #log.info("Free: %d GiB" % (free // (2**30)))
-
-        #log.info(' ')
-
 
     return isFull
 
@@ -229,13 +219,13 @@ def freeDiskSpace(dirVideo):
 
                         
                     else:
-                        log.info('Diretorio {} removido. Foi liberado {} de espaço'.format(oldestDir, dirSpace))             
+                        log.debug('Diretorio {} removido. Foi liberado {} de espaço'.format(oldestDir, dirSpace))             
                         iDaysSorted = iDaysSorted + 1
                         #totalLiberado = totalLiberado + float(dirSpace)
                     
                 else:
                     
-                    log.info('Removendo diretorio que ficou vazaio')
+                    log.debug('Removendo diretorio que ficou vazaio')
                     #apagando o diretorio que ficou vazio
                     oldestDir = dirVideo + '/' + dirSorted[iDirSorted]
                     
@@ -317,14 +307,14 @@ def createDirectory(dirVideos):
     except OSError as ex:
 
         if ex.errno == 17:
-            log.warning('Diretorio ' + current_dir + month_dir + today_dir + ' existente.')
+            log.debug('Diretorio ' + current_dir + month_dir + today_dir + ' existente.')
             status = True
         else:
             log.error('Erro ao criar o diretorio: ' + current_dir + month_dir + today_dir)
             log.error(ex.__str__())
 
     else:
-        log.info("Diretorio " + current_dir + month_dir + today_dir + " criado com sucesso")
+        log.debug("Diretorio " + current_dir + month_dir + today_dir + " criado com sucesso")
         status = True
 
     dir_temp = current_dir + month_dir + today_dir
@@ -425,7 +415,6 @@ class StatusConfig:
     def getLoginAutomatico(self):
         return self.dataLogin["loginAutomatico"]
 
-
     def getRegions(self):
         return self.regions
 
@@ -481,7 +470,6 @@ class StatusConfig:
                 i = i+1
 
         if not edit:
-            print('append')
             self.data.get('openVinoModels').append(model)
 
         self.saveConfigFile()
@@ -590,7 +578,7 @@ class StatusConfig:
         self.saveConfigFile()
 
     def addListCamAtivasConfig(self, listCam):
-        self.data["camListAtivas"] = listCam 
+        self.data["camListAtivas"] = listCam
         self.saveConfigFile()
     
     def getListCamEncontradas(self):
@@ -601,12 +589,13 @@ class StatusConfig:
 
     
     def getCamEmUsoConfig(self):
-        
+        camEmuso = None
         for cam in self.data['camListAtivas']:
             if cam['emUso'] == 'True':
-                return cam
+                camEmuso = cam
+                break
         
-        return None
+        return camEmuso 
 
 
     
@@ -655,7 +644,6 @@ class StatusConfig:
             self.regions.append(region)
 
         self.saveRegionFile()
-        #self.printRegions()
 
     def addAlarm(self, idRegion, alarm):
 
@@ -673,7 +661,6 @@ class StatusConfig:
             self.regions[idRegion].get('alarm').append(alarm)
 
         self.saveRegionFile()
-        #self.printRegions()
         #TO-DO try catch toleranca a falhas
 
 
@@ -702,7 +689,6 @@ class StatusConfig:
             log.critical('Arquivo de Regioes inexistente - será criado um novo arquivo') 
         else:
             log.info('Arquivo de regiões lido com sucesso')
-            #self.printRegions()
 
 
     def deleteAlarm(self, regionName, alarmName):
@@ -711,20 +697,16 @@ class StatusConfig:
         indexAlarm = 0
 
         for r in self.regions:
-            #print('nameRegion {}'.format(r.get("nameRegion")))
             if r.get("nameRegion") == regionName:
                 for a in r.get('alarm'):
-                    #print('name alarm: {}'.format(a.get("name")))
                     if a.get('name') == alarmName:
                         del self.regions[indexRegion].get('alarm')[indexAlarm]
-                        #print('Alarm removed: {}'.format(alarmName))
                     indexAlarm = indexAlarm+1
                # return True
 
             indexRegion = indexRegion+1
         #return False
 
-        print("Alarm '{}' removido com sucesso".format(alarmName))
         #self.saveConfigFile()
         self.saveRegionFile()
 
@@ -774,7 +756,6 @@ class StatusConfig:
     def deleteRegion(self, nameRegion='regions1'):
         i = 0
         for r in self.regions:
-            #print('nameRegion {}'.format(r.get("nameRegion")))
             if r.get("nameRegion") == nameRegion:
                 del self.regions[i]
                 self.saveRegionFile()

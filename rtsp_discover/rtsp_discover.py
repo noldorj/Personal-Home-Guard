@@ -15,7 +15,7 @@ import os
 import subprocess
 
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", stream=sys.stdout, datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO)
+#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", stream=sys.stdout, datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO)
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log', encoding='utf-8') 
 
 LIST_PORT = [554, 8554]
@@ -65,6 +65,7 @@ def options():
     return (create_options_packet() + "\r\n").encode()
 
 def getListCam():
+
   
     #definindo IP Local
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -135,8 +136,6 @@ def getListCam():
                         
                         if dataDescribe is not None:
                             resp = dataDescribe.decode()
-                            #print('Camera encontrada IP: {}:{}'.format(ip.get('ip'), str(port)))
-                            #print('Mac: {}'.format(ip.get('mac')))
                             if (ip not in listCamAtivas):
                                 for passwd in LIST_PASSWORD:
                                     if (ip not in listCamAtivas):
@@ -162,8 +161,6 @@ def getListCam():
                                                                 ip['channel'] = channel
                                                                 ip['source'] = source 
                                                                 listCamEncontradas.append(ip)
-                                                                print('resp encontradas: ' + resp)
-                                                                print(' ')
                                                                 idCam = idCam + 1
 
                                                         else:                                    
@@ -178,8 +175,6 @@ def getListCam():
                                                             ip['passwd'] = passwd
                                                             ip['channel'] = channel
                                                             ip['source'] = source 
-                                                            print('resp ativas: ' + resp)
-                                                            print(' ')
                                                             listCamAtivas.append(ip)                                    
                                                             idCam = idCam + 1
                 s.close()
@@ -187,30 +182,3 @@ def getListCam():
     s.close()
     
     return listCamEncontradas, listCamAtivas 
-            
-
-
-#if __name__ == '__main__':
-#    
-#    #print "   or https://github.com/tektengu/rtsp_discover/license.txt\n\n"
-#
-#    listCam, listRtsp, listRefused, listTimeout = createListIps()
-#
-#    print('List Cameras encontradas')
-#    for cam in listCam:
-#        print ('IP: ' + str(cam))
-#        
-#        
-#    print('List Cameras Refused')
-#    for cam in listRefused:
-#        print ('IP: ' + str(cam))
-#        
-#    print('List Cameras Timeout')
-#    for cam in listTimeout:
-#        print ('IP: ' + str(cam))
-#        
-#    print('List Cameras Refused')
-#    for cam in listRtsp:
-#        print ('IP: ' + str(cam))        
-    
-    
