@@ -2556,7 +2556,7 @@ while init_video and sessionStatus and rtspStatus :
                     log.critical('Servidor não respondendo. Ignorando checkSession')
                     sessionStatus = True
                
-                if sessionStatus == False:
+                elif sessionStatus == False:
                     log.warning('sessionStatus: {}'.format(sessionStatus))
                     log.warning('stopWatchDog chamado')
                     stopWatchDog()
