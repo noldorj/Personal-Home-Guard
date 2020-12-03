@@ -24,10 +24,11 @@ import time
 import logging as log
 from  openvino.inference_engine import IENetwork, IEPlugin
 
+#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
 #def main():
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
 
-#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.debug, stream=sys.stdout)
 
 
 labels_map = ["background", "car", "person", "bike"]
@@ -48,6 +49,7 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
     log.info('CPU Extension    : {}'.format(cpu_extension))
     log.info('Plugin Diretorio : {}'.format(plugin_dir))
     log.info(' ')
+    print('initOpenVino at pluginOpenVino')
 
     plugin_SO = 'linux' if sys.platform == 'linux' else 'windows'
 
@@ -74,6 +76,7 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
     
         try: 
             log.info('CPU_Extension: "{}" sendo carregado...'.format(cpu_extension))
+            print('CPU_Extension: "{}" sendo carregado...'.format(cpu_extension))
             plugin.add_cpu_extension(plugin_dir + '/' + cpu_extension)
 
         except Exception as e:
@@ -107,12 +110,13 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
 
                 #3 plugin SSE4                
                 else:
-                    log.info('CPU_Extension ok')
-                    log.info('cpu_extension utilizado: {}'.format(cpu_extension))
+                    log.debug('CPU_Extension ok')
+                    log.debug('cpu_extension utilizado: {}'.format(cpu_extension))
             
             #2 plugin AVX2 
             else:
-                log.info('CPU_Extension ok')
+                log.debug('CPU_Extension ok')
+                print('CPU_Extension ok')
 
              
         #1o plugin - AVX-512 ou plugin informado
@@ -122,7 +126,7 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
             log.info('cpu_extension utilizado: {}'.format(cpu_extension))
 
     # Read IR
-    log.info("Reading IR...")
+    log.debug("Reading IR...")
     try:
         log.info('Carregando IENetwork...') 
         net = IENetwork(model=model_xml, weights=model_bin)
@@ -132,17 +136,20 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
         log.error('IENetwork error: {}'.format(e))
 
     else:
-        log.info('IENetwork carregada')
+        log.debug('IENetwork carregada')
+        print('IENetwork carregada')
 
     #Loading Plugin 
     if plugin.device == "CPU" and plugin is not None:
 
         log.info('Layers suportadas...')
         
+        
         supported_layers = plugin.get_supported_layers(net)
         not_supported_layers = [l for l in net.layers.keys() if l not in supported_layers]
         
         if len(not_supported_layers) != 0:
+            print('erro layers')
             log.error("Following layers are not supported by the plugin for specified device {}:\n {}".
                       format(plugin.device, ', '.join(not_supported_layers)))
             log.error("Please try to specify cpu extensions library path in demo's command line parameters using -l "
@@ -160,19 +167,29 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
     
     if plugin is not None:
         log.info("Loading IR to the plugin...")
+        print("Loading IR to the plugin...")
         try:
+            print('try...')
             exec_net = plugin.load(network=net, num_requests=2)
+            print('try2...')
         except Exception as e:
-            log.error('Error plugin.load: {}'.format(str(e)))
+            print('Error plugin.load: {}'.format(str(e)))
+            log.error('Error plugin.load: {}'.format(str(e)))            
         else:
+            print('plugin.load ok') 
             log.info('plugin.load ok') 
+            
 
+
+    print('plugin done')
     n, c, h, w = net.inputs[input_blob].shape
     nchw = [n,c,h,w]
     del net
 
     is_async_mode = True
     log.info("Init Openvino done")
+    #log.DEBUG("Init Openvino done")
+    print("Init Openvino done")
 
     return nchw, exec_net, input_blob, out_blob
 

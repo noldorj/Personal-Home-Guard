@@ -1,0 +1,298 @@
+from PyQt5.QtWidgets import QWidget
+from PyQt5 import QtCore 
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
+import utilsCore as utils
+from utilsCore import StatusConfig
+from camRunTime import CamRunTime
+from formLogin import *
+import logging as log
+import secrets
+import psutil
+from checkLicence.sendingData import checkLoginPv 
+from checkLicence.sendingData import changePasswdPv 
+from checkLicence.sendingData import checkSessionPv
+from checkLicence.sendingData import forgotPasswordPv 
+
+class FormLogin(QWidget):
+
+    statusConfig = None
+    camRunTime = None
+    
+    token = secrets.token_urlsafe(20)
+    logged = False   
+    setBackStatusConfigCamRunTime = pyqtSignal(StatusConfig, CamRunTime)
+
+    def __init__(self, camRunTimeP, statusConfigP, parent=None ):
+        print('init GuiLogin')
+
+        super(FormLogin, self).__init__(parent)
+        self.uiLogin = Ui_formLogin()
+        self.uiLogin.setupUi(self)
+
+        #self.uiLogin.setWindowModality(QtCore.Qt.ApplicationModal)
+
+        self.statusConfig = statusConfigP
+        self.camRunTime = camRunTimeP
+
+        print('self.statusConfig.dataLogin.get(user):' + self.statusConfig.dataLogin.get('user'))
+
+        if self.statusConfig.dataLogin.get('autoStart') == 'True':
+            self.uiLogin.checkBoxLoginAutoStart.setCheckState(True)
+        else:
+            self.uiLogin.checkBoxLoginAutoStart.setCheckState(False)
+        
+        if self.statusConfig.dataLogin.get('salvarLogin') == 'True':
+            
+            self.uiLogin.txtEmail.setText(self.statusConfig.dataLogin.get('user'))
+            
+            passwd = utils.decrypt(self.statusConfig.dataLogin.get('passwd')) 
+            
+            self.uiLogin.txtPasswd.setText(passwd)
+            self.uiLogin.checkBoxSalvarLogin.setCheckState(True)
+
+        
+        self.uiLogin.btnLogin.clicked.connect(self.btnLogin)
+        self.uiLogin.btnExit.clicked.connect(self.btnExit)        
+        self.uiLogin.btnEsqueciSenha.clicked.connect(self.btnEsqueciSenha)
+        self.uiLogin.checkBoxSalvarLogin.stateChanged.connect(self.checkBoxSalvarLogin)
+        self.uiLogin.checkBoxLoginAutomatico.stateChanged.connect(self.checkBoxLoginAutomatico)
+        self.uiLogin.checkBoxLoginAutoStart.stateChanged.connect(self.checkBoxLoginAutoStart)
+        
+        self.uiLogin.btnAlterarSenha.clicked.connect(self.btnAlterarSenha)
+
+    
+    def setEnv(self, camRunTimeP, statusConfigP):
+        print('setEnv login')
+        self.statusConfig = statusConfigP
+        self.camRunTime = camRunTimeP
+       
+    def isLogged(self):
+        print('isLogged')
+        return self.logged    
+
+    def checkBoxLoginAutoStart(state):
+      
+
+        if self.camRunTime.OS_PLATFORM == 'windows':
+            ATALHO_PATH = 'PortaoVirtual.lnk'
+            USER_NAME = getpass.getuser()       
+            ROOT_PATH = os.path.splitdrive(os.environ['WINDIR'])[0]    
+            AUTO_START_PATH = ROOT_PATH + '/Users/' + USER_NAME + '/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup' 
+           
+        
+        if state == 0:
+            
+            log.info('Auto start login off')
+            self.statusConfig.setLoginAutoStart('False')
+            
+            if os.path.exists(AUTO_START_PATH + '/' + ATALHO_PATH):
+                os.remove(AUTO_START_PATH + '/' + ATALHO_PATH)
+            else:
+                log.info("Atalho na pasta de Inicialização do sistema não existe")
+
+        elif (state == 1 or state == 2):
+            
+            log.info('Auto start login On')
+            self.statusConfig.setLoginAutoStart('True')  
+            
+            if not os.path.exists(AUTO_START_PATH + '/' + ATALHO_PATH):              
+                shutil.copy2(ATALHO_PATH, AUTO_START_PATH) # complete target filename given
+
+    def checkBoxLoginAutomatico(state):
+        #global LOGIN_AUTOMATICO, self.statusConfig        
+        
+        if state == 0:
+            
+            log.info('Login automatico off')
+            self.statusConfig.setLoginAutomatico('False')
+            self.camRunTime.LOGIN_AUTOMATICO = False
+
+
+        elif (state == 1 or state == 2):
+            
+            log.info('Login automatico on')
+            self.statusConfig.setLoginAutomatico('True')
+            self.camRunTime.LOGIN_AUTOMATICO = True 
+
+    def checkBoxSalvarLogin(state):
+        #global fernetKey, statusConfig
+
+        
+        
+        if state == 0:
+            
+            log.info('salvar login off')
+            self.statusConfig.addLoginConfig(self.uiLogin.txtEmail.text(),
+                                        '',
+                                        'False',
+                                        self.statusConfig.dataLogin['loginAutomatico'],
+                                        self.statusConfig.dataLogin['autoStart']
+                                        )
+            log.info('Salvar Login desligado')
+
+        elif (state == 1 or state == 2):
+            
+
+            passEncrypted = utils.encrypt(self.uiLogin.txtPasswd.text())        
+            
+            self.statusConfig.addLoginConfig(self.uiLogin.txtEmail.text(),
+                                        passEncrypted,
+                                        'True',
+                                        self.statusConfig.dataLogin['loginAutomatico'],
+                                        self.statusConfig.dataLogin['autoStart'])
+            
+            log.info('Salvar Login ligado')
+
+    def btnExit(self):
+        #global statusLicence, init_video
+        log.debug('Login Cancelado')
+        self.camRunTime.statusLicence = False
+        self.camRunTime.init_video = False
+        utils.stopWatchDog()
+        #event.accept()
+        self.close()
+        #self.windowLogin.close()
+
+    def btnAlterarSenha():
+        #global uiLogin, statusPasswd
+
+        log.info("Alterando a senha")
+        
+        conexao = utils.checkInternetAccess()
+
+        if conexao:    
+
+            if (self.uiLogin.txtNovaSenha.text() == self.uiLogin.txtNovaSenha2.text()):
+            
+                self.camRunTime.login = {'user':utils.encrypt(self.uiLogin.txtEmail_minhaConta.text()), 'passwd':utils.encrypt(self.uiLogin.txtNovaSenha.text()), 'token':utils.encrypt(self.token)} 
+                
+
+                self.camRunTime.statusPasswd, self.camRunTime.error = changePasswdPv(self.camRunTime.login)
+                
+                if self.camRunTime.statusPasswd:
+                    
+                    log.info("Senha alterada com sucesso")
+                    self.uiLogin.lblStatus.setText("Senha alterada com sucesso")
+                
+                else:
+
+                    #se o servidor estiver fora do ar - libera acesso ao sistema 
+                    if self.camRunTime.error == "conexao":
+                        log.warning("Erro de conexão com o servidor")
+                        self.uiLogin.lblStatus.setText("Erro de conexão com o servidor")
+
+                    elif self.camRunTime.error == "login":
+                        log.warning("Usuario invalido")
+                        self.uiLogin.lblStatus.setText("Usuário ou senha inválida. Tente novamente")
+        else:
+            log.info("Erro de conexao com a Internet")
+            self.uiLogin.lblStatus.setText("Cheque sua conexão com a Internet por favor e tente mais tarde")
+
+    def btnEsqueciSenha():
+        #global self.uiLogin, conexao
+
+        log.info('btnEsqueciSenha:: Checando conexão com a Internet')
+        self.uiLogin.lblStatus.setText("Checando conexão com a Internet")
+
+        self.camRunTime.conexao = utils.checkInternetAccess()
+
+        if self.camRunTime.conexao:    
+        
+            log.info('btnEsqueciSenha:: Checando licença no servidor - Por favor aguarde')
+            #self.uiLogin.lblStatus.setText("Conectando com o servidor")
+            status, error = forgotPasswordPv(self.uiLogin.txtEmail.text()) 
+            
+            if error == "conexao":
+                log.warning("btnEsqueciSenha:: Erro de conexão com o servidor")
+                self.uiLogin.lblStatus.setText("Error de conexão com o servidor - tente novamente")
+
+            elif error == "login":
+
+                log.warning("Usuario invalido")
+                self.uiLogin.lblStatus.setText("Usuário desconhecido.")
+
+            if status:
+                log.warning("Email de recuperação de senha enviado")
+                self.uiLogin.lblStatus.setText("Email de recuperação de senha enviado")
+
+        else:
+             
+            log.warning("Erro de conexao com a Internet")
+            self.uiLogin.lblStatus.setText("Cheque sua conexão com a Internet.")
+
+    def btnLogin(self):
+
+        #checando licenca de usuario no servidor
+        #global init_video, statusLicence, self.uiLogin, conexao, login 
+
+        log.info('Checando conexão com a Internet')
+        self.uiLogin.lblStatus.setText("Checando conexão com a Internet")
+
+        self.camRunTime.conexao = utils.checkInternetAccess()
+        #conexao = True
+
+        if self.camRunTime.conexao:    
+        
+            log.info('Checando licença no servidor - Por favor aguarde')
+            print('Checando licença no servidor - Por favor aguarde')
+            self.uiLogin.lblStatus.setText("Conectando com o servidor")
+            
+            self.camRunTime.login = {'user':utils.encrypt(self.uiLogin.txtEmail.text()), 'passwd':utils.encrypt(self.uiLogin.txtPasswd.text()), 'token':utils.encrypt(self.token)}
+            #log.info('token: {}'.format(token))
+            
+            self.camRunTime.statusLicence, self.camRunTime.error  = checkLoginPv(self.camRunTime.login) 
+            #statusLicence = True ## testando apenas IJF
+            
+
+            if self.camRunTime.statusLicence:
+                
+                print("Usuario logado")
+                self.camRunTime.init_video = True 
+                self.camRunTime.statusLicence = True
+                #utils.initWatchDog()   
+                self.logged = True
+                print('initLogin statusLicence: ' + str(self.camRunTime.statusLicence))
+                #self.setBackStatusConfigCamRunTime.emit(self.statusConfig, self.camRunTime)
+                self.close()
+                #windowLogin.close()
+            
+            else:
+
+                #se o servidor estiver fora do ar - libera acesso ao sistema 
+                if self.camRunTime.error == "conexao":
+                    print("Erro de conexão com o servidor")
+                    self.camRunTime.init_video = True
+                    self.camRunTime.statusLicence = True
+                    log.warning("Liberando acesso")
+                    #event.accept()            
+                    #self.setBackStatusConfigCamRunTime.emit(self.statusConfig, self.camRunTime)
+                    self.close()
+                    #windowLogin.close()
+
+                elif self.camRunTime.error == "login":
+
+                    self.camRunTime.init_video = False
+                    self.camRunTime.statusLicence = False
+                    log.warning("Usuario invalido")
+                    print("Usuario invalido")
+                    self.uiLogin.lblStatus.setText("Usuário ou senha inválida. Tente novamente")
+
+        else:
+
+            log.info("Erro de conexao com a Internet")
+            self.uiLogin.lblStatus.setText("Cheque sua conexão com a Internet por favor e tente mais tarde")
+
+        #self.setBackStatusConfigCamRunTime.emit(self.statusConfig, self.camRunTime)
+        
+
+        #windowLogin.show()
+        #app.exec_()
+
+
+    def closeEvent(self, event):
+        #self.camRunTime.statusLicence = False
+        #self.camRunTime.init_video = False
+        utils.stopWatchDog()
+        event.accept()            
+        log.info('close formLogin')
+

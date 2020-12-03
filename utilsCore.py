@@ -12,11 +12,19 @@ import subprocess
 import time
 import locale
 import simplejson as json
-
+import secrets
+import psutil
 from pbkdf2 import PBKDF2
 
-import os
+
 from cryptography.fernet import Fernet
+
+import http.client as httplib
+
+OS_PLATFORM = 'windows'
+
+if sys.platform == 'linux':
+    OS_PLATFORM = 'linux'
 
 
 #locale.setlocale(locale.LC_ALL, 'pt_BR.utf-8')
@@ -25,6 +33,102 @@ from cryptography.fernet import Fernet
 
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
 #log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+
+def getProcessId(name):
+    for proc in psutil.process_iter():
+        if proc.name() == name:            
+            log.info('Pid: {:d}'.format(proc.pid))
+            log.info('name: {}'.format(proc.name()))
+            return proc.pid
+    return 0
+
+
+def killProcessId(name):
+    log.debug('killProcessId chamado')
+    for proc in psutil.process_iter():
+        if proc.name() == name:            
+            log.debug('Pid: {:d}'.format(proc.pid))
+            log.debug('name: {}'.format(proc.name()))
+            proc.kill()
+            return True 
+    return False 
+
+
+def initWatchDog():
+
+    DETACHED_PROCESS = 0x00000008
+    log.debug('initWatchDog...')
+
+    
+    if sys.platform == 'linux':    
+        app = os.getcwd() + '/' + 'wd'
+    else:
+        log.info('Windows WatchDog')
+        app = 'wd.exe'
+
+    pid = getProcessId('wd.exe')
+    if  pid == 0:
+        try: 
+            #subprocess.Popen(app, creationflags=DETACHED_PROCESS)
+            #cmd = "<full filepath plus arguments of child process>"
+            #cmds = shlex.split(app)
+            #log.info('cmds: {}'.format(cmds))
+            subprocess.Popen(app.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, start_new_session=True, close_fds=True)
+            #p = subprocess.Popen(app.split(), shell=False)
+            #(output, err) = p.communicate()
+            #log.info("Command output: {}".format(output))
+            #p_status = p.wait()
+            #log.info('p_status: {}'.format(p_status))
+
+        except Exception as e: 
+            log.critical('Erro initWatchDog: {}'.format(e))
+        else:
+            log.debug('WatchDog carregado. PID: {:d}'.format(getProcessId('wd.exe')))
+    else:
+        log.debug('WatchDog rodando. Pid: {:d}'.format(pid))
+
+
+def stopWatchDog():
+    log.debug('Encerrando Watchdog')
+
+    if sys.platform == 'linux':    
+        namePid = 'wd' 
+    else:
+        namePid = 'wd.exe' 
+
+    pid = getProcessId(namePid) 
+    while pid != 0:
+        try:
+            log.debug('kill name: {}'.format(namePid))
+
+            if OS_PLATFORM == 'linux':
+                os.kill(pid, 9)
+            else:
+                os.system("taskkill /f /im " + namePid)
+
+        except Exception as e:
+            log.error('Erro matando processo: {:d}'.format(pid))
+            log.error('Error: {}'.format(e))
+            killProcessId(namePid)
+        else:
+            log.debug('WatchDog encerrado. PId: {:d}'.format(pid))
+
+        pid = getProcessId(namePid) 
+
+
+def checkInternetAccess():
+
+    conn = httplib.HTTPConnection("www.google.com", timeout=5)
+    try:
+        log.info('Checando conexao...')
+        conn.request("HEAD", "/")
+        conn.close()
+        return True
+    except:
+        log.info('Falha na conexao')
+        conn.close()
+        return False
+
 
 def camSource(source = 'webcam'):
     status = True
@@ -130,6 +234,7 @@ def getDiskUsageFree():
     total, used, free = shutil.disk_usage("/")
     return int((free / total)*100)
 
+
 def isDiskFull(diskMinUsage):
     
     isFull = False 
@@ -140,7 +245,6 @@ def isDiskFull(diskMinUsage):
         isFull = True 
 
     return isFull
-
 
 
 def freeDiskSpace(dirVideo):
@@ -290,6 +394,7 @@ def getDate():
     
     return data
 
+
 def createDirectory(dirVideos):
 
     date = getDate()
@@ -320,6 +425,7 @@ def createDirectory(dirVideos):
     dir_temp = current_dir + month_dir + today_dir
 
     return status, dir_temp
+
 
 class StatusConfig:
 
@@ -858,6 +964,7 @@ class StatusConfig:
 
         log.info('Salvando arquivo de configuração: {}/{}'.format(os.getcwd(), fileName))
         #json.dump(self.dataLogin, open(file,'w'), indent=4)
+
 
 def playSound():
     pygame.init()
