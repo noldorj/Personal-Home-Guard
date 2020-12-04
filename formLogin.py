@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_formLogin(object):
     def setupUi(self, formLogin):
         formLogin.setObjectName("formLogin")
-        formLogin.setWindowModality(QtCore.Qt.NonModal)
+        formLogin.setWindowModality(QtCore.Qt.ApplicationModal)
         formLogin.resize(594, 307)
         formLogin.setFocusPolicy(QtCore.Qt.NoFocus)
         formLogin.setContextMenuPolicy(QtCore.Qt.NoContextMenu)

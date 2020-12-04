@@ -3,7 +3,7 @@
  <class>formConfig</class>
  <widget class="QWidget" name="formConfig">
   <property name="windowModality">
-   <enum>Qt::WindowModal</enum>
+   <enum>Qt::NonModal</enum>
   </property>
   <property name="geometry">
    <rect>
@@ -61,6 +61,9 @@
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <property name="mouseTracking">
+         <bool>true</bool>
         </property>
         <property name="frameShape">
          <enum>QFrame::Box</enum>

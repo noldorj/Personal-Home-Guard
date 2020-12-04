@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_formConfig(object):
     def setupUi(self, formConfig):
         formConfig.setObjectName("formConfig")
-        formConfig.setWindowModality(QtCore.Qt.WindowModal)
+        formConfig.setWindowModality(QtCore.Qt.NonModal)
         formConfig.resize(1168, 880)
         formConfig.setFocusPolicy(QtCore.Qt.TabFocus)
         self.tabConfig = QtWidgets.QTabWidget(formConfig)
@@ -33,6 +33,7 @@ class Ui_formConfig(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.lblCam1.sizePolicy().hasHeightForWidth())
         self.lblCam1.setSizePolicy(sizePolicy)
+        self.lblCam1.setMouseTracking(True)
         self.lblCam1.setFrameShape(QtWidgets.QFrame.Box)
         self.lblCam1.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.lblCam1.setMidLineWidth(0)

@@ -8,6 +8,8 @@ from formLogin import *
 import logging as log
 import secrets
 import psutil
+from inferenceCore import *
+
 from checkLicence.sendingData import checkLoginPv 
 from checkLicence.sendingData import changePasswdPv 
 from checkLicence.sendingData import checkSessionPv
@@ -70,7 +72,7 @@ class FormLogin(QWidget):
         print('isLogged')
         return self.logged    
 
-    def checkBoxLoginAutoStart(state):
+    def checkBoxLoginAutoStart(self, state):
       
 
         if self.camRunTime.OS_PLATFORM == 'windows':
@@ -98,23 +100,24 @@ class FormLogin(QWidget):
             if not os.path.exists(AUTO_START_PATH + '/' + ATALHO_PATH):              
                 shutil.copy2(ATALHO_PATH, AUTO_START_PATH) # complete target filename given
 
-    def checkBoxLoginAutomatico(state):
+    def checkBoxLoginAutomatico(self, state):
         #global LOGIN_AUTOMATICO, self.statusConfig        
+        print('checkBoxLoginAutomatico')
         
         if state == 0:
             
-            log.info('Login automatico off')
+            print('Login automatico off')
             self.statusConfig.setLoginAutomatico('False')
             self.camRunTime.LOGIN_AUTOMATICO = False
 
 
         elif (state == 1 or state == 2):
             
-            log.info('Login automatico on')
+            print('Login automatico on')
             self.statusConfig.setLoginAutomatico('True')
             self.camRunTime.LOGIN_AUTOMATICO = True 
 
-    def checkBoxSalvarLogin(state):
+    def checkBoxSalvarLogin(self, state):
         #global fernetKey, statusConfig
 
         
@@ -153,7 +156,7 @@ class FormLogin(QWidget):
         self.close()
         #self.windowLogin.close()
 
-    def btnAlterarSenha():
+    def btnAlterarSenha(self):
         #global uiLogin, statusPasswd
 
         log.info("Alterando a senha")
@@ -188,7 +191,7 @@ class FormLogin(QWidget):
             log.info("Erro de conexao com a Internet")
             self.uiLogin.lblStatus.setText("Cheque sua conexão com a Internet por favor e tente mais tarde")
 
-    def btnEsqueciSenha():
+    def btnEsqueciSenha(self):
         #global self.uiLogin, conexao
 
         log.info('btnEsqueciSenha:: Checando conexão com a Internet')
@@ -293,6 +296,6 @@ class FormLogin(QWidget):
         #self.camRunTime.statusLicence = False
         #self.camRunTime.init_video = False
         utils.stopWatchDog()
-        event.accept()            
+        #event.accept()            
         log.info('close formLogin')
 

@@ -25,6 +25,7 @@ from utilsCore import checkInternetAccess
 from matplotlib.path import Path
 from PyQt5.QtCore import QThread
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
+from checkLicence.sendingData import checkSessionPv
 #import tensorflow as tf
 
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', encoding='utf-8')
@@ -79,7 +80,9 @@ def callbackButtonResumeSound(self, ret):
 class InferenceCore(QThread):
 
     change_pixmap_signal = pyqtSignal(np.ndarray)
+    updateStorageInfo = pyqtSignal()
     camRunTime = None
+    #isDiskFull = False
 
     def __init__(self):
         super().__init__()
@@ -97,6 +100,12 @@ class InferenceCore(QThread):
         path = Path(ref_point_polygon)
         mask = path.contains_points([(centroid[0], centroid[1])])
         return mask
+
+    def setPointSelection(self, x, y):
+        print('setPointSelection')
+        
+        self.camRunTime.ref_point_polygon.append([x, y])
+        #self.camRunTime.cropPolygon = True
 
 
     def polygonSelection(self, event, x, y, flags, param): 
@@ -121,18 +130,17 @@ class InferenceCore(QThread):
         
         if self.camRunTime.isOpenVino:
 
-            print('initOpenVino')
-            print('initOpenVino2')
+            print('initOpenVino')            
         
             self.camRunTime.ret, self.camRunTime.frame = self.camRunTime.ipCam.read()
             self.camRunTime.ret, self.camRunTime.next_frame = self.camRunTime.ipCam.read()
             
-            #frame = cv.resize(frame, (RES_X, RES_Y)) 
-            
-            #next_frame = cv.resize(next_frame, (RES_X, RES_Y)) 
+            if self.camRunTime.frame is not None:
+                self.camRunTime.frame = cv.resize(self.camRunTime.frame, (self.camRunTime.RES_X, self.camRunTime.RES_Y))             
+                self.camRunTime.next_frame = cv.resize(self.camRunTime.next_frame, (self.camRunTime.RES_X, self.camRunTime.RES_Y)) 
         
             cvNet = None
-            print('try initOpenVino')
+            #print('try initOpenVino')
             try:
                 self.camRunTime.nchw, self.camRunTime.exec_net, self.camRunTime.input_blob, self.camRunTime.out_blob = \
                     pOpenVino.initOpenVino(self.camRunTime.device, self.camRunTime.openVinoModelXml, \
@@ -163,7 +171,7 @@ class InferenceCore(QThread):
         
         self.camRunTime.conectado, self.camRunTime.frame = self.camRunTime.ipCam.read()
         if self.camRunTime.frame is not None:
-            #frame = cv.resize(frame, (RES_X, RES_Y)) 
+            self.camRunTime.frameframe = cv.resize(self.camRunTime.frame, (self.camRunTime.RES_X, self.camRunTime.RES_Y)) 
             (self.camRunTime.h, self.camRunTime.w) = self.camRunTime.frame.shape[:2]
 
 
@@ -196,6 +204,7 @@ class InferenceCore(QThread):
 
         #while True:        
         while self.camRunTime.init_video and self.camRunTime.sessionStatus and self.camRunTime.rtspStatus :
+            #print('...')            
 
             #if counter == 0:
             #    startFps = time.time()
@@ -205,12 +214,13 @@ class InferenceCore(QThread):
             
 
             self.camRunTime.conectado, self.camRunTime.frame = self.camRunTime.ipCam.read()
-            #if frame is not None:
-            #    frame = cv.resize(frame, (RES_X, RES_Y)) 
             
+            if self.camRunTime.frame is not None:
+                self.camRunTime.frame = cv.resize(self.camRunTime.frame, (self.camRunTime.RES_X, self.camRunTime.RES_Y)) 
+                        
 
-            if (self.camRunTime.frame is not None and self.camRunTime.next_frame is not None):
-            #if (self.camRunTime.conectado and self.camRunTime.frame is not None and self.camRunTime.next_frame is not None):
+            #if (self.camRunTime.frame is not None and self.camRunTime.next_frame is not None):
+            if (self.camRunTime.conectado and self.camRunTime.frame is not None and self.camRunTime.next_frame is not None):
 
                 frame_no_label = self.camRunTime.frame.copy()
                 frame_screen = self.camRunTime.frame.copy()
@@ -235,17 +245,19 @@ class InferenceCore(QThread):
 
                 if self.camRunTime.cropPolygon:
                     #log.info('if cropPolygon')
-                    pts = np.array(ref_point_polygon, np.int32)
+                    pts = np.array(self.camRunTime.ref_point_polygon, np.int32)
                     pts = pts.reshape((-1,1,2))
                     cv.polylines(frame_screen,[pts],True,(0,0,255), 2)
 
 
-                #passando o Frame selecionado do portao para deteccao somente se o portao virtual estiver selecionado
+                #passando o Frame selecionado do portao para deteccao somente se o portao virtual estiver selecionado                
                 if self.camRunTime.portaoVirtualSelecionado and (self.camRunTime.STOP_ALL == False):
+                    #print('iniciando detecção')
 
                     #se eh openVino e este foi inicializado corretamente 
-                    if self.camRunTime.isOpenVino and self.camRunTime.initOpenVinoStatus:
                     ### ---------------  OpenVino Get Objects ----------------- ###
+                    if self.camRunTime.isOpenVino and self.camRunTime.initOpenVinoStatus:
+                    
 
                         self.camRunTime.ret, listReturn  = pOpenVino.getListBoxDetected(self.camRunTime.ipCam, self.camRunTime.device, self.camRunTime.frame,
                                            self.camRunTime.next_frame, self.camRunTime.nchw, self.camRunTime.exec_net, self.camRunTime.out_blob,
@@ -278,7 +290,9 @@ class InferenceCore(QThread):
                         self.camRunTime.releaseVideoOnAlarmes = True
 
                 #se tem objetos detectados pela CNN
+                
                 else:
+                    print('objetos detectados via openvino')
 
                     #objectsTracking = ct.update(listObjectsTracking)
 
@@ -498,13 +512,17 @@ class InferenceCore(QThread):
 
                 self.camRunTime.tEmptyEnd = time.time()
                 self.camRunTime.tEmpty = self.camRunTime.tEmptyEnd - self.camRunTime.tEmptyStart
-                #print('tEmpty end loop {}'.format(tEmpty))
+                #print('tEmpty end loop {}'.format(self.camRunTime.tEmpty))
 
                 self.camRunTime.timeGravandoAll = time.time() - self.camRunTime.timeGravandoAllInit
                 
-                if not utils.isDiskFull(self.camRunTime.diskMinUsage):
-
-                    if self.camRunTime.spaceMaxDirVideosOnAlarme == 0 or ( self.camRunTime.spaceMaxDirVideosOnAlarme >= utils.getDirUsedSpace(self.camRunTime.statusConfig.data["dirVideosOnAlarmes"]) ):
+                #print('checando se o disco está cheio')
+                #self.updateStorageInfo.emit()
+                if not self.camRunTime.isDiskFull:
+                # if not utils.isDiskFull(self.camRunTime.diskMinUsage):                    
+                    # print('disco ok')
+                    
+                    if self.camRunTime.spaceMaxDirVideosOnAlarme == 0 or ( self.camRunTime.spaceMaxDirVideosOnAlarme >= self.camRunTime.dirVideosOnAlarmesUsedSpace ):
 
                         if self.camRunTime.newVideo and self.camRunTime.gravandoOnAlarmes and (self.camRunTime.STOP_ALL == False):
                         
@@ -520,7 +538,7 @@ class InferenceCore(QThread):
                             #if out_video is not None:
                             #h = nchw[2]
                             #w = nchw[3]
-                            self.camRunTime.out_video = cv.VideoWriter(nameVideo, fourcc, FPS, (w,h))
+                            self.camRunTime.out_video = cv.VideoWriter(nameVideo, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h))
                             self.camRunTime.out_video.write(frame_no_label)
                             self.camRunTime.newVideo = False
 
@@ -537,7 +555,7 @@ class InferenceCore(QThread):
                             
                             data = utils.getDate()
                             data_email_sent = data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year']
-                            log.critical('Espaço maximo na pasta {} atingido'.format(statusConfig.data["dirVideosOnAlarmes"]))
+                            log.critical('Espaço maximo na pasta {} atingido'.format(self.camRunTime.statusConfig.data["dirVideosOnAlarmes"]))
                             threadEmail = Thread(target=sendMail, args=(
 
                                 'Portao Virtual - Falta de espaço  na pasta "Alarmes"',
@@ -548,21 +566,21 @@ class InferenceCore(QThread):
                                 Espaço utilizado "Video Alarmes" : {:3.2f} GB \n \
                                 Espaço utilizado "Video 24hs"    : {:3.2f} GB \n \
                                 Número de dias estimados para gravação: {:3d} \n \
-                                '.format(statusConfig.data["dirVideosOnAlarmes"], 
+                                '.format(self.camRunTime.statusConfig.data["dirVideosOnAlarmes"], 
                                     data_email_sent,
-                                    utils.getDiskUsageFree(), 
-                                    utils.getDiskUsageFreeGb(),
-                                    utils.getDirUsedSpace(statusConfig.data['dirVideosOnAlarmes']),
-                                    utils.getDirUsedSpace(statusConfig.data['dirVideosAllTime']), 
-                                    utils.getNumDaysRecording()
+                                    self.camRunTime.diskUsageFree(), 
+                                    self.camRunTime.diskUsageFreeGb(),
+                                    self.camRunTime.dirVideosOnAlarmesUsedSpace,
+                                    self.camRunTime.dirVideosAllTimeUsedSpace, 
+                                    self.camRunTime.numDaysRecording
                                     )) )
                             
                             threadEmail.start()
-                            emailSentFullVideosOnAlarmes = True
+                            self.camRunTime.emailSentFullVideosOnAlarmes = True
                             #avisar por email 1x a cada X tempo ? 
 
 
-                    if self.camRunTime.spaceMaxDirVideosAllTime == 0 or ( self.camRunTime.spaceMaxDirVideosAllTime >= utils.getDirUsedSpace(self.camRunTime.statusConfig.data["dirVideosAllTime"]) ):
+                    if self.camRunTime.spaceMaxDirVideosAllTime == 0 or ( self.camRunTime.spaceMaxDirVideosAllTime >= self.camRunTime.dirVideosAllTimeUsedSpace ):
                     
                         if self.camRunTime.gravandoAllTime and (self.camRunTime.STOP_ALL == False):
                             if self.camRunTime.out_video_all_time is not None:
@@ -592,7 +610,7 @@ class InferenceCore(QThread):
                     else:
                         
                         if not self.camRunTime.emailSentFullVideosAllTime:  
-                            log.critical('Espaço maximo na pasta {} atingido'.format(statusConfig.data["dirVideosAllTime"]))
+                            log.critical('Espaço maximo na pasta {} atingido'.format(self.statusConfig.data["dirVideosAllTime"]))
 
                             data = utils.getDate()
                             data_email_sent = data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year']
@@ -677,24 +695,31 @@ class InferenceCore(QThread):
                     elif self.camRunTime.stopSaveNewVideos:
                         self.camRunTime.gravandoAllTime = False
                         self.camRunTime.gravandoOnAlarmes = False
-
-
+                
+                #end else disco cheio    
+            
                 #cv.imshow('frame', frame_screen)
                 self.change_pixmap_signal.emit(frame_screen)
+                #print('emit')
 
                 self.camRunTime.end = time.time()
 
-                self.camRunTime.renderTime = (self.camRunTime.end-self.camRunTime.start)*1000
-                self.camRunTime.FPS = 1000/self.camRunTime.renderTime
+                
+                self.camRunTime.renderTime = (self.camRunTime.end - self.camRunTime.start)*1000
+                if (self.camRunTime.renderTime != 0):
+                    self.camRunTime.FPS = 1000/self.camRunTime.renderTime
+                
                 #print('render time: {:10.2f} ms'.format(renderTime))
-                #print('FPS: {:10.2f} ms'.format(FPS))
+                print('FPS: {:10.2f} FPS'.format(self.camRunTime.FPS))
 
                 self.camRunTime.timeSessionEnd = time.time() 
                 self.camRunTime.timeSession = self.camRunTime.timeSessionEnd - self.camRunTime.timeSessionInit
                 
                 #log.info('timeSession: {}'.format(timeSession))
 
+                #print('ANTES testando sessao')
                 if self.camRunTime.timeSession >= self.camRunTime.CHECK_SESSION:
+                    print('timeSession > CHECK_SESSION')
 
                     session = {self.camRunTime.login['user'], self.camRunTime.login['token']}
 
@@ -703,6 +728,7 @@ class InferenceCore(QThread):
                     if conexao: 
 
                         log.debug('Conexao com a Internet estabelecida')
+                        print('Conexao com a Internet estabelecida')
                         self.camRunTime.STOP_ALL = False
 
                         while (len(self.camRunTime.pilhaAlertasNaoEnviados) > 0) and (self.camRunTime.STOP_ALL == False):  
@@ -721,15 +747,19 @@ class InferenceCore(QThread):
                             alertaEmail[8]))
                             
                             threadEmail.start()
+                            print('Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
                             log.debug('Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
 
                             #listObjectMailAlerted.append(alertaEmail[9])
 
                         #ativar funcoes                        
-                        self.camRunTime.sessionStatus, self.camRunTime.error = checkSessionPv(self.camRunTime.login)
+                        #self.camRunTime.sessionStatus, self.camRunTime.error = checkSessionPv(self.camRunTime.login)
+                        self.camRunTime.sessionStatus, self.camRunTime.error = checkSessionPv(session)
                         self.camRunTime.timeInternetOffStart = time.time() 
+                        self.updateStorageInfo.emit()
 
                         if self.camRunTime.error == 'servidorOut':
+                            print('Servidor não respondendo. Ignorando checkSession')
                             log.critical('Servidor não respondendo. Ignorando checkSession')
                             self.camRunTime.sessionStatus = True
                        
@@ -745,7 +775,7 @@ class InferenceCore(QThread):
                        
                         if (time.time() - self.camRunTime.timeInternetOffStart) >= self.camRunTime.INTERNET_OFF: 
                             
-                            STOP_ALL = True 
+                            self.camRunTime.STOP_ALL = True 
                             #release dos videos
                             if self.camRunTime.out_video is not None:
                                self.camRunTime.out_video.release()
@@ -777,9 +807,9 @@ class InferenceCore(QThread):
                 #listObjectsTracking.clear()
 
                 #chamando callbackButtonRegioes  
-                if cv.waitKey(1) & 0xFF == ord('c'):
-                    self.camRunTime.pausaConfig = True
-                    callbackButtonRegioes(None, ret)
+                #if cv.waitKey(1) & 0xFF == ord('c'):
+                #    self.camRunTime.pausaConfig = True
+                #    callbackButtonRegioes(None, ret)
                 
                 if cv.waitKey(1) & 0xFF == ord('q'):
                     utils.stopWatchDog()
@@ -788,15 +818,16 @@ class InferenceCore(QThread):
             else:
                 if not self.camRunTime.conectado:
                     log.warning('Reconectando em 5 segundos...')
+                    print('Reconectando em 5 segundos...')
                     #init_video = False
                     time.sleep(5)
-                    self.camRunTime.ipCam, self.camRunTime.error = utils.camSource(source)
-                    self.camRunTime.ipCam.set(3, RES_X)
-                    self.camRunTime.ipCam.set(4, RES_Y)
+                    self.camRunTime.ipCam, self.camRunTime.error = utils.camSource(self.camRunTime.source)
+                    self.camRunTime.ipCam.set(3, self.camRunTime.RES_X)
+                    self.camRunTime.ipCam.set(4, self.camRunTime.RES_Y)
                     #ipCam = utils.camSource(source)
                 else:
                     log.warning('Reconectando em 5 segundos...')
-                    self.camRunTime.initOpenVino() 
+                    self.initOpenVino() 
                     time.sleep(5)
 
     def stop(self):
@@ -810,9 +841,9 @@ class InferenceCore(QThread):
             self.camRunTime.out_video_all_time.release()
 
 
-        if ipCam and cv is not None:
+        if self.camRunTime.ipCam and cv is not None:
             log.info('ipCam release and cv.destroyAllWindows') 
-            ipCam.release()
+            self.camRunTime.ipCam.release()
             cv.destroyAllWindows()
 
         self._run_flag = False
