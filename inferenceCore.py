@@ -81,6 +81,7 @@ class InferenceCore(QThread):
 
     change_pixmap_signal = pyqtSignal(np.ndarray)
     updateStorageInfo = pyqtSignal()
+    storageFull = pyqtSignal()
     camRunTime = None
     #isDiskFull = False
 
@@ -159,6 +160,8 @@ class InferenceCore(QThread):
                 self.camRunTime.init_video = False
             else:
                 print('Openvino carregado')
+                self.camRunTime.initOpenVinoStatus = True
+                self.camRunTime.init_video = True
                 log.info(' ')
                 self.camRunTime.cur_request_id = 0
                 self.camRunTime.next_request_id = 1
@@ -200,7 +203,7 @@ class InferenceCore(QThread):
         #cap.release() 
         print('InferenceCore run()')
         self.initOpenVino()
-        print('init_video: ' + str(self.camRunTime.init_video))
+        #print('init_video: ' + str(self.camRunTime.init_video))
 
         #while True:        
         while self.camRunTime.init_video and self.camRunTime.sessionStatus and self.camRunTime.rtspStatus :
@@ -232,10 +235,10 @@ class InferenceCore(QThread):
                 self.camRunTime.currentData = [self.camRunTime.currentData.get('day'), self.camRunTime.currentData.get('month')]
 
                 if self.camRunTime.current_data_dir != self.camRunTime.currentData:
-                    self.camRunTime.status_dir_criado_on_alarmes, self.camRunTime.dir_video_trigger_on_alarmes = utils.createDirectory(statusConfig.data["dirVideosOnAlarmes"])
-                    status_dir_criado_all_time, dir_video_trigger_all_time = utils.createDirectory(statusConfig.data["dirVideosAllTime"])
-                    current_data_dir = utils.getDate()
-                    current_data_dir = [current_data_dir.get('day'), current_data_dir.get('month')]
+                    self.camRunTime.status_dir_criado_on_alarmes, self.camRunTime.dir_video_trigger_on_alarmes = utils.createDirectory(self.camRunTime.statusConfig.data["dirVideosOnAlarmes"])
+                    self.camRunTime.status_dir_criado_all_time, self.camRunTime.dir_video_trigger_all_time = utils.createDirectory(self.camRunTime.statusConfig.data["dirVideosAllTime"])
+                    self.camRunTime.current_data_dir = utils.getDate()
+                    self.camRunTime.current_data_dir = [self.camRunTime.current_data_dir.get('day'), self.camRunTime.current_data_dir.get('month')]
 
                 #desenhando regioes
                 for r in self.camRunTime.regions:
@@ -259,12 +262,14 @@ class InferenceCore(QThread):
                     if self.camRunTime.isOpenVino and self.camRunTime.initOpenVinoStatus:
                     
 
+                        #print('pOpenVino.getListBoxDetected')
                         self.camRunTime.ret, listReturn  = pOpenVino.getListBoxDetected(self.camRunTime.ipCam, self.camRunTime.device, self.camRunTime.frame,
                                            self.camRunTime.next_frame, self.camRunTime.nchw, self.camRunTime.exec_net, self.camRunTime.out_blob,
                                            self.camRunTime.input_blob, self.camRunTime.cur_request_id, self.camRunTime.next_request_id, 
                                            self.camRunTime.prob_threshold, self.camRunTime.RES_X, self.camRunTime.RES_Y)
 
                         if self.camRunTime.ret:
+                            #print('self.camRunTime.ret')
                             self.camRunTime.frame = self.camRunTime.next_frame
                             self.camRunTime.frame, self.camRunTime.next_frame, self.camRunTime.cur_request_id,
                             self.camRunTime.next_request_id, self.camRunTime.listObjects, self.camRunTime.listObjectsTracking,
@@ -275,6 +280,7 @@ class InferenceCore(QThread):
                     else:
                         #chamada para a CNN do OpenCV - TensorFlow Object Detection API 
                         log.info("CNN via TF Object Detection API")
+                        print("CNN via TF Object Detection API")
                         self.camRunTime.listObjects, self.camRunTime.listObjectTradking  = objectDetection(frame, idObjeto, listRectanglesDetected, detection, rows, cols)
 
 
@@ -292,7 +298,7 @@ class InferenceCore(QThread):
                 #se tem objetos detectados pela CNN
                 
                 else:
-                    print('objetos detectados via openvino')
+                    #print('objetos detectados via openvino')
 
                     #objectsTracking = ct.update(listObjectsTracking)
 
@@ -467,6 +473,11 @@ class InferenceCore(QThread):
                                             minute = int(d['minute'])
                                             hour = int(d['hourOnly'])
 
+
+
+
+
+
                                             currentMinutes = (hour * 60) + minute
                                             
                                             log.info('Enviando alerta por email')
@@ -533,12 +544,12 @@ class InferenceCore(QThread):
 
                             #grava video novo se tiver um objeto novo na cena
                             hora = utils.getDate()['hour'].replace(':','-')
-                            nameVideo = self.camRunTime.dir_video_trigger_on_alarmes + '/' + hora + '.avi'
+                            self.camRunTime.nameVideo = self.camRunTime.dir_video_trigger_on_alarmes + '/' + hora + '.avi'
                             
                             #if out_video is not None:
                             #h = nchw[2]
                             #w = nchw[3]
-                            self.camRunTime.out_video = cv.VideoWriter(nameVideo, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h))
+                            self.camRunTime.out_video = cv.VideoWriter(self.camRunTime.nameVideo, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h))
                             self.camRunTime.out_video.write(frame_no_label)
                             self.camRunTime.newVideo = False
 
@@ -546,11 +557,13 @@ class InferenceCore(QThread):
                         #if gravando:
                         if self.camRunTime.gravandoOnAlarmes and (self.camRunTime.STOP_ALL == False):
                             if self.camRunTime.out_video is not None:
+                                print('gravandoOnAlarmes')
                                 self.camRunTime.out_video.write(frame_no_label)
 
-                    #espaço maximo na pasta VideosOnAlarmes atingido 
+                    #espaço maximo na pasta VideosOnAlarmes atingido                     
                     else:
                         #avisar por email 1x a cada X tempo ? 
+                        print('#espaço maximo na pasta VideosOnAlarmes atingido')
                         if not self.camRunTime.emailSentFullVideosOnAlarmes:  
                             
                             data = utils.getDate()
@@ -584,6 +597,7 @@ class InferenceCore(QThread):
                     
                         if self.camRunTime.gravandoAllTime and (self.camRunTime.STOP_ALL == False):
                             if self.camRunTime.out_video_all_time is not None:
+                                print('gravandoAllTime')
                                 self.camRunTime.out_video_all_time.write(frame_no_label)
                         
                         
@@ -596,12 +610,12 @@ class InferenceCore(QThread):
                             #if out_video_all_time is not None:
                             
                             hora = utils.getDate()['hour'].replace(':','-')
-                            self.camRunTime.nameVideoAllTime = dir_video_trigger_all_time + '/' + hora + '.avi'
+                            self.camRunTime.nameVideoAllTime = self.camRunTime.dir_video_trigger_all_time + '/' + hora + '.avi'
                             
                             #if out_video_all_time is not None:
                             #h = nchw[2]
                             #w = nchw[3]
-                            self.camRunTime.out_video_all_time = cv.VideoWriter(nameVideoAllTime, fourcc, FPS, (w,h))
+                            self.camRunTime.out_video_all_time = cv.VideoWriter(self.camRunTime.nameVideoAllTime, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h))
                             self.camRunTime.out_video_all_time.write(frame_no_label)
 
                             self.camRunTime.timeGravandoAllInit = time.time()
@@ -610,7 +624,7 @@ class InferenceCore(QThread):
                     else:
                         
                         if not self.camRunTime.emailSentFullVideosAllTime:  
-                            log.critical('Espaço maximo na pasta {} atingido'.format(self.statusConfig.data["dirVideosAllTime"]))
+                            log.critical('Espaço maximo na pasta {} atingido'.format(self.camRunTime.statusConfig.data["dirVideosAllTime"]))
 
                             data = utils.getDate()
                             data_email_sent = data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year']
@@ -624,12 +638,12 @@ class InferenceCore(QThread):
                                 Espaço utilizado "Video Alarmes" : {:3.2f}GB \n \
                                 Espaço utilizado "Video 24hs"    : {:3.2f}GB \n \
                                 Número de dias estimados para gravação: {:3d} \n \
-                                '.format(statusConfig.data["dirVideosAllTime"], 
+                                '.format(self.camRunTime.statusConfig.data["dirVideosAllTime"], 
                                     data_email_sent,
                                     utils.getDiskUsageFree(), 
                                     utils.getDiskUsageFreeGb(),
-                                    utils.getDirUsedSpace(statusConfig.data['dirVideosOnAlarmes']),
-                                    utils.getDirUsedSpace(statusConfig.data['dirVideosAllTime']), 
+                                    utils.getDirUsedSpace(self.camRunTime.statusConfig.data['dirVideosOnAlarmes']),
+                                    utils.getDirUsedSpace(self.camRunTime.statusConfig.data['dirVideosAllTime']), 
                                     utils.getNumDaysRecording()
                                     )) )
 
@@ -640,59 +654,62 @@ class InferenceCore(QThread):
                 #disco cheio 
                 else:
 
-                    if not self.camRunTime.emailSentDiskFull:  
-                        if self.camRunTime.eraseOldestFiles:
-                            textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a deletar \
-                                    os videos mais antigos, recomendamos que aumente seu espaço em disco \
-                                    para não perder as gravações realizadas.'
+                    print('disco cheio')
+                    self.storageFull.emit()
+                    
+                    # if not self.camRunTime.emailSentDiskFull:  
+                        # if self.camRunTime.eraseOldestFiles:
+                            # textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a deletar \
+                                    # os videos mais antigos, recomendamos que aumente seu espaço em disco \
+                                    # para não perder as gravações realizadas.'
 
-                            threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
-                            threadEmailDiskFull.start()
-                            emailSentDiskFull = True
-                            log.info('Email de disco cheio enviado - apagando videos antigos ')
-                            #avisar por email 1x a cada X tempo ? 
-                        else:
-                            textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a não \
-                                    gravar videos novos, recomendamos que aumente seu espaço em disco \
-                                    para poder novos videos quando ocorrer futuros alarmes.'
+                            # threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
+                            # threadEmailDiskFull.start()
+                            # self.camRunTime.emailSentDiskFull = True
+                            # log.info('Email de disco cheio enviado - apagando videos antigos ')
+                            # #avisar por email 1x a cada X tempo ? 
+                        # else:
+                            # textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a não \
+                                    # gravar videos novos, recomendamos que aumente seu espaço em disco \
+                                    # para poder novos videos quando ocorrer futuros alarmes.'
 
-                            threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
-                            threadEmailDiskFull.start()
-                            emailSentDiskFull = True
-                            log.info('Email de disco cheio enviado - interromper novos videos')
+                            # threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
+                            # threadEmailDiskFull.start()
+                            # self.camRunTime.emailSentDiskFull = True
+                            # log.info('Email de disco cheio enviado - interromper novos videos')
 
 
-                    # realmente apaga os videos mais antigos ? 
-                    if self.camRunTime.eraseOldestFiles:
+                    # # realmente apaga os videos mais antigos ? 
+                    # if self.camRunTime.eraseOldestFiles:
 
-                        if utils.freeDiskSpace(statusConfig.getDirVideosAllTime()) == False:
-                            
-                            log.critical('Diretorios de "Videos 24hs" já está vazio')
-                            if not emailSentdirVideosAllTimeEmpty:
-                                textEmail = 'Mesmo apagando a pasta "Videos 24hs", seu HD continua cheio ! \n\n \ Nossa sugestão é que você libere mais espaço para pode gravar os "Videos 24hs"' 
+                        # if utils.freeDiskSpace(self.camRunTime.statusConfig.getDirVideosAllTime()) == False:
+                        
+                            # log.critical('Diretorios de "Videos 24hs" já está vazio')
+                            # if not emailSentdirVideosAllTimeEmpty:
+                                # textEmail = 'Mesmo apagando a pasta "Videos 24hs", seu HD continua cheio ! \n\n \ Nossa sugestão é que você libere mais espaço para pode gravar os "Videos 24hs"' 
 
-                                threadEmailAllEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos 24hs" apagada - seu HD está cheio !',textEmail))
-                                threadEmailAllEmpty.start()
-                                emailSentdirVideosAllTimeEmpty = True
+                                # threadEmailAllEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos 24hs" apagada - seu HD está cheio !',textEmail))
+                                # threadEmailAllEmpty.start()
+                                # emailSentdirVideosAllTimeEmpty = True
 
                     
-                        #se ainda não tiver sido suficiente
-                        if utils.isDiskFull(diskMinUsage):
-                            log.info('Apagando diretórios de Alarmes')
-                            #log.info('Dir: {}'.format(statusConfig.getDirVideosOnAlarmes()))
-                            if utils.freeDiskSpace(statusConfig.getDirVideosOnAlarmes()) == False:
-                                log.critical('Diretorios de "Vidos Alarme" já está vazio')
+                        # #se ainda não tiver sido suficiente
+                        # if utils.isDiskFull(diskMinUsage):
+                            # log.info('Apagando diretórios de Alarmes')
+                            # #log.info('Dir: {}'.format(statusConfig.getDirVideosOnAlarmes()))
+                            # if utils.freeDiskSpace(statusConfig.getDirVideosOnAlarmes()) == False:
+                                # log.critical('Diretorios de "Vidos Alarme" já está vazio')
 
-                                if not emailSentdirVideosOnAlarmesEmpty:
-                                    textEmail = 'Mesmo apagando a pasta "Videos Alarme", seu HD continua cheio ! \n\n  \
-                                             Nossa sugestão é que você libere mais espaço para pode gravar os "Videos Alarme"' 
+                                # if not emailSentdirVideosOnAlarmesEmpty:
+                                    # textEmail = 'Mesmo apagando a pasta "Videos Alarme", seu HD continua cheio ! \n\n  \
+                                             # Nossa sugestão é que você libere mais espaço para pode gravar os "Videos Alarme"' 
                                             
-                                    threadEmailAlarmesEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos Alarmes" apagada - seu HD está cheio !',textEmail))
-                                    threadEmailAlarmesEmpty.start()
-                                    self.camRunTime.emailSentdirVideosOnAlarmesEmpty = True
+                                    # threadEmailAlarmesEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos Alarmes" apagada - seu HD está cheio !',textEmail))
+                                    # threadEmailAlarmesEmpty.start()
+                                    # self.camRunTime.emailSentdirVideosOnAlarmesEmpty = True
 
                     # ou então parar de gravar novos videos
-                    elif self.camRunTime.stopSaveNewVideos:
+                    if self.camRunTime.stopSaveNewVideos:
                         self.camRunTime.gravandoAllTime = False
                         self.camRunTime.gravandoOnAlarmes = False
                 
@@ -710,7 +727,7 @@ class InferenceCore(QThread):
                     self.camRunTime.FPS = 1000/self.camRunTime.renderTime
                 
                 #print('render time: {:10.2f} ms'.format(renderTime))
-                print('FPS: {:10.2f} FPS'.format(self.camRunTime.FPS))
+                #print('FPS: {:10.2f} FPS'.format(self.camRunTime.FPS))
 
                 self.camRunTime.timeSessionEnd = time.time() 
                 self.camRunTime.timeSession = self.camRunTime.timeSessionEnd - self.camRunTime.timeSessionInit
@@ -721,7 +738,7 @@ class InferenceCore(QThread):
                 if self.camRunTime.timeSession >= self.camRunTime.CHECK_SESSION:
                     print('timeSession > CHECK_SESSION')
 
-                    session = {self.camRunTime.login['user'], self.camRunTime.login['token']}
+                    session = {self.camRunTime.login.get('user'), self.camRunTime.login.get('token')}
 
                     conexao = utils.checkInternetAccess()
 
@@ -827,6 +844,7 @@ class InferenceCore(QThread):
                     #ipCam = utils.camSource(source)
                 else:
                     log.warning('Reconectando em 5 segundos...')
+                    print('Reconectando em 5 segundos... Iniciando OpenVino novamente')
                     self.initOpenVino() 
                     time.sleep(5)
 

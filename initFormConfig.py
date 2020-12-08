@@ -13,6 +13,9 @@ from objectTracking.pyimagesearch.centroidtracker import CentroidTracker
 from camRunTime import *
 from utilsCore import StatusConfig
 from inferenceCore import *
+from Utils_tracking import sendMailAlert
+from Utils_tracking import sendMail
+from Utils_tracking import saveImageBox
 
 import time
 import numpy as np
@@ -27,6 +30,26 @@ from collections import deque
 
 log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.DEBUG, stream=sys.stdout)
 
+class MouseTracker(QtCore.QObject):
+    positionChanged = QtCore.pyqtSignal(QtCore.QPoint)
+
+    def __init__(self, widget):
+        super().__init__(widget)
+        self._widget = widget
+        self.widget.setMouseTracking(True)
+        self.widget.installEventFilter(self)
+
+    @property
+    def widget(self):
+        return self._widget
+
+    def eventFilter(self, o, e):
+        #print('eventFilter')
+        if o is self.widget and e.type() == QtCore.QEvent.MouseButtonRelease:
+            self.positionChanged.emit(e.pos())
+        return super().eventFilter(o, e)
+
+
 
 class FormProc(QWidget):
 
@@ -37,7 +60,9 @@ class FormProc(QWidget):
 
     infCam = InferenceCore()
     
-    token = secrets.token_urlsafe(20)
+    
+    
+    label_position = None 
 
     
 
@@ -46,6 +71,7 @@ class FormProc(QWidget):
         self._run_flag = True
         self.uiConfig = Ui_formConfig()
         self.uiConfig.setupUi(self)
+        
 
         self.camRunTime.init()
         self.statusConfig = utils.StatusConfig()
@@ -57,6 +83,16 @@ class FormProc(QWidget):
         
         
         #slots
+        
+        tracker = MouseTracker(self.uiConfig.lblCam1)
+        tracker.positionChanged.connect(self.on_positionChanged)
+        
+        self.label_position = QtWidgets.QLabel(
+            self.uiConfig.lblCam1, alignment=QtCore.Qt.AlignCenter
+        )
+        self.label_position.setStyleSheet('background-color: white; border: 1px solid black')
+        
+        
         self.uiConfig.btnSaveEmail.clicked.connect(self.btnSaveEmail)
         self.uiConfig.btnSaveStorage.clicked.connect(self.btnSaveStorage)
 
@@ -81,6 +117,7 @@ class FormProc(QWidget):
         self.uiConfig.btnNewRegion.clicked.connect(self.btnNewRegion)
         self.uiConfig.btnInitAddRegiao.clicked.connect(self.btnNewRegion)
         self.uiConfig.btnNewAlarm.clicked.connect(self.btnNewAlarm)
+        self.uiConfig.btnInitSair.clicked.connect(self.btnInitSair)
 
         
         
@@ -139,7 +176,9 @@ class FormProc(QWidget):
             self.uiConfig.thread = self.infCam
             # connect its signal to the update_image slot
             self.uiConfig.thread.change_pixmap_signal.connect(self.update_image)
-            self.uiConfig.thread.change_pixmap_signal.connect(self.checkStorage)
+            #self.uiConfig.thread.change_pixmap_signal.connect(self.checkStorage)
+            self.uiConfig.thread.storageFull.connect(self.storageFull)
+            
             # start the thread
             self.uiConfig.thread.start()
             #self.uiConfig.thread.join()
@@ -168,7 +207,19 @@ class FormProc(QWidget):
         #self.statusConfig = statusConfig        
         #windowConfig.show()
     
-       
+    @QtCore.pyqtSlot(QtCore.QPoint)
+    def on_positionChanged(self, pos):
+        delta = QtCore.QPoint(30, -15)                
+        self.label_position.show()
+        self.label_position.move(pos + delta)        
+        self.label_position.setText("(%d, %d)" % (pos.x(), pos.y()))
+        print("(%d, %d)".format((pos.x(), pos.y())))        
+        self.label_position.adjustSize()       
+        
+        if self.camRunTime.cropPolygon == True:
+            self.infCam.setPointSelection(pos.x(), pos.y())
+            
+            
     
     @pyqtSlot(StatusConfig, CamRunTime)
     def updateStatusConfigCamRunTime(self, statusConfig, camRunTime):
@@ -180,7 +231,7 @@ class FormProc(QWidget):
 
     @pyqtSlot(np.ndarray)
     def update_image(self, cv_img):
-        print('update_image')
+        #print('update_image')
         #"""Updates the image_label with a new opencv image"""
         qt_img = self.convert_cv_qt(cv_img)
         self.uiConfig.lblCam1.setPixmap(qt_img)
@@ -189,13 +240,13 @@ class FormProc(QWidget):
     #    print('Mouse coords: ( %d : %d )' % (event.x(), event.y()))
     
     '''Reload the mouse click event (click) '''
-    def mousePressEvent(self, event):
+    # def mousePressEvent(self, event):
     
-        if self.camRunTime.cropPolygon == True:
-            if event.buttons () == QtCore.Qt.LeftButton: # left button pressed
-                self.infCam.setPointSelection(event.x(), event.y())
-                #self.setText ("Click the left mouse button for the event: define it yourself")
-                #Print("Click the left mouse button") # response test statement
+        # if self.camRunTime.cropPolygon == True:
+            # if event.buttons () == QtCore.Qt.LeftButton: # left button pressed
+                # self.infCam.setPointSelection(event.x(), event.y())
+                # #self.setText ("Click the left mouse button for the event: define it yourself")
+                # #Print("Click the left mouse button") # response test statement
     
     
     def convert_cv_qt(self, cv_img):
@@ -221,6 +272,13 @@ class FormProc(QWidget):
         self.uiConfig.thread.stop()
         #event.accept()
 
+    def btnInitSair(self):
+        print('btnInitSair')
+        self._run_flag = False        
+        statusFields = True
+        pausaConfig = False     
+        self.uiConfig.thread.stop()
+    
     def btnDeleteAlarm(self):
         
         self.statusConfig.deleteAlarm(self.uiConfig.comboRegions.currentText(), self.uiConfig.comboAlarms.currentText())
@@ -611,8 +669,8 @@ class FormProc(QWidget):
                 
                 self.camRunTime.listCamAtivas.append(camConfigurada)
 
-                statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)
-                statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
+                self.camRunTime.statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)
+                self.camRunTime.statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
                 
                 self.camRunTime.init() 
                 self.fillTabGeral()
@@ -627,6 +685,11 @@ class FormProc(QWidget):
         self.camRunTime.listCamAtivas.clear()
 
         self.uiConfig.lblStatusProcurarCam.setText('Procurando cameras na rede... aguarde')
+        
+        ## Chamar Thread ##
+        
+        #threadGetListCam = Thread(target=getListCam)                            
+        #threadGetListCam.start()
 
         self.camRunTime.listCamEncontradas, self.listCamAtivas = getListCam()
 
@@ -832,7 +895,11 @@ class FormProc(QWidget):
             for r in self.camRunTime.regions:
                 self.uiConfig.comboRegions.addItem(r.get("nameRegion"))
 
-            r = self.camRunTime.regions[i]
+            if len(self.camRunTime.regions) > 0:
+                r = self.camRunTime.regions[i]
+            else:
+                r = self.camRunTime.regions[0]
+               
             if r is not None:
                 self.uiConfig.txtRegionName.insert(r.get('nameRegion'))
                 self.uiConfig.txtThreshold.insert(str(r.get('prob_threshold')))            
@@ -1001,7 +1068,7 @@ class FormProc(QWidget):
                 email = self.statusConfig.dataLogin['user']
                 passwd = utils.decrypt(self.statusConfig.dataLogin['passwd'])
                 
-                self.camRunTime.login = {'user':utils.encrypt(email), 'passwd':utils.encrypt(passwd), 'token':utils.encrypt(self.token)}
+                self.camRunTime.login = {'user':utils.encrypt(email), 'passwd':utils.encrypt(passwd), 'token':utils.encrypt(self.camRunTime.token)}
                 
                 self.camRunTime.statusLicence, self.camRunTime.error  = checkLoginPv(self.camRunTime.login) 
                 #statusLicence = True ## testando apenas IJF
@@ -1035,8 +1102,63 @@ class FormProc(QWidget):
                 #uiLogin.lblStatus.setText("Cheque sua conexão com a Internet por favor e tente mais tarde")
 
     @pyqtSlot()
+    def storageFull(self):
+        print('storageFull')
+        if not self.camRunTime.emailSentDiskFull:  
+            if self.camRunTime.eraseOldestFiles:
+                textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a deletar \
+                        os videos mais antigos, recomendamos que aumente seu espaço em disco \
+                        para não perder as gravações realizadas.'
+
+                threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
+                threadEmailDiskFull.start()
+                self.camRunTime.emailSentDiskFull = True
+                log.info('Email de disco cheio enviado - apagando videos antigos ')
+                #avisar por email 1x a cada X tempo ? 
+            else:
+                textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a não \
+                        gravar videos novos, recomendamos que aumente seu espaço em disco \
+                        para poder novos videos quando ocorrer futuros alarmes.'
+
+                threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
+                threadEmailDiskFull.start()
+                self.camRunTime.emailSentDiskFull = True
+                log.info('Email de disco cheio enviado - interromper novos videos')
+
+
+            # realmente apaga os videos mais antigos ? 
+            if self.camRunTime.eraseOldestFiles:
+
+                if utils.freeDiskSpace(self.camRunTime.statusConfig.getDirVideosAllTime()) == False:
+                
+                    log.critical('Diretorios de "Videos 24hs" já está vazio')
+                    if not self.camRunTime.emailSentdirVideosAllTimeEmpty:
+                        textEmail = 'Mesmo apagando a pasta "Videos 24hs", seu HD continua cheio ! \n\n \ Nossa sugestão é que você libere mais espaço para pode gravar os "Videos 24hs"' 
+
+                        threadEmailAllEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos 24hs" apagada - seu HD está cheio !',textEmail))
+                        threadEmailAllEmpty.start()
+                        self.camRunTime.emailSentdirVideosAllTimeEmpty = True
+
+            
+                #se ainda não tiver sido suficiente
+                if utils.isDiskFull(self.camRunTime.diskMinUsage):
+                    log.info('Apagando diretórios de Alarmes')
+                    #log.info('Dir: {}'.format(statusConfig.getDirVideosOnAlarmes()))
+                    if utils.freeDiskSpace(statusConfig.getDirVideosOnAlarmes()) == False:
+                        log.critical('Diretorios de "Vidos Alarme" já está vazio')
+
+                        if not self.camRunTime.emailSentdirVideosOnAlarmesEmpty:
+                            textEmail = 'Mesmo apagando a pasta "Videos Alarme", seu HD continua cheio ! \n\n  \
+                                     Nossa sugestão é que você libere mais espaço para pode gravar os "Videos Alarme"' 
+                                    
+                            threadEmailAlarmesEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos Alarmes" apagada - seu HD está cheio !',textEmail))
+                            threadEmailAlarmesEmpty.start()
+                            self.camRunTime.emailSentdirVideosOnAlarmesEmpty = True
+    
+    @pyqtSlot()
     def checkStorage(self):
     
+        print('checkStorage')
         self.camRunTime.dirVideosOnAlarmesUsedSpace = utils.getDirUsedSpace(self.statusConfig.data["dirVideosOnAlarmes"])
         self.camRunTime.isDiskFull = utils.isDiskFull(self.camRunTime.diskMinUsage) 
         self.camRunTime.diskUsageFree = utils.getDiskUsageFree() 

@@ -251,8 +251,8 @@ def freeDiskSpace(dirVideo):
 
      locale.setlocale(locale.LC_ALL, 'en_US.utf-8')
 
- #vai apagando um dia por vez até sobrar espaço
- #se não sobrar espaço, avisar o usuário que o disco está cheio por outros motivos
+     #vai apagando um dia por vez até sobrar espaço
+     #se não sobrar espaço, avisar o usuário que o disco está cheio por outros motivos
      
      statusConfig = StatusConfig()    
      monthList = []

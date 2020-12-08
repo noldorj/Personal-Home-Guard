@@ -33,7 +33,7 @@ def checkLogin(login):
 
 @sio.event
 def checkSession(session):
-    #log.info('Check session de: ' + session['user']) 
+    print('Check session de: ' + session['user']) 
     sio.emit('checkSession', session)
 
 @sio.event

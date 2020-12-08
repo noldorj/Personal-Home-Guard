@@ -209,6 +209,7 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
     ret, next_frame = cap.read()
     if next_frame is None or ret is False:
         log.error("Error capturing next_frame")
+        print("Error capturing next_frame")
 
     else:
 
