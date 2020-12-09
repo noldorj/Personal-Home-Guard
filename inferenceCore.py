@@ -14,7 +14,7 @@ import os
 import subprocess
 import getpass
 import shutil
-from rtsp_discover.rtsp_discover import getListCam
+from rtsp_discover.rtsp_discover import CamFinder
 #import ffmpeg
 from threading import Thread
 from objectDetectionTensorFlow import objectDetection 
@@ -80,7 +80,7 @@ def callbackButtonResumeSound(self, ret):
 class InferenceCore(QThread):
 
     change_pixmap_signal = pyqtSignal(np.ndarray)
-    updateStorageInfo = pyqtSignal()
+    #updateStorageInfo = pyqtSignal()
     storageFull = pyqtSignal()
     camRunTime = None
     #isDiskFull = False
@@ -473,11 +473,6 @@ class InferenceCore(QThread):
                                             minute = int(d['minute'])
                                             hour = int(d['hourOnly'])
 
-
-
-
-
-
                                             currentMinutes = (hour * 60) + minute
                                             
                                             log.info('Enviando alerta por email')
@@ -560,37 +555,37 @@ class InferenceCore(QThread):
                                 print('gravandoOnAlarmes')
                                 self.camRunTime.out_video.write(frame_no_label)
 
-                    #espaço maximo na pasta VideosOnAlarmes atingido                     
-                    else:
-                        #avisar por email 1x a cada X tempo ? 
-                        print('#espaço maximo na pasta VideosOnAlarmes atingido')
-                        if not self.camRunTime.emailSentFullVideosOnAlarmes:  
+                    # #espaço maximo na pasta VideosOnAlarmes atingido                     
+                    # else:
+                        # #avisar por email 1x a cada X tempo ? 
+                        # print('#espaço maximo na pasta VideosOnAlarmes atingido')
+                        # if not self.camRunTime.emailSentFullVideosOnAlarmes:  
                             
-                            data = utils.getDate()
-                            data_email_sent = data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year']
-                            log.critical('Espaço maximo na pasta {} atingido'.format(self.camRunTime.statusConfig.data["dirVideosOnAlarmes"]))
-                            threadEmail = Thread(target=sendMail, args=(
+                            # data = utils.getDate()
+                            # data_email_sent = data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year']
+                            # log.critical('Espaço maximo na pasta {} atingido'.format(self.camRunTime.statusConfig.data["dirVideosOnAlarmes"]))
+                            # threadEmail = Thread(target=sendMail, args=(
 
-                                'Portao Virtual - Falta de espaço  na pasta "Alarmes"',
-                                'Espaço maximo na pasta " {} " atingido. \n\n \
-                                Status do armazenamento - {} \n \
-                                Espaço livre em disco em %       : {:3d}% \n \
-                                Espaço livre em disco em GB      : {:3.2f} GB \n \
-                                Espaço utilizado "Video Alarmes" : {:3.2f} GB \n \
-                                Espaço utilizado "Video 24hs"    : {:3.2f} GB \n \
-                                Número de dias estimados para gravação: {:3d} \n \
-                                '.format(self.camRunTime.statusConfig.data["dirVideosOnAlarmes"], 
-                                    data_email_sent,
-                                    self.camRunTime.diskUsageFree(), 
-                                    self.camRunTime.diskUsageFreeGb(),
-                                    self.camRunTime.dirVideosOnAlarmesUsedSpace,
-                                    self.camRunTime.dirVideosAllTimeUsedSpace, 
-                                    self.camRunTime.numDaysRecording
-                                    )) )
+                                # 'Portao Virtual - Falta de espaço  na pasta "Alarmes"',
+                                # 'Espaço maximo na pasta " {} " atingido. \n\n \
+                                # Status do armazenamento - {} \n \
+                                # Espaço livre em disco em %       : {:3d}% \n \
+                                # Espaço livre em disco em GB      : {:3.2f} GB \n \
+                                # Espaço utilizado "Video Alarmes" : {:3.2f} GB \n \
+                                # Espaço utilizado "Video 24hs"    : {:3.2f} GB \n \
+                                # Número de dias estimados para gravação: {:3d} \n \
+                                # '.format(self.camRunTime.statusConfig.data["dirVideosOnAlarmes"], 
+                                    # data_email_sent,
+                                    # self.camRunTime.diskUsageFree(), 
+                                    # self.camRunTime.diskUsageFreeGb(),
+                                    # self.camRunTime.dirVideosOnAlarmesUsedSpace,
+                                    # self.camRunTime.dirVideosAllTimeUsedSpace, 
+                                    # self.camRunTime.numDaysRecording
+                                    # )) )
                             
-                            threadEmail.start()
-                            self.camRunTime.emailSentFullVideosOnAlarmes = True
-                            #avisar por email 1x a cada X tempo ? 
+                            # threadEmail.start()
+                            # self.camRunTime.emailSentFullVideosOnAlarmes = True
+                            # #avisar por email 1x a cada X tempo ? 
 
 
                     if self.camRunTime.spaceMaxDirVideosAllTime == 0 or ( self.camRunTime.spaceMaxDirVideosAllTime >= self.camRunTime.dirVideosAllTimeUsedSpace ):
@@ -621,41 +616,45 @@ class InferenceCore(QThread):
                             self.camRunTime.timeGravandoAllInit = time.time()
                                 
 
-                    else:
+                    # else:
                         
-                        if not self.camRunTime.emailSentFullVideosAllTime:  
-                            log.critical('Espaço maximo na pasta {} atingido'.format(self.camRunTime.statusConfig.data["dirVideosAllTime"]))
+                        # if not self.camRunTime.emailSentFullVideosAllTime:  
+                            # log.critical('Espaço maximo na pasta {} atingido'.format(self.camRunTime.statusConfig.data["dirVideosAllTime"]))
 
-                            data = utils.getDate()
-                            data_email_sent = data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year']
-                            threadEmail = Thread(target=sendMail, args=(
+                            # data = utils.getDate()
+                            # data_email_sent = data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year']
+                            # threadEmail = Thread(target=sendMail, args=(
 
-                                'Portao Virtual - Falta de espaço  na pasta "Videos 24hs"',
-                                'Espaço maximo na pasta " {} " atingido. \n\n \
-                                Status do armazenamento - {} \n \
-                                Espaço livre em disco em %       : {:3d}% \n \
-                                Espaço livre em disco em GB      : {:3.2f}GB \n \
-                                Espaço utilizado "Video Alarmes" : {:3.2f}GB \n \
-                                Espaço utilizado "Video 24hs"    : {:3.2f}GB \n \
-                                Número de dias estimados para gravação: {:3d} \n \
-                                '.format(self.camRunTime.statusConfig.data["dirVideosAllTime"], 
-                                    data_email_sent,
-                                    utils.getDiskUsageFree(), 
-                                    utils.getDiskUsageFreeGb(),
-                                    utils.getDirUsedSpace(self.camRunTime.statusConfig.data['dirVideosOnAlarmes']),
-                                    utils.getDirUsedSpace(self.camRunTime.statusConfig.data['dirVideosAllTime']), 
-                                    utils.getNumDaysRecording()
-                                    )) )
+                                # 'Portao Virtual - Falta de espaço  na pasta "Videos 24hs"',
+                                # 'Espaço maximo na pasta " {} " atingido. \n\n \
+                                # Status do armazenamento - {} \n \
+                                # Espaço livre em disco em %       : {:3d}% \n \
+                                # Espaço livre em disco em GB      : {:3.2f}GB \n \
+                                # Espaço utilizado "Video Alarmes" : {:3.2f}GB \n \
+                                # Espaço utilizado "Video 24hs"    : {:3.2f}GB \n \
+                                # Número de dias estimados para gravação: {:3d} \n \
+                                # '.format(self.camRunTime.statusConfig.data["dirVideosAllTime"], 
+                                    # data_email_sent,
+                                    # utils.getDiskUsageFree(), 
+                                    # utils.getDiskUsageFreeGb(),
+                                    # utils.getDirUsedSpace(self.camRunTime.statusConfig.data['dirVideosOnAlarmes']),
+                                    # utils.getDirUsedSpace(self.camRunTime.statusConfig.data['dirVideosAllTime']), 
+                                    # utils.getNumDaysRecording()
+                                    # )) )
 
-                            threadEmail.start()
-                            self.camRunTime.emailSentFullVideosAllTime = True
-                            #avisar por email 1x a cada X tempo ? 
+                            # threadEmail.start()
+                            # self.camRunTime.emailSentFullVideosAllTime = True
+                            # #avisar por email 1x a cada X tempo ? 
 
                 #disco cheio 
                 else:
-
                     print('disco cheio')
-                    self.storageFull.emit()
+                    # ou então parar de gravar novos videos
+                    if self.camRunTime.stopSaveNewVideos:
+                        self.camRunTime.gravandoAllTime = False
+                        self.camRunTime.gravandoOnAlarmes = False
+                        
+                    #self.storageFull.emit()
                     
                     # if not self.camRunTime.emailSentDiskFull:  
                         # if self.camRunTime.eraseOldestFiles:
@@ -708,14 +707,10 @@ class InferenceCore(QThread):
                                     # threadEmailAlarmesEmpty.start()
                                     # self.camRunTime.emailSentdirVideosOnAlarmesEmpty = True
 
-                    # ou então parar de gravar novos videos
-                    if self.camRunTime.stopSaveNewVideos:
-                        self.camRunTime.gravandoAllTime = False
-                        self.camRunTime.gravandoOnAlarmes = False
+                    
                 
-                #end else disco cheio    
-            
-                #cv.imshow('frame', frame_screen)
+                #end else disco cheio  
+                            
                 self.change_pixmap_signal.emit(frame_screen)
                 #print('emit')
 
@@ -723,7 +718,7 @@ class InferenceCore(QThread):
 
                 
                 self.camRunTime.renderTime = (self.camRunTime.end - self.camRunTime.start)*1000
-                if (self.camRunTime.renderTime != 0):
+                if (self.camRunTime.renderTime > 0):
                     self.camRunTime.FPS = 1000/self.camRunTime.renderTime
                 
                 #print('render time: {:10.2f} ms'.format(renderTime))
@@ -770,10 +765,11 @@ class InferenceCore(QThread):
                             #listObjectMailAlerted.append(alertaEmail[9])
 
                         #ativar funcoes                        
-                        #self.camRunTime.sessionStatus, self.camRunTime.error = checkSessionPv(self.camRunTime.login)
-                        self.camRunTime.sessionStatus, self.camRunTime.error = checkSessionPv(session)
+                        #self.camRunTime.sessionStatus, self.camRunTime.error = checkSessionPv(self.camRunT im h0 ek0.login)
+                        self.camRunTime.sessionStatus, self.camRunTime.error = checkSessionPv(self.camRunTime.login)
                         self.camRunTime.timeInternetOffStart = time.time() 
-                        self.updateStorageInfo.emit()
+                        #self.updateStorageInfo.emit()
+                        #print('sessionStatus: {}'.format(self.camRunTime.sessionStatus))
 
                         if self.camRunTime.error == 'servidorOut':
                             print('Servidor não respondendo. Ignorando checkSession')
@@ -820,17 +816,9 @@ class InferenceCore(QThread):
                     self.camRunTime.timeSessionInit = time.time()
 
                 
-                self.camRunTime.listObjects.clear()
-                #listObjectsTracking.clear()
-
-                #chamando callbackButtonRegioes  
-                #if cv.waitKey(1) & 0xFF == ord('c'):
-                #    self.camRunTime.pausaConfig = True
-                #    callbackButtonRegioes(None, ret)
+                self.camRunTime.listObjects.clear()                
                 
-                if cv.waitKey(1) & 0xFF == ord('q'):
-                    utils.stopWatchDog()
-                    break
+                
 
             else:
                 if not self.camRunTime.conectado:

@@ -16,6 +16,8 @@ from inferenceCore import *
 from Utils_tracking import sendMailAlert
 from Utils_tracking import sendMail
 from Utils_tracking import saveImageBox
+from checkStorage import CheckStorage
+from rtsp_discover.rtsp_discover import CamFinder
 
 import time
 import numpy as np
@@ -24,6 +26,7 @@ import sys
 import time
 import logging as log
 import getpass
+
 
 
 from collections import deque
@@ -59,6 +62,8 @@ class FormProc(QWidget):
     camRunTime = CamRunTime()
 
     infCam = InferenceCore()
+    
+    #checkStorageThread = CheckStorage(camRunTime)
     
     
     
@@ -117,7 +122,7 @@ class FormProc(QWidget):
         self.uiConfig.btnNewRegion.clicked.connect(self.btnNewRegion)
         self.uiConfig.btnInitAddRegiao.clicked.connect(self.btnNewRegion)
         self.uiConfig.btnNewAlarm.clicked.connect(self.btnNewAlarm)
-        self.uiConfig.btnInitSair.clicked.connect(self.btnInitSair)
+        self.uiConfig.btnInitSair.clicked.connect(self.closeEvent)
 
         
         
@@ -181,7 +186,22 @@ class FormProc(QWidget):
             
             # start the thread
             self.uiConfig.thread.start()
-            #self.uiConfig.thread.join()
+            
+            ## Thread CheckStorage
+            self.threadStorage = QtCore.QThread()
+            self.threadStorage = CheckStorage(self.camRunTime)
+            self.threadStorage.updateStorageInfo.connect(self.checkStorage)
+            self.threadStorage.start()
+            
+            
+            self.threadProcurarCam = QThread()
+            self.threadProcurarCam = CamFinder()
+            self.threadProcurarCam.updateProgress.connect(self.updateProcurarCam)
+            #self.threadProcurarCam.start()
+            
+            
+            
+            
 
         elif self.camRunTime.rtspStatus:
             print('Erro ao conectar a câmera')
@@ -213,7 +233,7 @@ class FormProc(QWidget):
         self.label_position.show()
         self.label_position.move(pos + delta)        
         self.label_position.setText("(%d, %d)" % (pos.x(), pos.y()))
-        print("(%d, %d)".format((pos.x(), pos.y())))        
+        #print("(%d, %d)".format((pos.x(), pos.y())))        
         self.label_position.adjustSize()       
         
         if self.camRunTime.cropPolygon == True:
@@ -223,10 +243,10 @@ class FormProc(QWidget):
     
     @pyqtSlot(StatusConfig, CamRunTime)
     def updateStatusConfigCamRunTime(self, statusConfig, camRunTime):
-        print('updateStatusConfigRunTime')
+        #print('updateStatusConfigRunTime')
         self.statusConfig = statusConfig
         self.camRunTime = camRunTime
-        print('updateStatusConfig statusLicence: ' + str(self.camRunTime.statusLicence))
+        #print('updateStatusConfig statusLicence: ' + str(self.camRunTime.statusLicence))
 
 
     @pyqtSlot(np.ndarray)
@@ -264,20 +284,15 @@ class FormProc(QWidget):
         self._run_flag = False
         self.wait()           
 
-    def closeEvent(self, event):
-        print('closeEvent')
+    def closeEvent(self, event):        
         self._run_flag = False        
         statusFields = True
         pausaConfig = False     
         self.uiConfig.thread.stop()
         #event.accept()
 
-    def btnInitSair(self):
-        print('btnInitSair')
-        self._run_flag = False        
-        statusFields = True
-        pausaConfig = False     
-        self.uiConfig.thread.stop()
+    def btnInitSair(self):        
+        self.closeEvent()
     
     def btnDeleteAlarm(self):
         
@@ -399,6 +414,7 @@ class FormProc(QWidget):
             self.fillTabGeral()
 
             self.camRunTime.init() 
+            self.infCam.setCamRunTime(self.camRunTime)
 
     def btnCancelRegion(self):
         if len(self.camRunTime.regions) > 0:
@@ -618,6 +634,7 @@ class FormProc(QWidget):
 
             self.statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)
             self.camRunTime.init() 
+            self.infCam.setCamRunTime(self.camRunTime)
 
 
         else:
@@ -674,6 +691,7 @@ class FormProc(QWidget):
                 
                 self.camRunTime.init() 
                 self.fillTabGeral()
+                self.infCam.setCamRunTime(self.camRunTime)
 
     def btnProcurarCam(self):
         
@@ -688,25 +706,56 @@ class FormProc(QWidget):
         
         ## Chamar Thread ##
         
-        #threadGetListCam = Thread(target=getListCam)                            
-        #threadGetListCam.start()
-
-        self.camRunTime.listCamEncontradas, self.listCamAtivas = getListCam()
-
-        for cam in self.listCamAtivas:
-            self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']:' + cam.get('ip') + ' : ' + cam.get('port'))
-
-        for cam2 in self.camRunTime.listCamEncontradas:
-            self.uiConfig.comboBoxCamEncontradas.addItem('[' + cam2.get('id') + ']:' + cam2.get('ip') + ' : ' + cam2.get('port'))
-
-        self.statusConfig.zerarListCamAtivasConfig() 
-        self.statusConfig.zerarListCamEncontradasConfig()
-
-        self.statusConfig.addListCamAtivasConfig(self.listCamAtivas)
-        self.statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
         
-        self.camRunTime.init() 
-        self.fillTabGeral()
+        #self.threadProcurarCam = QThread()
+        #self.threadProcurarCam = getListCam()
+        
+        print('btnProcurarCam')
+        self.threadProcurarCam.start()        
+        print('self.threadProcurarCam.start()')
+
+        #self.camRunTime.listCamEncontradas, self.listCamAtivas = getListCam()
+
+        # for cam in self.listCamAtivas:
+            # self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']:' + cam.get('ip') + ' : ' + cam.get('port'))
+
+        # for cam2 in self.camRunTime.listCamEncontradas:
+            # self.uiConfig.comboBoxCamEncontradas.addItem('[' + cam2.get('id') + ']:' + cam2.get('ip') + ' : ' + cam2.get('port'))
+
+        # self.statusConfig.zerarListCamAtivasConfig() 
+        # self.statusConfig.zerarListCamEncontradasConfig()
+
+        # self.statusConfig.addListCamAtivasConfig(self.listCamAtivas)
+        # self.statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
+        
+        # self.camRunTime.init() 
+        # self.fillTabGeral()
+        # self.infCam.setCamRunTime(self.camRunTime)
+
+    
+    @QtCore.pyqtSlot(int)
+    def updateProcurarCam(self, progress):
+    
+        print('Progress: {:d}'.format(progress))
+        
+        if progress == 100:    
+            for cam in self.listCamAtivas:
+                self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']:' + cam.get('ip') + ' : ' + cam.get('port'))
+
+            for cam2 in self.camRunTime.listCamEncontradas:
+                self.uiConfig.comboBoxCamEncontradas.addItem('[' + cam2.get('id') + ']:' + cam2.get('ip') + ' : ' + cam2.get('port'))
+
+            self.statusConfig.zerarListCamAtivasConfig() 
+            self.statusConfig.zerarListCamEncontradasConfig()
+
+            self.statusConfig.addListCamAtivasConfig(self.listCamAtivas)
+            self.statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
+            
+            self.camRunTime.init() 
+            self.fillTabGeral()
+            self.infCam.setCamRunTime(self.camRunTime)
+
+
 
     def btnSaveStorage(self):
 
@@ -1166,186 +1215,9 @@ class FormProc(QWidget):
         self.camRunTime.dirVideosAllTimeUsedSpace = utils.getDirUsedSpace(self.statusConfig.data['dirVideosOnAlarmes'])
         self.camRunTime.numDaysRecording = utils.getNumDaysRecording()                     
                             
-        
-        # #print('checando se o disco está cheio')
-        # if not utils.isDiskFull(self.camRunTime.diskMinUsage):                    
-            # print('disco ok')
-            
-            # if self.camRunTime.spaceMaxDirVideosOnAlarme == 0 or ( self.camRunTime.spaceMaxDirVideosOnAlarme >= utils.getDirUsedSpace(self.camRunTime.statusConfig.data["dirVideosOnAlarmes"]) ):
-
-                # if self.camRunTime.newVideo and self.camRunTime.gravandoOnAlarmes and (self.camRunTime.STOP_ALL == False):
-                
-                    # # if self.camRunTime.out_video is not None:
-                       # # self.camRunTime.out_video.release()
-                       # # self.camRunTime.out_video = None
-                       # # self.camRunTime.releaseVideoOnAlarmes = False
-
-                    # # #grava video novo se tiver um objeto novo na cena
-                    # # hora = utils.getDate()['hour'].replace(':','-')
-                    # # nameVideo = self.camRunTime.dir_video_trigger_on_alarmes + '/' + hora + '.avi'
-                    
-                    # # #if out_video is not None:
-                    # # #h = nchw[2]
-                    # # #w = nchw[3]
-                    # # self.camRunTime.out_video = cv.VideoWriter(nameVideo, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h))
-                    # # self.camRunTime.out_video.write(frame_no_label)
-                    # # self.camRunTime.newVideo = False
-
-                
-                # # #if gravando:
-                # # if self.camRunTime.gravandoOnAlarmes and (self.camRunTime.STOP_ALL == False):
-                    # # if self.camRunTime.out_video is not None:
-                        # # self.camRunTime.out_video.write(frame_no_label)
-
-            # #espaço maximo na pasta VideosOnAlarmes atingido 
-            # else:
-                # #avisar por email 1x a cada X tempo ? 
-                # if not self.camRunTime.emailSentFullVideosOnAlarmes:  
-                    
-                    # data = utils.getDate()
-                    # data_email_sent = data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year']
-                    # log.critical('Espaço maximo na pasta {} atingido'.format(statusConfig.data["dirVideosOnAlarmes"]))
-                    # threadEmail = Thread(target=sendMail, args=(
-
-                        # 'Portao Virtual - Falta de espaço  na pasta "Alarmes"',
-                        # 'Espaço maximo na pasta " {} " atingido. \n\n \
-                        # Status do armazenamento - {} \n \
-                        # Espaço livre em disco em %       : {:3d}% \n \
-                        # Espaço livre em disco em GB      : {:3.2f} GB \n \
-                        # Espaço utilizado "Video Alarmes" : {:3.2f} GB \n \
-                        # Espaço utilizado "Video 24hs"    : {:3.2f} GB \n \
-                        # Número de dias estimados para gravação: {:3d} \n \
-                        # '.format(statusConfig.data["dirVideosOnAlarmes"], 
-                            # data_email_sent,
-                            # utils.getDiskUsageFree(), 
-                            # utils.getDiskUsageFreeGb(),
-                            # utils.getDirUsedSpace(statusConfig.data['dirVideosOnAlarmes']),
-                            # utils.getDirUsedSpace(statusConfig.data['dirVideosAllTime']), 
-                            # utils.getNumDaysRecording()
-                            # )) )
-                    
-                    # threadEmail.start()
-                    # emailSentFullVideosOnAlarmes = True
-                    # #avisar por email 1x a cada X tempo ? 
+   
 
 
-            # if self.camRunTime.spaceMaxDirVideosAllTime == 0 or ( self.camRunTime.spaceMaxDirVideosAllTime >= utils.getDirUsedSpace(self.camRunTime.statusConfig.data["dirVideosAllTime"]) ):
-            
-                # if self.camRunTime.gravandoAllTime and (self.camRunTime.STOP_ALL == False):
-                    # if self.camRunTime.out_video_all_time is not None:
-                        # self.camRunTime.out_video_all_time.write(frame_no_label)
-                
-                
-                # if self.camRunTime.gravandoAllTime and (self.camRunTime.timeGravandoAll >= self.camRunTime.GRAVANDO_TIME) and (self.camRunTime.STOP_ALL == False):
-
-                    # if self.camRunTime.out_video_all_time is not None:
-                         # self.camRunTime.out_video_all_time.release()
-                         # self.camRunTime.out_video_all_time = None
-                    
-                    # #if out_video_all_time is not None:
-                    
-                    # hora = utils.getDate()['hour'].replace(':','-')
-                    # self.camRunTime.nameVideoAllTime = dir_video_trigger_all_time + '/' + hora + '.avi'
-                    
-                    # #if out_video_all_time is not None:
-                    # #h = nchw[2]
-                    # #w = nchw[3]
-                    # self.camRunTime.out_video_all_time = cv.VideoWriter(nameVideoAllTime, fourcc, FPS, (w,h))
-                    # self.camRunTime.out_video_all_time.write(frame_no_label)
-
-                    # self.camRunTime.timeGravandoAllInit = time.time()
-                        
-
-            # else:
-                
-                # if not self.camRunTime.emailSentFullVideosAllTime:  
-                    # log.critical('Espaço maximo na pasta {} atingido'.format(statusConfig.data["dirVideosAllTime"]))
-
-                    # data = utils.getDate()
-                    # data_email_sent = data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year']
-                    # threadEmail = Thread(target=sendMail, args=(
-
-                        # 'Portao Virtual - Falta de espaço  na pasta "Videos 24hs"',
-                        # 'Espaço maximo na pasta " {} " atingido. \n\n \
-                        # Status do armazenamento - {} \n \
-                        # Espaço livre em disco em %       : {:3d}% \n \
-                        # Espaço livre em disco em GB      : {:3.2f}GB \n \
-                        # Espaço utilizado "Video Alarmes" : {:3.2f}GB \n \
-                        # Espaço utilizado "Video 24hs"    : {:3.2f}GB \n \
-                        # Número de dias estimados para gravação: {:3d} \n \
-                        # '.format(statusConfig.data["dirVideosAllTime"], 
-                            # data_email_sent,
-                            # utils.getDiskUsageFree(), 
-                            # utils.getDiskUsageFreeGb(),
-                            # utils.getDirUsedSpace(statusConfig.data['dirVideosOnAlarmes']),
-                            # utils.getDirUsedSpace(statusConfig.data['dirVideosAllTime']), 
-                            # utils.getNumDaysRecording()
-                            # )) )
-
-                    # threadEmail.start()
-                    # self.camRunTime.emailSentFullVideosAllTime = True
-                    # #avisar por email 1x a cada X tempo ? 
-
-        # #disco cheio 
-        # else:
-
-            # if not self.camRunTime.emailSentDiskFull:  
-                # if self.camRunTime.eraseOldestFiles:
-                    # textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a deletar \
-                            # os videos mais antigos, recomendamos que aumente seu espaço em disco \
-                            # para não perder as gravações realizadas.'
-
-                    # threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
-                    # threadEmailDiskFull.start()
-                    # emailSentDiskFull = True
-                    # log.info('Email de disco cheio enviado - apagando videos antigos ')
-                    # #avisar por email 1x a cada X tempo ? 
-                # else:
-                    # textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a não \
-                            # gravar videos novos, recomendamos que aumente seu espaço em disco \
-                            # para poder novos videos quando ocorrer futuros alarmes.'
-
-                    # threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
-                    # threadEmailDiskFull.start()
-                    # emailSentDiskFull = True
-                    # log.info('Email de disco cheio enviado - interromper novos videos')
-
-
-            # # realmente apaga os videos mais antigos ? 
-            # if self.camRunTime.eraseOldestFiles:
-
-                # if utils.freeDiskSpace(statusConfig.getDirVideosAllTime()) == False:
-                    
-                    # log.critical('Diretorios de "Videos 24hs" já está vazio')
-                    # if not emailSentdirVideosAllTimeEmpty:
-                        # textEmail = 'Mesmo apagando a pasta "Videos 24hs", seu HD continua cheio ! \n\n \ Nossa sugestão é que você libere mais espaço para pode gravar os "Videos 24hs"' 
-
-                        # threadEmailAllEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos 24hs" apagada - seu HD está cheio !',textEmail))
-                        # threadEmailAllEmpty.start()
-                        # emailSentdirVideosAllTimeEmpty = True
-
-            
-                # #se ainda não tiver sido suficiente
-                # if utils.isDiskFull(diskMinUsage):
-                    # log.info('Apagando diretórios de Alarmes')
-                    # #log.info('Dir: {}'.format(statusConfig.getDirVideosOnAlarmes()))
-                    # if utils.freeDiskSpace(statusConfig.getDirVideosOnAlarmes()) == False:
-                        # log.critical('Diretorios de "Vidos Alarme" já está vazio')
-
-                        # if not emailSentdirVideosOnAlarmesEmpty:
-                            # textEmail = 'Mesmo apagando a pasta "Videos Alarme", seu HD continua cheio ! \n\n  \
-                                     # Nossa sugestão é que você libere mais espaço para pode gravar os "Videos Alarme"' 
-                                    
-                            # threadEmailAlarmesEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos Alarmes" apagada - seu HD está cheio !',textEmail))
-                            # threadEmailAlarmesEmpty.start()
-                            # self.camRunTime.emailSentdirVideosOnAlarmesEmpty = True
-
-            # # ou então parar de gravar novos videos
-            # elif self.camRunTime.stopSaveNewVideos:
-                # self.camRunTime.gravandoAllTime = False
-                # self.camRunTime.gravandoOnAlarmes = False
-        
-        # #end else disco cheio  
 
 
 
