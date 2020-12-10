@@ -22,11 +22,8 @@ import subprocess
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log', encoding='utf-8') 
 
 class CamFinder(QThread):
-
-    
-    
-    updateProgress = pyqtSignal(int)
-    
+        
+    updateProgress = pyqtSignal(float, 'QVariantList', 'QVariantList')    
     LIST_PORT = [554, 8554]
     LIST_IP = []
     OS_PLATFORM = 'windows'
@@ -76,6 +73,9 @@ class CamFinder(QThread):
         dataDescribe = None
         idCam = 0
         
+        self.updateProgress.emit(1, listCamEncontradas, listCamAtivas)
+        
+        
        
         #if OS_PLATFORM == 'linux':
         #    cmd = 'arp -a'
@@ -84,26 +84,29 @@ class CamFinder(QThread):
             
         myNetwork = IP_LOCAL + '.0/24' 
         myScan = networkscan.Networkscan(myNetwork)
-        
-        self.updateProgress.emit(3)
+        self.updateProgress.emit(3, listCamEncontradas, listCamAtivas)
         myScan.run()
+        self.updateProgress.emit(6, listCamEncontradas, listCamAtivas)
         
         for ip in myScan.list_of_hosts_found:
             mac = get_mac_address(ip=ip)
-            self.LIST_IP.append({'id':'0', 'ip':ip, 'mac':mac, 'port':'0', 'user':'user', 
+            self.LIST_IP.append({'id':'0','nome':'nomeCam', 'ip':ip, 'mac':mac, 'port':'0', 'user':'user', 
                 'passwd':'passwd', 'channel':'channel', 'source':'0', 'emUso':'False'})
 
         
-        self.updateProgress.emit(8)
+        
         #for ipLocal in os.popen(cmd):     
         #    ipLocal = ipLocal.split(' ')
         #    if '[ether]' in ipLocal:
         #        ipLocal[1] = ipLocal[1].replace(')', '')
         #        LIST_IP.append({'ip':ipLocal[1].replace('(', ''),'mac':ipLocal[3] })
-            
+
         
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)    
-            
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)            
+        progressTotal = len(self.LIST_IP) * len(self.LIST_PORT) * len(self.LIST_PASSWORD) * len(self.LIST_USERNAME) * len(self.LIST_CHANNEL)
+        progressI = 1 
+        
+        
         for ip in self.LIST_IP: 
             
             if ip not in listCamAtivas:
@@ -141,7 +144,7 @@ class CamFinder(QThread):
                                         if (ip not in listCamAtivas):
                                             for user in self.LIST_USERNAME:
                                                 if (ip not in listCamAtivas):
-                                                    for channel in self.LIST_CHANNEL:
+                                                    for channel in self.LIST_CHANNEL:                                                   
                                                         
                                                         if ip not in listCamAtivas:
                                                             
@@ -153,9 +156,9 @@ class CamFinder(QThread):
 
                                                                 if ip not in listCamEncontradas and ip not in listCamAtivas: 
 
-                                                                    ip['id'] = 'Cam_' + str(idCam)
-                                                                    ip['port'] = str(port)
-                                                                    ip['port'] = str(port)
+                                                                    ip['id'] = str(idCam)
+                                                                    ip['nome'] = 'Cam_' + str(idCam)
+                                                                    ip['port'] = str(port)                                                                    
                                                                     ip['user'] = user
                                                                     ip['passwd'] = passwd
                                                                     ip['channel'] = channel
@@ -169,7 +172,8 @@ class CamFinder(QThread):
                                                                 log.info('Data: \n {}'.format(dataDescribe.decode()))
                                                                 log.info(' ')
 
-                                                                ip['id'] = 'Cam_' + str(idCam)
+                                                                ip['id'] = str(idCam)
+                                                                ip['nome'] = 'Cam_' + str(idCam)
                                                                 ip['port'] = str(port)
                                                                 ip['user'] = user
                                                                 ip['passwd'] = passwd
@@ -177,12 +181,27 @@ class CamFinder(QThread):
                                                                 ip['source'] = source 
                                                                 listCamAtivas.append(ip)                                    
                                                                 idCam = idCam + 1
+                                                    
+                                                    
+                                            
+                                    
                     s.close()
             # end for in LIST_PORT                            
+                    self.updateProgress.emit((progressI/(len(self.LIST_PORT)*len(self.LIST_IP)) )*100, listCamEncontradas, listCamAtivas)
+                    progressI = progressI + 1
+                    #print('progressI: {:d}'.format(progressI))
+                    #print('progressI: {:f}'.format((progressI/ (len(self.LIST_PORT)*len(self.LIST_IP)) )*100))
+                    
+            self.updateProgress.emit((progressI/ (len(self.LIST_PORT)*len(self.LIST_IP)) )*100, listCamEncontradas, listCamAtivas)
+            progressI = progressI + 1
+            #print('progressI: {:d}'.format(progressI))
+            #print('progressI: {:.2f}'.format((progressI/ (len(self.LIST_PORT)*len(self.LIST_IP)) )*100))
+            
+        self.updateProgress.emit(100, listCamEncontradas, listCamAtivas)    
         s.close()
         
-        self.updateProgress.emit(100)
-        return listCamEncontradas, listCamAtivas 
+        
+        #return listCamEncontradas, listCamAtivas 
 
     def create_describe_packet(self, ip):
         #global DESCRIBEPACKET

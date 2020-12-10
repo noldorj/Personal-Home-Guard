@@ -31,6 +31,7 @@ import getpass
 
 from collections import deque
 
+
 log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.DEBUG, stream=sys.stdout)
 
 class MouseTracker(QtCore.QObject):
@@ -50,6 +51,31 @@ class MouseTracker(QtCore.QObject):
         #print('eventFilter')
         if o is self.widget and e.type() == QtCore.QEvent.MouseButtonRelease:
             self.positionChanged.emit(e.pos())
+        
+        if (e.type() == QtCore.QEvent.KeyPress and o is self.uiConfig.txtNomeCamAtiva):
+                print('self.uiConfig.txtNomeCamAtiva keypress')
+                if self.uiConfig.comboBoxCamAtivas.currentIndex() != -1: 
+                    
+                    idCombo = self.uiConfig.comboBoxCamAtivas.currentText().split(':')[0]
+                    idCombo = idCombo.replace('[','')
+                    idCombo = idCombo.replace(']','')
+                    print('idCombo: {}'.format(idCombo))                        
+                    i = 0
+                    for cam in self.camRunTime.listCamAtivas:
+                        if cam.get('id') == idCombo:
+                            self.camRunTime.listCamAtivas[i]['nome'] = self.uiConfig.txtNomeCamAtiva.text()
+                            break
+                        i = i + 1
+                    
+                    self.camRunTime.statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)
+                    self.camRunTime.statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
+                
+                self.camRunTime.init() 
+                self.fillTabGeral()
+                self.infCam.setCamRunTime(self.camRunTime)
+                
+        
+        
         return super().eventFilter(o, e)
 
 
@@ -106,6 +132,7 @@ class FormProc(QWidget):
         self.uiConfig.btnTestarConfigCam.clicked.connect(self.btnTestarConfigCam)
 
         self.uiConfig.checkBoxWebCam.stateChanged.connect(self.checkBoxWebcamStateChanged)
+        
         self.uiConfig.checkBoxDesabilitarLoginAutomatico.stateChanged.connect(self.checkBoxDesabilitarLoginAutomatico)
        
         self.uiConfig.checkBoxNoLimitsVideosAllTime.stateChanged.connect(self.checkBoxNoLimitsVideosAllTime)
@@ -113,6 +140,7 @@ class FormProc(QWidget):
 
         self.uiConfig.comboRegions.activated['int'].connect(self.comboRegionsUpdate)
         self.uiConfig.comboAlarms.activated['int'].connect(self.comboAlarmsUpdate)
+        self.uiConfig.comboBoxCamAtivas.activated['int'].connect(self.comboBoxCamAtivasStateChanged)
         self.uiConfig.btnSaveAlarm.clicked.connect(self.btnSaveAlarm)
         self.uiConfig.btnSaveRegion.clicked.connect(self.btnSaveRegion)
         self.uiConfig.btnDeleteAlarm.clicked.connect(self.btnDeleteAlarm)
@@ -123,6 +151,11 @@ class FormProc(QWidget):
         self.uiConfig.btnInitAddRegiao.clicked.connect(self.btnNewRegion)
         self.uiConfig.btnNewAlarm.clicked.connect(self.btnNewAlarm)
         self.uiConfig.btnInitSair.clicked.connect(self.closeEvent)
+        self.uiConfig.btnAlterarNomeCamAtiva.clicked.connect(self.btnSalvarNomeCamAtiva)
+        self.uiConfig.btnRemoverCamAtiva.clicked.connect(self.btnRemoverCamAtiva)
+        self.uiConfig.btnNovaCam.clicked.connect(self.btnNovaCam)
+        
+        self.uiConfig.progressBarProcurarCam.hide()
 
         
         
@@ -220,6 +253,10 @@ class FormProc(QWidget):
        
         #appLogin.exec_()
         #self.exec_()
+
+
+       
+
 
     def run(self):              
 
@@ -604,6 +641,46 @@ class FormProc(QWidget):
         self.uiConfig.lblStatus.clear()
         self.uiConfig.lblStatusProcurarCam.clear()
 
+    def btnRemoverCamAtiva(self):        
+                    
+        if self.uiConfig.comboBoxCamAtivas.currentIndex() != -1: 
+            
+            idCombo = self.uiConfig.comboBoxCamAtivas.currentText().split(':')[0]
+            idCombo = idCombo.replace('[','')
+            idCombo = idCombo.replace(']','')
+            print('idCombo: {}'.format(idCombo))                        
+            i = 0
+            for cam in self.camRunTime.listCamAtivas:
+                if cam.get('id') == idCombo:
+                    #self.camRunTime.listCamAtivas[i]['nome'] = self.uiConfig.txtNomeCamAtiva.text()
+                    
+                    break
+                i = i + 1
+            self.camRunTime.listCamAtivas.pop(i)            
+            self.camRunTime.statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)
+            self.fillTabGeral()
+            self.infCam.setCamRunTime(self.camRunTime)
+    
+    
+    def btnSalvarNomeCamAtiva(self):        
+                    
+        if self.uiConfig.comboBoxCamAtivas.currentIndex() != -1: 
+            
+            idCombo = self.uiConfig.comboBoxCamAtivas.currentText().split(':')[0]
+            idCombo = idCombo.replace('[','')
+            idCombo = idCombo.replace(']','')
+            print('idCombo: {}'.format(idCombo))                        
+            i = 0
+            for cam in self.camRunTime.listCamAtivas:
+                if cam.get('id') == idCombo:
+                    self.camRunTime.listCamAtivas[i]['nome'] = self.uiConfig.txtNomeCamAtiva.text()
+                    break
+                i = i + 1
+            
+            self.camRunTime.statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)
+            self.fillTabGeral()
+            self.infCam.setCamRunTime(self.camRunTime)
+    
     def btnAtivarCam(self):
         #global listCamAtivas, self.uiConfig, statusConfig
 
@@ -635,11 +712,107 @@ class FormProc(QWidget):
             self.statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)
             self.camRunTime.init() 
             self.infCam.setCamRunTime(self.camRunTime)
-
-
+            self.fillTabGeral()
         else:
             self.uiConfig.lblStatusProcurarCam.setText('Sem câmeras ativas. Clique em "Procurar Câmeras" para uma nova varredura')
 
+    def btnNovaCam(self):
+        
+        source = 'rtsp://' + self.uiConfig.txtUserCamDisponivel.text() + ':' + self.uiConfig.txtPasswdCamDisponivel.text() + '@' \
+                                    + self.uiConfig.txtIpCamDisponivel.text() + ':' + self.uiConfig.txtPortaCamDisponivel.text() + '/' + self.uiConfig.txtCanalCamDiponivel.text()
+        
+        
+        #novo id 
+        idMaior = 0
+        for cam in self.camRunTime.listCamAtivas:
+            if int(cam.get('id')) > idMaior:
+                idMaior = int(cam.get('id'))
+                
+        for cam in self.camRunTime.listCamEncontradas:
+            if int(cam.get('id')) > idMaior:
+                idMaior = int(cam.get('id'))
+        
+        idMaior = idMaior + 1
+        
+        novaCam = {'ip':self.uiConfig.txtIpCamDisponivel.text(),
+                   'user':self.uiConfig.txtUserCamDisponivel.text(),
+                   'passwd':self.uiConfig.txtPasswdCamDisponivel.text(),
+                   'channel':self.uiConfig.txtCanalCamDiponivel.text(),
+                   'port':self.uiConfig.txtPortaCamDisponivel.text(),
+                   'source':source,
+                   'emUso':'False',
+                   'id':str(idMaior),
+                   'nome':self.uiConfig.txtNomeCamDisponivel.text(),
+                   'mac':'0'                   
+                   }
+
+        self.camRunTime.listCamEncontradas.append(novaCam)
+        self.fillTabGeral()
+        self.uiConfig.lblStatusTestarCam.setText('Clique em "Testar Configuração" para checar se esta câmera está funcionando')
+        self.comboBoxCamEncontradasStateChanged(len(self.camRunTime.listCamEncontradas)-1)
+   
+        
+    def clearFieldsCamConfig(self):
+        self.uiConfig.txtNomeCamDisponivel.clear()
+        self.uiConfig.txtIpCamDisponivel.clear()
+        self.uiConfig.txtUserCamDisponivel.clear()
+        self.uiConfig.txtPasswdCamDisponivel.clear()
+        self.uiConfig.txtPortaCamDisponivel.clear()
+        self.uiConfig.txtCanalCamDiponivel.clear()
+        #self.uiConfig.lblStatusTestarCam.clear()
+        
+    def comboBoxCamEncontradasStateChanged(self, i):
+        
+        print('comboBoxCamEncontradasStateChanged: {:d}'.format(i))
+        
+        idCombo = None
+        
+        if i != -1: 
+            idCombo = self.uiConfig.comboBoxCamEncontradas.currentText().split(':')[0]
+            idCombo = idCombo.replace('[','')
+            idCombo = idCombo.replace(']','')
+            print('idCombo: {}'.format(idCombo))            
+            
+            
+            for cam in self.camRunTime.listCamEncontradas:
+                if cam.get('id') == idCombo:
+                    
+                    self.uiConfig.txtNomeCamDisponivel.setText(cam.get('nome'))
+                    self.uiConfig.txtIpCamDisponivel.setText(cam.get('ip'))
+                    self.uiConfig.txtUserCamDisponivel.setText(cam.get('user'))
+                    self.uiConfig.txtPasswdCamDisponivel.setText(cam.get('passwd'))
+                    self.uiConfig.txtPortaCamDisponivel.setText(cam.get('port'))
+                    self.uiConfig.txtCanalCamDiponivel.setText(cam.get('channel'))                    
+                    
+                    break
+                
+            
+            
+    
+    
+    
+    def comboBoxCamAtivasStateChanged(self, i):
+        
+        print('comboBoxCamAtivasStateChanged: {:d}'.format(i))
+        nome = None
+        idCombo = None
+        
+        if i != -1: 
+            idCombo = self.uiConfig.comboBoxCamAtivas.currentText().split(':')[0]
+            idCombo = idCombo.replace('[','')
+            idCombo = idCombo.replace(']','')
+            print('idCombo: {}'.format(idCombo))
+            
+            
+            for cam in self.camRunTime.listCamAtivas:
+                if cam.get('id') == idCombo:
+                    nome = cam.get('nome')
+                    break
+            
+            self.uiConfig.txtNomeCamAtiva.setText(nome)
+    
+        
+    
     def btnTestarConfigCam(self):
 
         #global listCamAtivas, listCamEncontradas, statusconfig
@@ -702,7 +875,8 @@ class FormProc(QWidget):
         self.camRunTime.listCamEncontradas.clear()
         self.camRunTime.listCamAtivas.clear()
 
-        self.uiConfig.lblStatusProcurarCam.setText('Procurando cameras na rede... aguarde')
+        self.uiConfig.lblStatusProcurarCam.setText('Procurando câmeras na rede local. Aguarde por favor...')
+        self.uiConfig.progressBarProcurarCam.show()
         
         ## Chamar Thread ##
         
@@ -714,42 +888,34 @@ class FormProc(QWidget):
         self.threadProcurarCam.start()        
         print('self.threadProcurarCam.start()')
 
-        #self.camRunTime.listCamEncontradas, self.listCamAtivas = getListCam()
-
-        # for cam in self.listCamAtivas:
-            # self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']:' + cam.get('ip') + ' : ' + cam.get('port'))
-
-        # for cam2 in self.camRunTime.listCamEncontradas:
-            # self.uiConfig.comboBoxCamEncontradas.addItem('[' + cam2.get('id') + ']:' + cam2.get('ip') + ' : ' + cam2.get('port'))
-
-        # self.statusConfig.zerarListCamAtivasConfig() 
-        # self.statusConfig.zerarListCamEncontradasConfig()
-
-        # self.statusConfig.addListCamAtivasConfig(self.listCamAtivas)
-        # self.statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
         
-        # self.camRunTime.init() 
-        # self.fillTabGeral()
-        # self.infCam.setCamRunTime(self.camRunTime)
 
     
-    @QtCore.pyqtSlot(int)
-    def updateProcurarCam(self, progress):
+    @QtCore.pyqtSlot(float, 'QVariantList', 'QVariantList')
+    def updateProcurarCam(self, progress, listCamEncontradas, listCamAtivas):
     
-        print('Progress: {:d}'.format(progress))
+        print('Progress: {:.2f}'.format(progress))
+        self.uiConfig.progressBarProcurarCam.setValue(progress)
+        
         
         if progress == 100:    
+            self.listCamAtivas = listCamAtivas
+            self.listCamEncontradas = listCamEncontradas
+            
             for cam in self.listCamAtivas:
-                self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']:' + cam.get('ip') + ' : ' + cam.get('port'))
+                self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']: ' + cam.get('ip') + ' : ' + cam.get('port'))
 
             for cam2 in self.camRunTime.listCamEncontradas:
-                self.uiConfig.comboBoxCamEncontradas.addItem('[' + cam2.get('id') + ']:' + cam2.get('ip') + ' : ' + cam2.get('port'))
+                self.uiConfig.comboBoxCamEncontradas.addItem('[' + cam2.get('id') + ']: ' + cam2.get('ip') + ' : ' + cam2.get('port'))
 
             self.statusConfig.zerarListCamAtivasConfig() 
             self.statusConfig.zerarListCamEncontradasConfig()
 
             self.statusConfig.addListCamAtivasConfig(self.listCamAtivas)
             self.statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
+            
+            self.uiConfig.lblStatusProcurarCam.setText('Busca por novas câmeras terminado')
+            self.uiConfig.progressBarProcurarCam.hide()
             
             self.camRunTime.init() 
             self.fillTabGeral()
@@ -1018,16 +1184,11 @@ class FormProc(QWidget):
         self.uiConfig.comboBoxCamAtivas.clear()
         self.uiConfig.comboBoxCamEncontradas.clear()
         
-        self.uiConfig.txtUserCamDisponivel.clear()
-        self.uiConfig.txtPasswdCamDisponivel.clear()
-        self.uiConfig.txtPortaCamDisponivel.clear()
-        self.uiConfig.txtCanalCamDiponivel.clear()
-        self.uiConfig.lblStatusTestarCam.clear()
+        self.clearListCameras()        
 
         self.refreshStatusConfig()
 
         self.uiConfig.checkBoxDesabilitarLoginAutomatico.setCheckState( True if self.statusConfig.getLoginAutomatico() == "True" else False )
-
 
         self.uiConfig.checkBoxVideoRecordingOnAlarmes.setCheckState( True if self.statusConfig.data.get("isRecordingOnAlarmes") == "True" else False )
 
@@ -1058,15 +1219,31 @@ class FormProc(QWidget):
         self.uiConfig.txtEmailTo.setText(self.statusConfig.data["emailConfig"].get('to'))
 
         #carregar cams previamente escaneadas na rede
-
         for cam in self.camRunTime.listCamAtivas:
             if cam.get('emUso') == 'True':
-                self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']:' + cam.get('ip') + ' : ' + cam.get('port') + ' [em uso]')
+                self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']: ' + cam.get('ip') + ' : ' + cam.get('port') + ' [em uso]')
             else:
-                self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']:' + cam.get('ip') + ' : ' + cam.get('port'))
+                self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']: ' + cam.get('ip') + ' : ' + cam.get('port'))
 
         for cam in self.camRunTime.listCamEncontradas:
-            self.uiConfig.comboBoxCamEncontradas.addItem('[' + cam.get('id') + ']:' + cam.get('ip') + ' : ' + cam.get('port'))
+            self.uiConfig.comboBoxCamEncontradas.addItem('[' + cam.get('id') + ']: ' + cam.get('ip') + ' : ' + cam.get('port'))
+        
+
+        if self.uiConfig.comboBoxCamAtivas.currentIndex() != -1: 
+            idCombo = self.uiConfig.comboBoxCamAtivas.currentText().split(':')[0]
+            idCombo = idCombo.replace('[','')
+            idCombo = idCombo.replace(']','')
+            print('idCombo: {}'.format(idCombo))            
+            
+            for cam in self.camRunTime.listCamAtivas:
+                if cam.get('id') == idCombo:
+                    nome = cam.get('nome')
+                    break
+            
+            self.uiConfig.txtNomeCamAtiva.setText(nome)
+        
+        
+        
         
         
         #configuracoes de armazenamento

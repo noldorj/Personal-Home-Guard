@@ -197,6 +197,7 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
 def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, prob_threshold, RES_X, RES_Y):
 
 
+    
     prob_threshold_returned, xmin, xmax, ymin, ymax, det_label, class_id, label  = 0,0, 0, 0, 0, ' ', 0, ' '
 
     listObjectsTracking.clear()
@@ -233,6 +234,8 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
 
             for obj in res[0][0]:
                 # Draw only objects when probability more than specified threshold
+                #print('tamanho obj: {:d}'.format(len(obj)))
+                
                 if obj[2] > prob_threshold:
 
                     xmin = int(obj[3] * initial_w)
@@ -250,6 +253,7 @@ def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blo
 
                     #teste para mais de um ID
                     box = (xmin, ymin, xmax, ymax, label, class_id, det_label)
+                    #print('det_label: {}'.format(det_label))
                     if det_label is 'person' or \
                                 det_label is 'cat' or \
                                 det_label is 'car' or \

@@ -139,6 +139,7 @@ def camSource(source = 'webcam'):
         
         log.debug('imagem da WebCam')
         ipCam = cv.VideoCapture(0)
+        print('capturando da webcam')
 
     else:
 
@@ -147,6 +148,7 @@ def camSource(source = 'webcam'):
         except cv.error as e:
             status = False
             log.critical('camSource error: {}'.format(e))
+            print('camSource error: {}'.format(e))
             error = e
         else:
             if ipCam.isOpened():

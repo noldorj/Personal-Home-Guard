@@ -192,15 +192,7 @@ class InferenceCore(QThread):
         self.camRunTime.out_video_all_time = cv.VideoWriter(self.camRunTime.nameVideoAllTime, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h))
 
     def run(self):
-        # capture from web cam
-        #cap = cv.VideoCapture('rtsp://admin:WWYZRL@192.168.5.101:554/profile0')
-        
-        #while self._run_flag:
-        #    ret, cv_img = cap.read()
-        #    if ret:
-        #        self.change_pixmap_signal.emit(cv_img)
-        # shut down capture system
-        #cap.release() 
+    
         print('InferenceCore run()')
         self.initOpenVino()
         #print('init_video: ' + str(self.camRunTime.init_video))
@@ -271,8 +263,8 @@ class InferenceCore(QThread):
                         if self.camRunTime.ret:
                             #print('self.camRunTime.ret')
                             self.camRunTime.frame = self.camRunTime.next_frame
-                            self.camRunTime.frame, self.camRunTime.next_frame, self.camRunTime.cur_request_id,
-                            self.camRunTime.next_request_id, self.camRunTime.listObjects, self.camRunTime.listObjectsTracking,
+                            self.camRunTime.frame, self.camRunTime.next_frame, self.camRunTime.cur_request_id, \
+                            self.camRunTime.next_request_id, self.camRunTime.listObjects, self.camRunTime.listObjectsTracking, \
                             self.camRunTime.prob_threshold_returned  = listReturn[0], listReturn[1], listReturn[2], listReturn[3], listReturn[4], listReturn[5], listReturn[6]
 
                             self.camRunTime.cur_request_id, self.camRunTime.next_request_id = self.camRunTime.next_request_id, self.camRunTime.cur_request_id
@@ -283,7 +275,7 @@ class InferenceCore(QThread):
                         print("CNN via TF Object Detection API")
                         self.camRunTime.listObjects, self.camRunTime.listObjectTradking  = objectDetection(frame, idObjeto, listRectanglesDetected, detection, rows, cols)
 
-
+                #sem detecção de objetos
                 if len(self.camRunTime.listObjects) == 0 and self.camRunTime.portaoVirtualSelecionado:
 
                     self.camRunTime.tEmptyEnd = time.time()
@@ -295,10 +287,9 @@ class InferenceCore(QThread):
                         self.camRunTime.newVideo = True
                         self.camRunTime.releaseVideoOnAlarmes = True
 
-                #se tem objetos detectados pela CNN
-                
+                #se tem objetos detectados pela CNN                
                 else:
-                    #print('objetos detectados via openvino')
+                    print('objetos detectados via openvino')
 
                     #objectsTracking = ct.update(listObjectsTracking)
 
@@ -307,7 +298,7 @@ class InferenceCore(QThread):
                         if self.camRunTime.portaoVirtualSelecionado:
 
                             #objetos com ID e centro de massa
-                            self.camRunTime.objectsTracking = ct.update(self.camRunTime.listObjectsTracking)
+                            self.camRunTime.objectsTracking = self.camRunTime.ct.update(self.camRunTime.listObjectsTracking)
 
                             for (objectID, centroid) in self.camRunTime.objectsTracking.items():
 
@@ -480,7 +471,7 @@ class InferenceCore(QThread):
                                             if utils.checkInternetAccess():
 
                                                 log.info('Alerta enviado ID[' + str(objectID) + ']')
-                                                threadEmail = Thread(target=sendMailAlert, args=(emailConfig['name'],
+                                                threadEmail = Thread(target=sendMailAlert, args=(self.camRunTime.emailConfig['name'],
                                                                                                    self.camRunTime.emailConfig['to'],
                                                                                                    self.camRunTime.emailConfig['subject'],
                                                                                                    self.camRunTime.emailConfig['port'],
@@ -731,7 +722,7 @@ class InferenceCore(QThread):
 
                 #print('ANTES testando sessao')
                 if self.camRunTime.timeSession >= self.camRunTime.CHECK_SESSION:
-                    print('timeSession > CHECK_SESSION')
+                    #print('timeSession > CHECK_SESSION')
 
                     session = {self.camRunTime.login.get('user'), self.camRunTime.login.get('token')}
 
@@ -740,7 +731,7 @@ class InferenceCore(QThread):
                     if conexao: 
 
                         log.debug('Conexao com a Internet estabelecida')
-                        print('Conexao com a Internet estabelecida')
+                        #print('Conexao com a Internet estabelecida')
                         self.camRunTime.STOP_ALL = False
 
                         while (len(self.camRunTime.pilhaAlertasNaoEnviados) > 0) and (self.camRunTime.STOP_ALL == False):  
@@ -759,7 +750,7 @@ class InferenceCore(QThread):
                             alertaEmail[8]))
                             
                             threadEmail.start()
-                            print('Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
+                            #print('Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
                             log.debug('Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
 
                             #listObjectMailAlerted.append(alertaEmail[9])
