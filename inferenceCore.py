@@ -88,7 +88,7 @@ class InferenceCore(QThread):
     def __init__(self):
         super().__init__()
         self._run_flag = True
-        print('InferenceCore __init__')
+        #print('InferenceCore __init__')
 
         #cv.namedWindow('frame', cv.WINDOW_FREERATIO)
         #cv.setWindowTitle('frame', 'Portão Virtual')
@@ -829,22 +829,30 @@ class InferenceCore(QThread):
 
     def stop(self):
         #"""Sets run flag to False and waits for thread to finish"""
+        #if self.camRunTime.out_video is not None:
+        log.warning('Fim da captura de video out_video_all_time')
         if self.camRunTime.out_video is not None:
-            log.warning('Fim da captura de video out_video_all_time')
             self.camRunTime.out_video.release()
-
-        if self.camRunTime.out_video_all_time is not None:
-            log.warning('Fim da captura de video out_video_all_time')
-            self.camRunTime.out_video_all_time.release()
-
-
-        if self.camRunTime.ipCam and cv is not None:
-            log.info('ipCam release and cv.destroyAllWindows') 
+        
+        if self.camRunTime.ipCam is not None:
             self.camRunTime.ipCam.release()
-            cv.destroyAllWindows()
-
+        
+        cv.destroyAllWindows()
         self._run_flag = False
         self.wait()
+
+        # if self.camRunTime.out_video_all_time is not None:
+            # log.warning('Fim da captura de video out_video_all_time')
+            # self.camRunTime.out_video_all_time.release()
+
+
+        # if self.camRunTime.ipCam and cv is not None:
+            # log.info('ipCam release and cv.destroyAllWindows') 
+            # self.camRunTime.ipCam.release()
+            # cv.destroyAllWindows()
+
+        
+        
 
 
 

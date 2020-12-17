@@ -206,7 +206,7 @@ class FormProc(QWidget):
         #implementar logica de checar licença TO-DO
         
         print('formConfig statusLicence: ' + str(self.camRunTime.statusLicence))
-        if self.camRunTime.statusLicence: 
+        if self.camRunTime.statusLicence and not self.camRunTime.errorRtsp: 
 
             print('init Thread OpenCV')        
             ### Thread OpenCV
@@ -228,17 +228,20 @@ class FormProc(QWidget):
             
             
             self.threadProcurarCam = QThread()
-            self.threadProcurarCam = CamFinder()
+            self.threadProcurarCam = CamFinder(False)
             self.threadProcurarCam.updateProgress.connect(self.updateProcurarCam)
             #self.threadProcurarCam.start()
-            
-            
-            
-            
+           
 
-        elif self.camRunTime.rtspStatus:
+        elif self.camRunTime.errorRtsp:
             print('Erro ao conectar a câmera')
-            self.uiConfig.lblCam1.setText('Câmera com erro de conexão. Procure ou configure uma nova câmera.')
+            self.uiConfig.lblCam1.setText('Câmera com erro de conexão. O sistema está checando se a câmera mudou de IP')
+            
+            #self.camRunTime.checkNewIp()
+            self.threadRtspStatus = QThread()
+            self.threadRtspStatus = CamFinder(True)
+            self.threadRtspStatus.updateProgress.connect(self.updateProcurarCam)            
+            self.threadRtspStatus.start()        
 
                 # initOpenVino()
                 
@@ -325,7 +328,7 @@ class FormProc(QWidget):
         self._run_flag = False        
         statusFields = True
         pausaConfig = False     
-        self.uiConfig.thread.stop()
+        #self.uiConfig.thread.stop()
         #event.accept()
 
     def btnInitSair(self):        
@@ -686,7 +689,7 @@ class FormProc(QWidget):
 
         log.debug('Ativando camera selecionada')
         
-        if len(self.camRunTime.listCamAtivas) > 0: 
+        if len(self.camRunTime.listCamAtivas) > 0 and self.camRunTime.listCamAtivas is not None: 
             idCombo = self.uiConfig.comboBoxCamAtivas.currentText().split(':')[0]
             idCombo = idCombo.replace('[','')
             idCombo = idCombo.replace(']','')
@@ -881,7 +884,7 @@ class FormProc(QWidget):
         ## Chamar Thread ##
         
         
-        #self.threadProcurarCam = QThread()
+        self.threadProcurarCam = QThread()
         #self.threadProcurarCam = getListCam()
         
         print('btnProcurarCam')
@@ -891,35 +894,107 @@ class FormProc(QWidget):
         
 
     
-    @QtCore.pyqtSlot(float, 'QVariantList', 'QVariantList')
-    def updateProcurarCam(self, progress, listCamEncontradas, listCamAtivas):
+    @QtCore.pyqtSlot(float, 'QVariantList', 'QVariantList', bool)
+    def updateProcurarCam(self, progress, listCamEncontradas, listCamAtivas, rtspError):
     
         print('Progress: {:.2f}'.format(progress))
+        self.uiConfig.progressBarProcurarCam.show()
         self.uiConfig.progressBarProcurarCam.setValue(progress)
         
+        self.camRunTime.listCamAtivas = listCamAtivas
+        self.camRunTime.listCamEncontradas = listCamEncontradas
         
-        if progress == 100:    
-            self.listCamAtivas = listCamAtivas
-            self.listCamEncontradas = listCamEncontradas
-            
-            for cam in self.listCamAtivas:
-                self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']: ' + cam.get('ip') + ' : ' + cam.get('port'))
+        if not rtspError:
+            if progress == 100:    
+                
+                
+                for cam in self.camRunTime.listCamAtivas:
+                    self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']: ' + cam.get('ip') + ' : ' + cam.get('port'))
 
-            for cam2 in self.camRunTime.listCamEncontradas:
-                self.uiConfig.comboBoxCamEncontradas.addItem('[' + cam2.get('id') + ']: ' + cam2.get('ip') + ' : ' + cam2.get('port'))
+                for cam2 in self.camRunTime.listCamEncontradas:
+                    self.uiConfig.comboBoxCamEncontradas.addItem('[' + cam2.get('id') + ']: ' + cam2.get('ip') + ' : ' + cam2.get('port'))
 
-            self.statusConfig.zerarListCamAtivasConfig() 
-            self.statusConfig.zerarListCamEncontradasConfig()
+                self.statusConfig.zerarListCamAtivasConfig() 
+                self.statusConfig.zerarListCamEncontradasConfig()
 
-            self.statusConfig.addListCamAtivasConfig(self.listCamAtivas)
-            self.statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
+                self.statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)
+                self.statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
+                
+                self.uiConfig.lblStatusProcurarCam.setText('Busca por novas câmeras terminado')
+                self.uiConfig.progressBarProcurarCam.hide()
+                
+                self.camRunTime.init() 
+                self.fillTabGeral()
+                self.infCam.setCamRunTime(self.camRunTime)
+        else:
+            print('updateProcurarCam rtspError True')
+            #checar se o mac address camEmUso vs nova cam ativa
+            camEmUso = self.statusConfig.getCamEmUsoConfig()
             
-            self.uiConfig.lblStatusProcurarCam.setText('Busca por novas câmeras terminado')
-            self.uiConfig.progressBarProcurarCam.hide()
-            
-            self.camRunTime.init() 
-            self.fillTabGeral()
-            self.infCam.setCamRunTime(self.camRunTime)
+            if progress == 100:
+                print('updateProcurarCam rtspError True - progress 100')
+                if (camEmUso is not None) and (self.camRunTime.listCamAtivas is not None):
+                    print('camEmUso listCamAtivas not None')                    
+                    print('-')
+                    print('camEmUso IP: {}'.format(camEmUso.get('ip')))
+                    print('camEmUso MAC: {}'.format(camEmUso.get('mac')))
+                    
+                    for cam in self.camRunTime.listCamAtivas:                                            
+                        
+                        print(' -- ')
+                        print('camEmUso listCamAtivas: {}'.format(cam.get('ip')))
+                        print('camEmUso listCamAtivas: {}'.format(cam.get('mac')))
+                        if cam.get('mac') == camEmUso.get('mac'):
+                            if cam.get('ip') != camEmUso.get('ip'):
+                                
+                                print('Camera em uso mudou de IP')
+                                log.debug('Camera em uso mudou de IP')
+                                log.debug('Camera em uso IP: {}'.format(camEmUso.get('ip')))
+                                log.debug('Novo IP: {}'.format(cam.get('ip')))
+                                print('Novo IP: {}'.format(cam.get('ip')))
+                                
+                                self.camRunTime.ipCam, self.camRunTime.error = utils.camSource(cam.get('source'))
+
+                                if self.camRunTime.error != '':
+                                    self.camRunTime.ipCam = None
+                                    self.camRunTime.rtspStatus = False
+                                    log.critical('Erro camSource: {}'.format(self.camRunTime.error))
+                                    print('Erro camSource: {}'.format(self.camRunTime.error))
+                                    #ui.lblStatus.setText('Falha em localizar novo IP automaticamente. Tente configurar o endereço RTSP, e clique em "Salvar"')
+                                    #ui.lblStatusProcurarCam.setText('Falha em localizar o novo IP automaticamente. Tente configurar uma nova câmera ou fazer uma nova varredura por câmeras clicando em "Procurar Câmeras". ')
+                                else:
+
+                                    self.statusConfig.setRtspConfig(cam.get('source'))
+                                    self.statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)
+                                    self.statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
+                                    #ui.txtUrlRstp.setText(cam.get('source'))
+
+                                    self.camRunTime.rtspStatus = True 
+                                    self.camRunTime.ipCam.set(3, self.camRunTime.RES_X)
+                                    self.camRunTime.ipCam.set(4, self.camRunTime.RES_Y)
+                                    print('Conexao com camera restabelecida.')
+                                    log.debug('Conexao com camera restabelecida.')
+                                    self.uiConfig.lblStatus.setText('Conexão com a camera estabelecida! Feche a janela para inciar o Portão Virtual')
+                                    self.uiConfig.lblStatusProcurarCam.setText('Conexão com a câmera estabelecida! Feche a janela para inciar o Portão Virtual')
+                                    break
+
+                    #checar se o mac address camEmUso vs nova cam encontrada 
+                    if (self.camRunTime.listCamEncontradas is not None) and (camEmUso is not None):
+                        for cam in self.camRunTime.listCamEncontradas:
+                            if cam.get('mac') == camEmUso.get('mac'):
+                                if cam.get('ip') != camEmUso.get('ip'):
+                                    print('Camera em uso mudou de IP')
+                                    print('Camera em uso IP: {}'.format(camEmUso.get('ip')))
+                                    print('Novo IP: {}'.format(cam.get('ip')))
+                                    log.debug('Camera em uso mudou de IP')
+                                    log.debug('Camera em uso IP: {}'.format(camEmUso.get('ip')))
+                                    log.debug('Novo IP: {}'.format(cam.get('ip')))
+                                    
+                                    #ipCam, error = utils.camSource(source)
+
+                                    self.uiConfig.lblStatus.setText('Câmera previamente configurada trocou de IP, localizamos o novo IP com sucesso. Porém a senha, porta ou canal precisam ser novamente configurados !')
+                                    self.uiConfig.lblStatusProcurarCam.setText('Câmera previamente configurada trocou de IP, localizamos o novo IP com sucesso. Porém a senha, porta ou canal precisam ser novamente configurados !')
+                                    break
 
 
 
