@@ -97,7 +97,8 @@ class CamRunTime():
     out_video = None
     out_video_all_time = None
 
-    init_video = False 
+    #init_video = False 
+    init_video = True
     pausaConfig = False
 
     statusPasswd = False
@@ -163,6 +164,7 @@ class CamRunTime():
 
     login = None 
     sessionStatus = True
+    sessionErrorCount = 2 #numero maximo de erros na sessao
     token = None
 
     #variaveis do disco
@@ -201,6 +203,29 @@ class CamRunTime():
     def setRtspError(self, status):
         print('setRtspError')
         self.errorRtsp = status
+
+    def updateIpCam(self):
+        #origem do stream do video
+        self.source = self.statusConfig.data["camSource"]
+        print('updateIpCam source: {}'.format(self.source))
+        self.ipCam, self.error = utils.camSource(self.source)
+        
+        if self.error != '':
+            
+            print('Erro camSource: {}'.format(self.error))
+            self.errorRtsp = True
+            self.rtspStatus = False 
+            
+        else:
+            self.rtspStatus = True 
+            self.errorRtsp = False
+            self.ipCam.set(3, self.RES_X)
+            self.ipCam.set(4, self.RES_Y)
+            log.debug('Conexao com camera restabelecida.')            
+            print('updateIpCam - Conexao com camera restabelecida.')            
+            self.conectado = False
+            self.frame = None
+            self.next_frame = None
   
 
     def init(self):
@@ -213,7 +238,16 @@ class CamRunTime():
         if sys.platform == 'linux':
                 self.OS_PLATFORM = 'linux'
 
-               
+        
+        # if self.ipCam is not None:
+            # self.ipCam = None
+        
+        # if self.out_video is not None:
+            # self.out_video = None
+        
+        # if self.out_video_all_time is not None:
+            # self.out_video_all_time = None
+        
         self.current_data_dir = utils.getDate()
         self.current_data_dir = [self.current_data_dir.get('day'), self.current_data_dir.get('month')]
         self.hora = utils.getDate()['hour'].replace(':','-')
@@ -293,80 +327,12 @@ class CamRunTime():
             self.errorRtsp = True
             self.rtspStatus = False 
             
-            
-            # self.ipCam = None
-            # self.rtspStatus = False
-            # log.critical('Erro camSource: {}'.format(self.error))
-            
-            # #self.uiConfig.lblStatus.setText('Erro de conexao da camera. Tente configurar o endereço RTSP, e clique em "Salvar"')
-            # #self.uiConfig.lblStatusProcurarCam.setText('Erro de conexao da camera. Tente configurar uma nova câmera ou fazer uma nova varredura por câmeras clicando em "Procurar Câmeras". ')
-            
-            # #checar se houve mudança de IP
-            # camEmUso = self.statusConfig.getCamEmUsoConfig()
-
-            # #self.camListEncontradas, self.camListAtivas = self.camFinder.start()
-            # self.camListEncontradas, self.camListAtivas = self.camFinder.getListCam()
-            
-            
-
-            # #checar se o mac address camEmUso vs nova cam ativa
-            # for cam in self.camListAtivas:
-                # if cam.get('mac') == camEmUso.get('mac'):
-                    # if cam.get('ip') != camEmUso.get('ip'):
-                        
-                        # print('Camera em uso mudou de IP')
-                        # log.debug('Camera em uso mudou de IP')
-                        # log.debug('Camera em uso IP: {}'.format(camEmUso.get('ip')))
-                        # log.debug('Novo IP: {}'.format(cam.get('ip')))
-                        
-                        # self.ipCam, self.error = utils.camSource(cam.get('source'))
-
-                        # if self.error != '':
-                            # self.ipCam = None
-                            # self.rtspStatus = False
-                            # log.critical('Erro camSource: {}'.format(error))
-                            # #ui.lblStatus.setText('Falha em localizar novo IP automaticamente. Tente configurar o endereço RTSP, e clique em "Salvar"')
-                            # #ui.lblStatusProcurarCam.setText('Falha em localizar o novo IP automaticamente. Tente configurar uma nova câmera ou fazer uma nova varredura por câmeras clicando em "Procurar Câmeras". ')
-                        # else:
-
-                            # self.statusConfig.setRtspConfig(cam.get('source'))
-                            # self.statusConfig.addListCamAtivasConfig(self.listCamAtivas)
-                            # self.statusConfig.addListCamEncontradasConfig(self.listCamEncontradas)
-                            # #ui.txtUrlRstp.setText(cam.get('source'))
-
-                            # self.rtspStatus = True 
-                            # self.ipCam.set(3, RES_X)
-                            # self.ipCam.set(4, RES_Y)
-                            # log.debug('Conexao com camera restabelecida.')
-                            # #ui.lblStatus.setText('Conexão com a camera estabelecida! Feche a janela para inciar o Portão Virtual')
-                            # #ui.lblStatusProcurarCam.setText('Conexão com a câmera estabelecida! Feche a janela para inciar o Portão Virtual')
-                            # break
-
-
-
-            # #checar se o mac address camEmUso vs nova cam encontrada 
-            # for cam in self.camListEncontradas:
-                # if cam.get('mac') == camEmUso.get('mac'):
-                    # if cam.get('ip') != camEmUso.get('ip'):
-                        # print('Camera em uso mudou de IP')
-                        # print('Camera em uso IP: {}'.format(camEmUso.get('ip')))
-                        # print('Novo IP: {}'.format(cam.get('ip')))
-                        # log.debug('Camera em uso mudou de IP')
-                        # log.debug('Camera em uso IP: {}'.format(camEmUso.get('ip')))
-                        # log.debug('Novo IP: {}'.format(cam.get('ip')))
-                        
-                        # #ipCam, error = utils.camSource(source)
-
-                        # #ui.lblStatus.setText('Câmera previamente configurada trocou de IP, localizamos o novo IP com sucesso. Porém a senha, porta ou canal precisam ser novamente configurados !')
-                        # #ui.lblStatusProcurarCam.setText('Câmera previamente configurada trocou de IP, localizamos o novo IP com sucesso. Porém a senha, porta ou canal precisam ser novamente configurados !')
-                        # break 
-            
         else:
             self.rtspStatus = True 
+            self.errorRtsp = False
             self.ipCam.set(3, self.RES_X)
             self.ipCam.set(4, self.RES_Y)
-            log.debug('Conexao com camera restabelecida.')
-            #ui.lblStatus.setText('Conexão com a camera estabelecida! Feche a janela para inciar o Portão Virtual')
-            #ui.lblStatusProcurarCam.setText('Conexão com a câmera estabelecida! Feche a janela para inciar o Portão Virtual')
+            log.debug('Conexao com camera restabelecida.')            
+            print('Conexao com camera restabelecida.')            
 
         self.prob_threshold = float(self.statusConfig.data["prob_threshold"])

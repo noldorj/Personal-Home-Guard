@@ -153,8 +153,10 @@ def camSource(source = 'webcam'):
         else:
             if ipCam.isOpened():
                 log.debug('Imagem de camera rstp ok')
+                print('Imagem de camera rstp ok')
             else:
                 error = 'rtsp'
+                print('camSource:: error rtsp')
 
     return ipCam, error
 

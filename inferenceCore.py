@@ -73,15 +73,12 @@ def callbackButtonResumeSound(self, ret):
 
 
 
-
-
-
-
 class InferenceCore(QThread):
 
     change_pixmap_signal = pyqtSignal(np.ndarray)
     #updateStorageInfo = pyqtSignal()
     storageFull = pyqtSignal()
+    warningSessionLoss = pyqtSignal()
     camRunTime = None
     #isDiskFull = False
 
@@ -97,7 +94,7 @@ class InferenceCore(QThread):
     def setCamRunTime(self, camRunTime):
         self.camRunTime = camRunTime
 
-    def isIdInsideRegion(centroid, ref_point_polygon):
+    def isIdInsideRegion(self, centroid, ref_point_polygon):
         path = Path(ref_point_polygon)
         mask = path.contains_points([(centroid[0], centroid[1])])
         return mask
@@ -195,6 +192,7 @@ class InferenceCore(QThread):
     
         print('InferenceCore run()')
         self.initOpenVino()
+        errorSession = 0
         #print('init_video: ' + str(self.camRunTime.init_video))
 
         #while True:        
@@ -289,7 +287,7 @@ class InferenceCore(QThread):
 
                 #se tem objetos detectados pela CNN                
                 else:
-                    print('objetos detectados via openvino')
+                    #print('objetos detectados via openvino')
 
                     #objectsTracking = ct.update(listObjectsTracking)
 
@@ -355,18 +353,18 @@ class InferenceCore(QThread):
 
                                                             if currentMinutes >= startMinutes and currentMinutes < endMinutes:
 
-                                                                if tSoundLimit > 0:
+                                                                if self.camRunTime.tSoundLimit > 0:
 
                                                                     tSoundEnd = time.time()
                                                                     tSound = tSoundEnd - tSoundStart
 
-                                                                    if tSound < tSoundLimit:
-                                                                        stopSound = True
+                                                                    if tSound < self.camRunTime.tSoundLimit:
+                                                                        self.camRunTime.stopSound = True
                                                                     else:
-                                                                        stopSound = False
-                                                                        tSoundLimit = 0
+                                                                        self.camRunTime.stopSound = False
+                                                                        self.camRunTime.tSoundLimit = 0
 
-                                                                if a.get('isSoundAlert') == "True" and not stopSound:
+                                                                if a.get('isSoundAlert') == "True" and not self.camRunTime.stopSound:
                                                                     #evitar campainhas seguidas para mesmo objeto
                                                                     if self.camRunTime.listObjectSoundAlerted.count(objectID) == 0:
                                                                         utils.playSound()
@@ -513,11 +511,9 @@ class InferenceCore(QThread):
 
                 self.camRunTime.timeGravandoAll = time.time() - self.camRunTime.timeGravandoAllInit
                 
-                #print('checando se o disco está cheio')
-                #self.updateStorageInfo.emit()
+                
                 if not self.camRunTime.isDiskFull:
-                # if not utils.isDiskFull(self.camRunTime.diskMinUsage):                    
-                    # print('disco ok')
+               
                     
                     if self.camRunTime.spaceMaxDirVideosOnAlarme == 0 or ( self.camRunTime.spaceMaxDirVideosOnAlarme >= self.camRunTime.dirVideosOnAlarmesUsedSpace ):
 
@@ -543,40 +539,10 @@ class InferenceCore(QThread):
                         #if gravando:
                         if self.camRunTime.gravandoOnAlarmes and (self.camRunTime.STOP_ALL == False):
                             if self.camRunTime.out_video is not None:
-                                print('gravandoOnAlarmes')
+                                #print('gravandoOnAlarmes')
                                 self.camRunTime.out_video.write(frame_no_label)
 
-                    # #espaço maximo na pasta VideosOnAlarmes atingido                     
-                    # else:
-                        # #avisar por email 1x a cada X tempo ? 
-                        # print('#espaço maximo na pasta VideosOnAlarmes atingido')
-                        # if not self.camRunTime.emailSentFullVideosOnAlarmes:  
-                            
-                            # data = utils.getDate()
-                            # data_email_sent = data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year']
-                            # log.critical('Espaço maximo na pasta {} atingido'.format(self.camRunTime.statusConfig.data["dirVideosOnAlarmes"]))
-                            # threadEmail = Thread(target=sendMail, args=(
-
-                                # 'Portao Virtual - Falta de espaço  na pasta "Alarmes"',
-                                # 'Espaço maximo na pasta " {} " atingido. \n\n \
-                                # Status do armazenamento - {} \n \
-                                # Espaço livre em disco em %       : {:3d}% \n \
-                                # Espaço livre em disco em GB      : {:3.2f} GB \n \
-                                # Espaço utilizado "Video Alarmes" : {:3.2f} GB \n \
-                                # Espaço utilizado "Video 24hs"    : {:3.2f} GB \n \
-                                # Número de dias estimados para gravação: {:3d} \n \
-                                # '.format(self.camRunTime.statusConfig.data["dirVideosOnAlarmes"], 
-                                    # data_email_sent,
-                                    # self.camRunTime.diskUsageFree(), 
-                                    # self.camRunTime.diskUsageFreeGb(),
-                                    # self.camRunTime.dirVideosOnAlarmesUsedSpace,
-                                    # self.camRunTime.dirVideosAllTimeUsedSpace, 
-                                    # self.camRunTime.numDaysRecording
-                                    # )) )
-                            
-                            # threadEmail.start()
-                            # self.camRunTime.emailSentFullVideosOnAlarmes = True
-                            # #avisar por email 1x a cada X tempo ? 
+                   
 
 
                     if self.camRunTime.spaceMaxDirVideosAllTime == 0 or ( self.camRunTime.spaceMaxDirVideosAllTime >= self.camRunTime.dirVideosAllTimeUsedSpace ):
@@ -607,35 +573,7 @@ class InferenceCore(QThread):
                             self.camRunTime.timeGravandoAllInit = time.time()
                                 
 
-                    # else:
-                        
-                        # if not self.camRunTime.emailSentFullVideosAllTime:  
-                            # log.critical('Espaço maximo na pasta {} atingido'.format(self.camRunTime.statusConfig.data["dirVideosAllTime"]))
-
-                            # data = utils.getDate()
-                            # data_email_sent = data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year']
-                            # threadEmail = Thread(target=sendMail, args=(
-
-                                # 'Portao Virtual - Falta de espaço  na pasta "Videos 24hs"',
-                                # 'Espaço maximo na pasta " {} " atingido. \n\n \
-                                # Status do armazenamento - {} \n \
-                                # Espaço livre em disco em %       : {:3d}% \n \
-                                # Espaço livre em disco em GB      : {:3.2f}GB \n \
-                                # Espaço utilizado "Video Alarmes" : {:3.2f}GB \n \
-                                # Espaço utilizado "Video 24hs"    : {:3.2f}GB \n \
-                                # Número de dias estimados para gravação: {:3d} \n \
-                                # '.format(self.camRunTime.statusConfig.data["dirVideosAllTime"], 
-                                    # data_email_sent,
-                                    # utils.getDiskUsageFree(), 
-                                    # utils.getDiskUsageFreeGb(),
-                                    # utils.getDirUsedSpace(self.camRunTime.statusConfig.data['dirVideosOnAlarmes']),
-                                    # utils.getDirUsedSpace(self.camRunTime.statusConfig.data['dirVideosAllTime']), 
-                                    # utils.getNumDaysRecording()
-                                    # )) )
-
-                            # threadEmail.start()
-                            # self.camRunTime.emailSentFullVideosAllTime = True
-                            # #avisar por email 1x a cada X tempo ? 
+                   
 
                 #disco cheio 
                 else:
@@ -769,8 +707,16 @@ class InferenceCore(QThread):
                        
                         elif self.camRunTime.sessionStatus == False:
                             log.warning('sessionStatus: {}'.format(self.camRunTime.sessionStatus))
-                            log.warning('stopWatchDog chamado')
-                            utils.stopWatchDog()
+                            if self.camRunTime.sessionErrorCount > 2:
+                                self.warningSessionLoss.emit()
+                                print('self.warningSessionLoss.emit()')
+                                #log.warning('stopWatchDog chamado')
+                                #utils.stopWatchDog()
+                            else:
+                                errorSession = errorSession + 1
+                                log.warning('Erro de sessao pela {:d} vez'.format(errorSession))
+                                print('Erro de sessao pela {:d} vez'.format(errorSession))
+                                
 
 
                     else:
@@ -793,12 +739,13 @@ class InferenceCore(QThread):
 
 
                             log.critical('Tempo maximo sem Internet permitido esgotado - Portao Virtual ficará inativo')
-                            msg = QMessageBox()
-                            msg.setIcon(QMessageBox.Information)
-                            msg.setWindowTitle("Sem conexão com a Internet")
-                            msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-                            msg.setText("Tempo maximo de 3 horas sem conexão com a Internet atingido - Portao Virtual ficará inativo, mostrando somente as imagens")
-                            msg.exec()
+                            #CHAMAR FUNCAO NA gui
+                            # msg = QMessageBox()
+                            # msg.setIcon(QMessageBox.Information)
+                            # msg.setWindowTitle("Sem conexão com a Internet")
+                            # msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+                            # msg.setText("Tempo maximo de 3 horas sem conexão com a Internet atingido - Portao Virtual ficará inativo, mostrando somente as imagens")
+                            # msg.exec()
                             #desativar funcoes
 
                         #emitir mensagem de aviso
@@ -813,8 +760,8 @@ class InferenceCore(QThread):
 
             else:
                 if not self.camRunTime.conectado:
-                    log.warning('Reconectando em 5 segundos...')
-                    print('Reconectando em 5 segundos...')
+                    log.warning('Conectado False - Reconectando em 5 segundos...')
+                    print('Conectado False - Reconectando em 5 segundos...')
                     #init_video = False
                     time.sleep(5)
                     self.camRunTime.ipCam, self.camRunTime.error = utils.camSource(self.camRunTime.source)
@@ -827,6 +774,9 @@ class InferenceCore(QThread):
                     self.initOpenVino() 
                     time.sleep(5)
 
+        
+        self.stop()
+    
     def stop(self):
         #"""Sets run flag to False and waits for thread to finish"""
         #if self.camRunTime.out_video is not None:
@@ -839,7 +789,7 @@ class InferenceCore(QThread):
         
         cv.destroyAllWindows()
         self._run_flag = False
-        self.wait()
+        #self.wait()
 
         # if self.camRunTime.out_video_all_time is not None:
             # log.warning('Fim da captura de video out_video_all_time')
