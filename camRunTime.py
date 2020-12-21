@@ -18,6 +18,8 @@ class CamRunTime():
 
     #camFinder = CamFinder(False)
 
+    camRunTimeId = 0 
+    changeIpCam = False
     OS_PLATFORM = 'windows'
     #variaveis globais
     diskFullWarned = False
@@ -206,7 +208,9 @@ class CamRunTime():
 
     def updateIpCam(self):
         #origem do stream do video
+        self.statusConfig = utils.StatusConfig()
         self.source = self.statusConfig.data["camSource"]
+        
         print('updateIpCam source: {}'.format(self.source))
         self.ipCam, self.error = utils.camSource(self.source)
         
@@ -223,17 +227,21 @@ class CamRunTime():
             self.ipCam.set(4, self.RES_Y)
             log.debug('Conexao com camera restabelecida.')            
             print('updateIpCam - Conexao com camera restabelecida.')            
-            self.conectado = False
+            self.conectado = False            
             self.frame = None
             self.next_frame = None
+            self.changeIpCam = True
   
 
     def init(self):
 
+        
         log.debug(' ')
         log.debug('initConfig')
         log.debug(' ')
         print('camRunTime init')
+        
+        self.camRunTimeId = secrets.token_urlsafe(5)
 
         if sys.platform == 'linux':
                 self.OS_PLATFORM = 'linux'

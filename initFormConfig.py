@@ -134,6 +134,7 @@ class FormProc(QWidget):
         self.uiConfig.checkBoxWebCam.stateChanged.connect(self.checkBoxWebcamStateChanged)
         
         self.uiConfig.checkBoxDesabilitarLoginAutomatico.stateChanged.connect(self.checkBoxDesabilitarLoginAutomatico)
+        self.uiConfig.checkTodosDias.stateChanged.connect(self.checkBoxTodosDiasStateChanged)
        
         self.uiConfig.checkBoxNoLimitsVideosAllTime.stateChanged.connect(self.checkBoxNoLimitsVideosAllTime)
         self.uiConfig.checkBoxNoLimitsVideosOnAlarmes.stateChanged.connect(self.checkBoxNoLimitsVideosOnAlarmes)
@@ -171,8 +172,8 @@ class FormProc(QWidget):
 
             for r in self.camRunTime.regions:
                 self.uiConfig.comboRegions.addItem(r.get("nameRegion"))
-            self.comboRegionsUpdate(self.uiConfig.comboRegions.currentIndex())
-            self.comboAlarmsUpdate(self.uiConfig.comboAlarms.currentIndex())
+            self.comboRegionsUpdate(0)
+            self.comboAlarmsUpdate(0)
         else:
             self.uiConfig.btnDeleteRegion.setEnabled(False)
             self.uiConfig.btnDeleteAlarm.setEnabled(False)
@@ -233,6 +234,8 @@ class FormProc(QWidget):
             #self.threadProcurarCam = CamFinder(False)
             #self.threadProcurarCam.updateProgress.connect(self.updateProcurarCam)
             #self.threadProcurarCam.start()
+            
+            
            
 
         elif self.camRunTime.errorRtsp:
@@ -344,13 +347,13 @@ class FormProc(QWidget):
         self.comboAlarmsUpdate(0)
 
     def btnDeleteRegion(self):
-        
         self.statusConfig.deleteRegion(self.uiConfig.comboRegions.currentText())        
+        self.camRunTime.regions = self.statusConfig.getRegions()
         self.refreshStatusConfig()
         self.comboRegionsUpdate(0)
         self.comboAlarmsUpdate(0)
         
-        self.camRunTime.regions = self.statusConfig.getRegions()
+        
 
     def btnSaveEmail(self):
         #global self.uiConfig
@@ -470,8 +473,9 @@ class FormProc(QWidget):
         self.uiConfig.btnCancelRegion.setEnabled(False)
         self.clearFieldsTabRegiao()
         self.comboRegionsUpdate(0)
+        self.fillTabGeral()
 
-        global portaoVirtualSelecionado, portaoVirtualSelecionado, cropPolygon
+        #global portaoVirtualSelecionado, portaoVirtualSelecionado, cropPolygon
         self.camRunTime.portaoVirtualSelecionado = True
         self.camRunTime.portaoVirtualSelecionado = True
         self.camRunTime.ref_point_polygon.clear()
@@ -570,9 +574,12 @@ class FormProc(QWidget):
             self.statusConfig.addRegion(self.uiConfig.txtRegionName.displayText(),
                                    newAlarm, objectType, round(float(self.uiConfig.txtThreshold.displayText()),2), points )
             self.refreshStatusConfig()
-            self.comboRegionsUpdate(self.uiConfig.comboRegions.currentIndex())
+            
             self.comboAlarmsUpdate(0)
-            self.camRunTime.regions = self.statusConfig.getRegions()
+            self.camRunTime.regions = self.statusConfig.getRegions()                        
+           
+            self.comboRegionsUpdate(len(self.camRunTime.regions) - 1)
+            
             #self.uiConfig.btnSaveRegion.setEnabled(False)
             self.uiConfig.btnCancelRegion.setEnabled(False)
 
@@ -716,8 +723,16 @@ class FormProc(QWidget):
 
 
             self.statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)
-            self.camRunTime.init()             
-            #self.infCam.camRunTime.updateIpCam()
+            #print('self.camRunTime ID: {}'.format(self.camRunTime.camRunTimeId))
+            #print('self.infCam.camRunTime ID: {}'.format(self.infCam.camRunTime.camRunTimeId))            
+            self.camRunTime.updateIpCam()
+            print('formConfig self.camRunTime.camSource: {}'.format(self.camRunTime.source))
+            
+            #self.camRunTime.init()             
+            print('--------------------\n')
+            #print('self.camRunTime ID: {}'.format(self.camRunTime.camRunTimeId))
+            #print('self.infCam.camRunTime ID: {}'.format(self.infCam.camRunTime.camRunTimeId))
+            
             #self.infCam.camRunTime.conectado = False
             #self.infCam.camRunTime.init()
             #self.infCam.setCamRunTime(self.camRunTime)
@@ -1200,6 +1215,7 @@ class FormProc(QWidget):
         self.clearFieldsAlarm()
 
         #preenchendo lista de alarmes
+        print('comboAlarmsUpdate index: {:d}'.format(self.uiConfig.comboRegions.currentIndex()))
         if not self.statusConfig.isAlarmEmpty(self.uiConfig.comboRegions.currentText()) and not self.statusConfig.isRegionsEmpty():
 
             self.uiConfig.btnDeleteAlarm.setEnabled(True)
@@ -1227,6 +1243,7 @@ class FormProc(QWidget):
 
     def comboRegionsUpdate(self, i):        
 
+        print('regions i: {:d}'.format(i))
         self.clearFieldsTabRegiao()
         #r = regions[i]
 
@@ -1236,7 +1253,7 @@ class FormProc(QWidget):
             for r in self.camRunTime.regions:
                 self.uiConfig.comboRegions.addItem(r.get("nameRegion"))
 
-            if len(self.camRunTime.regions) > 0:
+            if len(self.camRunTime.regions) > 0 and len(self.camRunTime.regions) <= i:
                 r = self.camRunTime.regions[i]
             #else:
             #    r = self.camRunTime.regions[0]
@@ -1255,6 +1272,7 @@ class FormProc(QWidget):
                     for a in self.camRunTime.regions[i].get('alarm'):
                         self.uiConfig.comboAlarms.addItem(a.get('name'))                
                 
+            
             self.uiConfig.comboRegions.setCurrentIndex(i)
             self.comboAlarmsUpdate(0)
             self.uiConfig.btnDeleteRegion.setEnabled(True)
@@ -1343,6 +1361,9 @@ class FormProc(QWidget):
         
         self.uiConfig.txtEmailSubject.setText(self.statusConfig.data["emailConfig"].get('subject'))
         self.uiConfig.txtEmailTo.setText(self.statusConfig.data["emailConfig"].get('to'))
+        
+        self.comboRegionsUpdate(0)
+
 
         #carregar cams previamente escaneadas na rede
         for cam in self.camRunTime.listCamAtivas:
@@ -1375,11 +1396,6 @@ class FormProc(QWidget):
             # idCombo = idCombo.replace(']','')
             # print('idCombo encontradas: {}'.format(idCombo))            
             
-            
-        
-        
-        
-        
         
         #configuracoes de armazenamento
         if self.camRunTime.spaceMaxDirVideosAllTime == 0:
@@ -1520,6 +1536,7 @@ class FormProc(QWidget):
     @pyqtSlot()
     def warningSessionLoss(self):
     
+        print('warningSessionLoss')
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
         msg.setWindowTitle("Perda de sessão")
@@ -1530,7 +1547,7 @@ class FormProc(QWidget):
     @pyqtSlot()
     def checkStorage(self):
     
-        print('checkStorage')
+        #print('checkStorage')
         self.camRunTime.dirVideosOnAlarmesUsedSpace = utils.getDirUsedSpace(self.statusConfig.data["dirVideosOnAlarmes"])
         self.camRunTime.isDiskFull = utils.isDiskFull(self.camRunTime.diskMinUsage) 
         self.camRunTime.diskUsageFree = utils.getDiskUsageFree() 

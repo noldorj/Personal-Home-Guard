@@ -610,8 +610,7 @@ class StatusConfig:
         self.dataLogin['autoStart'] = autoStart 
 
         self.saveConfigLogin()
-
-
+        
     def setLoginAutomatico(self, status):
 
         self.dataLogin['loginAutomatico'] = status 

@@ -119,10 +119,7 @@ class InferenceCore(QThread):
             self.camRunTime.portaoVirtualSelecionado = True
 
     def initOpenVino(self):
-        #global isOpenVino, ret, frame, next_frame, cvNet, nchw, exec_net, input_blob, out_blob
-        #global device, openVinoModelXml, openVinoModelBin, openVinoCpuExtension, openVinoPluginDir
-        #global initOpenVinoStatus, init_video, cur_request_id, next_request_id, render_time
-        #global out_video_all_time, timeSessionInit, timeGravandoAllInit, timeGravandoAll, hora, nameVideoAllTime, dir_video_trigger_all_time, timeInternetOffStart, h, w
+        
         
         ### ---------------  OpenVino Init ----------------- ###
         
@@ -549,7 +546,7 @@ class InferenceCore(QThread):
                     
                         if self.camRunTime.gravandoAllTime and (self.camRunTime.STOP_ALL == False):
                             if self.camRunTime.out_video_all_time is not None:
-                                print('gravandoAllTime')
+                                #print('gravandoAllTime')
                                 self.camRunTime.out_video_all_time.write(frame_no_label)
                         
                         
@@ -583,59 +580,7 @@ class InferenceCore(QThread):
                         self.camRunTime.gravandoAllTime = False
                         self.camRunTime.gravandoOnAlarmes = False
                         
-                    #self.storageFull.emit()
-                    
-                    # if not self.camRunTime.emailSentDiskFull:  
-                        # if self.camRunTime.eraseOldestFiles:
-                            # textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a deletar \
-                                    # os videos mais antigos, recomendamos que aumente seu espaço em disco \
-                                    # para não perder as gravações realizadas.'
-
-                            # threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
-                            # threadEmailDiskFull.start()
-                            # self.camRunTime.emailSentDiskFull = True
-                            # log.info('Email de disco cheio enviado - apagando videos antigos ')
-                            # #avisar por email 1x a cada X tempo ? 
-                        # else:
-                            # textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a não \
-                                    # gravar videos novos, recomendamos que aumente seu espaço em disco \
-                                    # para poder novos videos quando ocorrer futuros alarmes.'
-
-                            # threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
-                            # threadEmailDiskFull.start()
-                            # self.camRunTime.emailSentDiskFull = True
-                            # log.info('Email de disco cheio enviado - interromper novos videos')
-
-
-                    # # realmente apaga os videos mais antigos ? 
-                    # if self.camRunTime.eraseOldestFiles:
-
-                        # if utils.freeDiskSpace(self.camRunTime.statusConfig.getDirVideosAllTime()) == False:
-                        
-                            # log.critical('Diretorios de "Videos 24hs" já está vazio')
-                            # if not emailSentdirVideosAllTimeEmpty:
-                                # textEmail = 'Mesmo apagando a pasta "Videos 24hs", seu HD continua cheio ! \n\n \ Nossa sugestão é que você libere mais espaço para pode gravar os "Videos 24hs"' 
-
-                                # threadEmailAllEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos 24hs" apagada - seu HD está cheio !',textEmail))
-                                # threadEmailAllEmpty.start()
-                                # emailSentdirVideosAllTimeEmpty = True
-
-                    
-                        # #se ainda não tiver sido suficiente
-                        # if utils.isDiskFull(diskMinUsage):
-                            # log.info('Apagando diretórios de Alarmes')
-                            # #log.info('Dir: {}'.format(statusConfig.getDirVideosOnAlarmes()))
-                            # if utils.freeDiskSpace(statusConfig.getDirVideosOnAlarmes()) == False:
-                                # log.critical('Diretorios de "Vidos Alarme" já está vazio')
-
-                                # if not emailSentdirVideosOnAlarmesEmpty:
-                                    # textEmail = 'Mesmo apagando a pasta "Videos Alarme", seu HD continua cheio ! \n\n  \
-                                             # Nossa sugestão é que você libere mais espaço para pode gravar os "Videos Alarme"' 
-                                            
-                                    # threadEmailAlarmesEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos Alarmes" apagada - seu HD está cheio !',textEmail))
-                                    # threadEmailAlarmesEmpty.start()
-                                    # self.camRunTime.emailSentdirVideosOnAlarmesEmpty = True
-
+                   
                     
                 
                 #end else disco cheio  
@@ -762,14 +707,29 @@ class InferenceCore(QThread):
                 if not self.camRunTime.conectado:
                     log.warning('Conectado False - Reconectando em 5 segundos...')
                     print('Conectado False - Reconectando em 5 segundos...')
+                    self.source = self.camRunTime.statusConfig.data["camSource"]
                     #init_video = False
                     time.sleep(5)
                     self.camRunTime.ipCam, self.camRunTime.error = utils.camSource(self.camRunTime.source)
                     self.camRunTime.ipCam.set(3, self.camRunTime.RES_X)
                     self.camRunTime.ipCam.set(4, self.camRunTime.RES_Y)
+                    self.camRunTime.conectado, self.camRunTime.frame = self.camRunTime.ipCam.read()
                     #ipCam = utils.camSource(source)
+                elif self.camRunTime.changeIpCam:
+                    log.warning('changeIpCam True')
+                    print('changeIpCam True')                    
+                    #self.source = self.statusConfig.data["camSource"]
+                    print('self.camRunTime.source: {}'.format(self.camRunTime.source))
+                    self.camRunTime.ipCam, self.camRunTime.error = utils.camSource(self.camRunTime.source)
+                    self.camRunTime.ipCam.set(3, self.camRunTime.RES_X)
+                    self.camRunTime.ipCam.set(4, self.camRunTime.RES_Y)
+                    self.camRunTime.conectado, self.camRunTime.frame = self.camRunTime.ipCam.read()
+                    self.camRunTime.ret, self.camRunTime.next_frame = self.camRunTime.ipCam.read()
+                    self.changeIpCam = False
                 else:
                     log.warning('Reconectando em 5 segundos...')
+                    #self.source = self.statusConfig.data["camSource"]
+                    self.source = self.camRunTime.statusConfig.data["camSource"]
                     print('Reconectando em 5 segundos... Iniciando OpenVino novamente')
                     self.initOpenVino() 
                     time.sleep(5)
