@@ -40,7 +40,7 @@
      <x>0</x>
      <y>0</y>
      <width>921</width>
-     <height>801</height>
+     <height>671</height>
     </rect>
    </property>
    <layout class="QHBoxLayout" name="layoutForm">
@@ -66,8 +66,8 @@
         <property name="geometry">
          <rect>
           <x>0</x>
-          <y>700</y>
-          <width>901</width>
+          <y>590</y>
+          <width>911</width>
           <height>41</height>
          </rect>
         </property>
@@ -201,25 +201,31 @@
         <property name="geometry">
          <rect>
           <x>0</x>
-          <y>60</y>
-          <width>901</width>
-          <height>641</height>
+          <y>70</y>
+          <width>911</width>
+          <height>511</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="gridCam">
          <item>
           <widget class="QLabel" name="lblCam1">
            <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>854</width>
+             <height>480</height>
+            </size>
            </property>
            <property name="mouseTracking">
             <bool>true</bool>
            </property>
            <property name="frameShape">
-            <enum>QFrame::NoFrame</enum>
+            <enum>QFrame::Box</enum>
            </property>
            <property name="frameShadow">
             <enum>QFrame::Sunken</enum>

@@ -103,7 +103,7 @@ class FormProc(QWidget):
             #print('Iniciando login automatico')
             self.loginAutomatico()
             
-            #utils.initWatchDog() 
+            
         else:
         
             ## CHAMANDO TELA DE LOGIN ## 
@@ -122,6 +122,7 @@ class FormProc(QWidget):
         #if self.camRunTime.statusLicence and not self.camRunTime.errorRtsp: 
         if not loginStatus:
             log.debug('loginStatus saindo...')
+            utils.stopWatchDog() 
             self._run_flag = False 
             sys.exit()            
             
@@ -219,7 +220,7 @@ class FormProc(QWidget):
                 self.threadStorage.updateStorageInfo.connect(self.checkStorage)
                 self.threadStorage.start()
                                                             
-                
+                utils.initWatchDog() 
                
 
             elif self.camRunTime.errorRtsp:
@@ -289,6 +290,7 @@ class FormProc(QWidget):
 
     def closeEvent(self, event):                
         log.debug('closeEvent')
+        utils.stopWatchDog()
         self._run_flag = False                       
         
     
@@ -1498,6 +1500,7 @@ class FormProc(QWidget):
     def warningSessionLoss(self):
     
         log.debug('warningSessionLoss')
+        utils.stopWatchDog()
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
         msg.setWindowTitle("Perda de sessão")
