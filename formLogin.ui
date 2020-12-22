@@ -1,57 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>formLogin</class>
- <widget class="QWidget" name="formLogin">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
   <property name="windowModality">
-   <enum>Qt::ApplicationModal</enum>
+   <enum>Qt::WindowModal</enum>
   </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>594</width>
-    <height>307</height>
+    <width>590</width>
+    <height>295</height>
    </rect>
   </property>
-  <property name="focusPolicy">
-   <enum>Qt::NoFocus</enum>
-  </property>
-  <property name="contextMenuPolicy">
-   <enum>Qt::NoContextMenu</enum>
-  </property>
-  <property name="acceptDrops">
-   <bool>false</bool>
-  </property>
   <property name="windowTitle">
-   <string>Login - Portão Virtual</string>
+   <string>Dialog</string>
   </property>
-  <property name="layoutDirection">
-   <enum>Qt::LeftToRight</enum>
+  <property name="modal">
+   <bool>true</bool>
   </property>
-  <property name="locale">
-   <locale language="Portuguese" country="Brazil"/>
-  </property>
-  <widget class="QLabel" name="lblStatus">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>270</y>
-     <width>581</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="frameShape">
-    <enum>QFrame::StyledPanel</enum>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-  </widget>
   <widget class="QTabWidget" name="tabWidget">
    <property name="geometry">
     <rect>
      <x>0</x>
-     <y>10</y>
+     <y>0</y>
      <width>581</width>
      <height>251</height>
     </rect>
@@ -290,20 +262,23 @@
     </widget>
    </widget>
   </widget>
+  <widget class="QLabel" name="lblStatus">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>260</y>
+     <width>581</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::StyledPanel</enum>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
  </widget>
- <tabstops>
-  <tabstop>txtEmail</tabstop>
-  <tabstop>txtPasswd</tabstop>
-  <tabstop>btnLogin</tabstop>
-  <tabstop>btnExit</tabstop>
-  <tabstop>btnEsqueciSenha</tabstop>
-  <tabstop>txtEmail_minhaConta</tabstop>
-  <tabstop>txtPasswd_minhaConta</tabstop>
-  <tabstop>txtNovaSenha</tabstop>
-  <tabstop>txtNovaSenha2</tabstop>
-  <tabstop>btnAlterarSenha</tabstop>
-  <tabstop>tabWidget</tabstop>
- </tabstops>
  <resources/>
  <connections/>
 </ui>

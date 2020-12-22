@@ -139,7 +139,7 @@ def camSource(source = 'webcam'):
         
         log.debug('imagem da WebCam')
         ipCam = cv.VideoCapture(0)
-        print('capturando da webcam')
+        log.debug('\n run')('capturando da webcam')
 
     else:
 
@@ -148,15 +148,15 @@ def camSource(source = 'webcam'):
         except cv.error as e:
             status = False
             log.critical('camSource error: {}'.format(e))
-            print('camSource error: {}'.format(e))
+            
             error = e
         else:
             if ipCam.isOpened():
                 log.debug('Imagem de camera rstp ok')
-                print('Imagem de camera rstp ok')
+                
             else:
                 error = 'rtsp'
-                print('camSource:: error rtsp')
+                log.debug('camSource:: error rtsp')
 
     return ipCam, error
 

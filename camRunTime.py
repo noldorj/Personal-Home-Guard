@@ -104,7 +104,7 @@ class CamRunTime():
     pausaConfig = False
 
     statusPasswd = False
-    statusLicence = False
+    statusLicence = True
 
     statusConfig = None
     pb = None
@@ -118,6 +118,7 @@ class CamRunTime():
     dir_video_trigger_all_time = None
     source = None
     ipCam = None
+    nameCam = 'Camera'
     error = ''
     prob_threshold = 60.0 
     #list de objetos identificados pela CNN
@@ -185,38 +186,23 @@ class CamRunTime():
     numDaysRecording = None
     errorRtsp = False
     
-    # def checkNewIp(self):
-    
-        # print('checkNewIp ...')
-        # self.ipCam = None
-        # #self.rtspStatus = False
-        # #log.critical('Erro camSource: {}'.format(self.error))
-        # #print('Erro camSource: {}'.format(self.error))
-        # #self.uiConfig.lblStatus.setText('Erro de conexao da camera. Tente configurar o endereço RTSP, e clique em "Salvar"')
-        # #self.uiConfig.lblStatusProcurarCam.setText('Erro de conexao da camera. Tente configurar uma nova câmera ou fazer uma nova varredura por câmeras clicando em "Procurar Câmeras". ')
-        
-        # #checar se houve mudança de IP
-        # camEmUso = self.statusConfig.getCamEmUsoConfig()
-
-        # self.camListEncontradas, self.camListAtivas = self.camFinder.start(True)
-        # #self.camListEncontradas, self.camListAtivas = self.camFinder.getListCam()
-
-        
+            
     def setRtspError(self, status):
-        print('setRtspError')
+        log.debug('setRtspError')
         self.errorRtsp = status
 
     def updateIpCam(self):
+        log.debug('updateIpCam')
         #origem do stream do video
         self.statusConfig = utils.StatusConfig()
         self.source = self.statusConfig.data["camSource"]
         
-        print('updateIpCam source: {}'.format(self.source))
+        
         self.ipCam, self.error = utils.camSource(self.source)
         
         if self.error != '':
             
-            print('Erro camSource: {}'.format(self.error))
+            log.debug('Erro camSource: {}'.format(self.error))
             self.errorRtsp = True
             self.rtspStatus = False 
             
@@ -226,7 +212,7 @@ class CamRunTime():
             self.ipCam.set(3, self.RES_X)
             self.ipCam.set(4, self.RES_Y)
             log.debug('Conexao com camera restabelecida.')            
-            print('updateIpCam - Conexao com camera restabelecida.')            
+            
             self.conectado = False            
             self.frame = None
             self.next_frame = None
@@ -239,22 +225,15 @@ class CamRunTime():
         log.debug(' ')
         log.debug('initConfig')
         log.debug(' ')
-        print('camRunTime init')
+        log.debug('camRunTime init')
         
         self.camRunTimeId = secrets.token_urlsafe(5)
+      
 
         if sys.platform == 'linux':
                 self.OS_PLATFORM = 'linux'
-
+      
         
-        # if self.ipCam is not None:
-            # self.ipCam = None
-        
-        # if self.out_video is not None:
-            # self.out_video = None
-        
-        # if self.out_video_all_time is not None:
-            # self.out_video_all_time = None
         
         self.current_data_dir = utils.getDate()
         self.current_data_dir = [self.current_data_dir.get('day'), self.current_data_dir.get('month')]
@@ -290,7 +269,7 @@ class CamRunTime():
 
         #device = statusConfig.data["openVinoDevice"]
         self.device, self.openVinoModelXml, self.openVinoModelBin, self.openVinoCpuExtension, self.openVinoPluginDir, self.openVinoModelName  = self.statusConfig.getActiveDevice()
-
+        self.nameCam = self.statusConfig.getCamEmUsoConfig().get('nome')
         
         # dnnMOdel for TensorFlow Object Detection API
         self.pb = self.statusConfig.data["dnnModelPb"] 
@@ -299,6 +278,7 @@ class CamRunTime():
         #Carregando regioes salvas
         self.regions = self.statusConfig.getRegions()
         self.emailConfig = self.statusConfig.getEmailConfig()
+        
         
         #se existirem regioes ja selecionadas, o portao virtual é mostrado
         #if len(regions) > 0:
@@ -331,7 +311,7 @@ class CamRunTime():
 
         if self.error != '':
             
-            print('Erro camSource: {}'.format(self.error))
+            log.debug('Erro camSource: {}'.format(self.error))
             self.errorRtsp = True
             self.rtspStatus = False 
             
@@ -341,6 +321,6 @@ class CamRunTime():
             self.ipCam.set(3, self.RES_X)
             self.ipCam.set(4, self.RES_Y)
             log.debug('Conexao com camera restabelecida.')            
-            print('Conexao com camera restabelecida.')            
+            
 
         self.prob_threshold = float(self.statusConfig.data["prob_threshold"])

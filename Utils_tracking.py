@@ -77,7 +77,7 @@ def sendMail(subject, text):
 
 
 #envia alerta do portao virtual com imagem anexada ao email
-def sendMailAlert(sender, recipients, subject, port, smtp, user, frame, tipoObjetoDetectado, region):
+def sendMailAlert(sender, recipients, subject, port, smtp, user, frame, tipoObjetoDetectado, region, nameCam):
 
     
 
@@ -119,7 +119,7 @@ def sendMailAlert(sender, recipients, subject, port, smtp, user, frame, tipoObje
     elif tipoObjetoDetectado == 'car':
         tipoObjetoDetectado = 'Carro'
 
-    msg['Subject'] = subject + ' - ' + '"' + tipoObjetoDetectado + '"' + ' na ' + region + '-' + data['hour']
+    msg['Subject'] = subject + ' - ' + '"' + tipoObjetoDetectado + '"' + ' na ' + region  + ' [' + nameCam + '] ' + data['hour']
     msg['From'] = sender
     msg['To'] = recipients
 

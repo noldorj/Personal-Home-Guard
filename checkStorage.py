@@ -18,7 +18,7 @@ class CheckStorage(QThread):
     checkStorageRun = True
 
     def __init__(self, camRunTime):
-        print('init CheckStorage')
+        log.debug('init CheckStorage')
         super().__init__()
         self._run_flag = True
         self.camRunTime = camRunTime
@@ -27,7 +27,7 @@ class CheckStorage(QThread):
 
     def run(self):
     
-        print('run CheckStorage')
+        log.debug('run CheckStorage')
 
         self.camRunTime.dirVideosOnAlarmesUsedSpace = utils.getDirUsedSpace(self.statusConfig.data["dirVideosOnAlarmes"])
         self.camRunTime.isDiskFull = utils.isDiskFull(self.camRunTime.diskMinUsage) 
@@ -45,7 +45,7 @@ class CheckStorage(QThread):
                 if self.camRunTime.spaceMaxDirVideosOnAlarme > 0 and self.camRunTime.spaceMaxDirVideosOnAlarme <= self.camRunTime.dirVideosOnAlarmesUsedSpace :
                 
                     #avisar por email 1x a cada X tempo ? 
-                    print('#espaço maximo na pasta VideosOnAlarmes atingido')
+                    log.debug('#espaço maximo na pasta VideosOnAlarmes atingido')
                     if not self.camRunTime.emailSentFullVideosOnAlarmes:  
                         
                         data = utils.getDate()
@@ -106,7 +106,7 @@ class CheckStorage(QThread):
         
             # disco cheio
             else:
-                print('disco cheio')
+                log.debug('Disco cheio')
                 if not self.camRunTime.emailSentDiskFull:  
                 
                     if self.camRunTime.eraseOldestFiles:
@@ -117,7 +117,7 @@ class CheckStorage(QThread):
                         threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
                         threadEmailDiskFull.start()
                         self.camRunTime.emailSentDiskFull = True
-                        print('emailSentDiskFull')
+                        
                         log.info('Email de disco cheio enviado - apagando videos antigos ')
                         #avisar por email 1x a cada X tempo ? 
                     else:
@@ -143,7 +143,7 @@ class CheckStorage(QThread):
                                 threadEmailAllEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos 24hs" apagada - seu HD está cheio !',textEmail))
                                 threadEmailAllEmpty.start()
                                 self.camRunTime.emailSentdirVideosAllTimeEmpty = True
-                                print('emailSentdirVideosAllTimeEmpty')
+                                
 
                     
                         #se ainda não tiver sido suficiente
@@ -160,7 +160,7 @@ class CheckStorage(QThread):
                                     threadEmailAlarmesEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos Alarmes" apagada - seu HD está cheio !',textEmail))
                                     threadEmailAlarmesEmpty.start()
                                     self.camRunTime.emailSentdirVideosOnAlarmesEmpty = True
-                                    print('emailSentdirVideosOnAlarmesEmpty')
+                                    
                                     
             
             time.sleep(self.CHECK_STORAGE_TIME)    

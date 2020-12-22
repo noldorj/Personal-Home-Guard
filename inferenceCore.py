@@ -28,48 +28,8 @@ from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
 from checkLicence.sendingData import checkSessionPv
 #import tensorflow as tf
 
-#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', encoding='utf-8')
-#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log', encoding='utf-8', level=log.DEBUG)
-#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
-#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S',  encoding='utf-8', level=log.CRITICAL, stream=sys.stdout ) 
-
-#from fbs_runtime.application_context.PyQt5 import ApplicationContext
-
-#app = ApplicationContext()
-
-#app = QApplication (sys.argv)
-
-
-
-
-
 #cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
 
-
-
-
-#---------------- gui Form Login -------------------
-
-
-
-#---------------- gui -------------------
-def callbackButton1min(self, ret):
-    global tSoundLimit, tSoundStart
-    tSoundLimit = tSoundLimit + 60
-    tSoundStart = time.time()
-
-def callbackButton30min(self, ret):
-    global tSoundLimit, tSoundStart
-    tSoundLimit = tSoundLimit + 1800
-    tSoundStart = time.time()
-
-def callbackButtonResumeSound(self, ret):
-    global tSoundLimit, tSoundStart, stopSound
-    tSoundLimit = 0
-    tSoundStart = 0
-    tSoundEnd = 0
-    tSound = 0
-    stopSound = False
 
 
 
@@ -85,11 +45,8 @@ class InferenceCore(QThread):
     def __init__(self):
         super().__init__()
         self._run_flag = True
-        #print('InferenceCore __init__')
-
-        #cv.namedWindow('frame', cv.WINDOW_FREERATIO)
-        #cv.setWindowTitle('frame', 'Portão Virtual')
-        #cv.setMouseCallback('frame', self.polygonSelection)
+        log.debug('InferenceCore __init__')
+        
         
     def setCamRunTime(self, camRunTime):
         self.camRunTime = camRunTime
@@ -100,14 +57,11 @@ class InferenceCore(QThread):
         return mask
 
     def setPointSelection(self, x, y):
-        print('setPointSelection')
-        
         self.camRunTime.ref_point_polygon.append([x, y])
         #self.camRunTime.cropPolygon = True
 
 
-    def polygonSelection(self, event, x, y, flags, param): 
-        #global ref_point_polygon, cropPolygon, portaoVirtualSelecionado
+    def polygonSelection(self, event, x, y, flags, param):         
 
         if event == cv.EVENT_LBUTTONDBLCLK and not self.camRunTime.portaoVirtualSelecionado:  
             
@@ -125,7 +79,7 @@ class InferenceCore(QThread):
         
         if self.camRunTime.isOpenVino:
 
-            print('initOpenVino')            
+            log.debug('initOpenVino')            
         
             self.camRunTime.ret, self.camRunTime.frame = self.camRunTime.ipCam.read()
             self.camRunTime.ret, self.camRunTime.next_frame = self.camRunTime.ipCam.read()
@@ -143,17 +97,10 @@ class InferenceCore(QThread):
         
             except:
                 log.critical('Erro ao iniciar OpenVino - checar arquivo de configuracao')
-                print('Erro ao iniciar OpenVino - checar arquivo de configuracao')
-                #abrindo janela de configuracao"
-                #msg = QMessageBox()
-                #msg.setIcon(QMessageBox.Information)
-                #msg.setWindowTitle("Erro ao abrir mómodulo OpenVino - checar aba de configurações")
-                #msg.exec()
-                #callbackButtonRegioes(None, 1)
                 self.camRunTime.initOpenVinoStatus = False
                 self.camRunTime.init_video = False
             else:
-                print('Openvino carregado')
+                log.debug('Openvino carregado')
                 self.camRunTime.initOpenVinoStatus = True
                 self.camRunTime.init_video = True
                 log.info(' ')
@@ -162,7 +109,7 @@ class InferenceCore(QThread):
                 self.camRunTime.render_time = 0
         
         else:
-            log.info("TensorFlow on")
+            log.debug("TensorFlow on")
             cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
             cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
         
@@ -179,18 +126,15 @@ class InferenceCore(QThread):
         self.camRunTime.hora = utils.getDate()['hour'].replace(':','-')
         self.camRunTime.nameVideoAllTime = self.camRunTime.dir_video_trigger_all_time + '/' + self.camRunTime.hora + '.avi'
         
-        #primeiro arquivo fica zuado - bug
-        #if out_video_all_time is not None: 
-        #h = nchw[2]
-        #w = nchw[3]
+        
         self.camRunTime.out_video_all_time = cv.VideoWriter(self.camRunTime.nameVideoAllTime, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h))
 
     def run(self):
     
-        print('InferenceCore run()')
+        
         self.initOpenVino()
         errorSession = 0
-        #print('init_video: ' + str(self.camRunTime.init_video))
+        
 
         #while True:        
         while self.camRunTime.init_video and self.camRunTime.sessionStatus and self.camRunTime.rtspStatus :
@@ -209,7 +153,7 @@ class InferenceCore(QThread):
                 self.camRunTime.frame = cv.resize(self.camRunTime.frame, (self.camRunTime.RES_X, self.camRunTime.RES_Y)) 
                         
 
-            #if (self.camRunTime.frame is not None and self.camRunTime.next_frame is not None):
+            
             if (self.camRunTime.conectado and self.camRunTime.frame is not None and self.camRunTime.next_frame is not None):
 
                 frame_no_label = self.camRunTime.frame.copy()
@@ -266,8 +210,8 @@ class InferenceCore(QThread):
 
                     else:
                         #chamada para a CNN do OpenCV - TensorFlow Object Detection API 
-                        log.info("CNN via TF Object Detection API")
-                        print("CNN via TF Object Detection API")
+                        log.debug("CNN via TF Object Detection API")
+                        
                         self.camRunTime.listObjects, self.camRunTime.listObjectTradking  = objectDetection(frame, idObjeto, listRectanglesDetected, detection, rows, cols)
 
                 #sem detecção de objetos
@@ -352,10 +296,10 @@ class InferenceCore(QThread):
 
                                                                 if self.camRunTime.tSoundLimit > 0:
 
-                                                                    tSoundEnd = time.time()
-                                                                    tSound = tSoundEnd - tSoundStart
+                                                                    self.camRunTime.tSoundEnd = time.time()
+                                                                    self.camRunTime.tSound = self.camRunTime.tSoundEnd - self.camRunTime.tSoundStart
 
-                                                                    if tSound < self.camRunTime.tSoundLimit:
+                                                                    if self.camRunTime.tSound < self.camRunTime.tSoundLimit:
                                                                         self.camRunTime.stopSound = True
                                                                     else:
                                                                         self.camRunTime.stopSound = False
@@ -372,7 +316,7 @@ class InferenceCore(QThread):
                                                                     #evitar emails seguidos para mesmo objeto
                                                                     if self.camRunTime.listObjectMailAlerted.count(objectID) == 0:
 
-                                                                        log.info('Enviando alerta por email')
+                                                                        log.debug('Enviando alerta por email')
                                                                         #salvando foto para treinamento
                                                                         #crop no box
                                                                         #left, top, right, bottom
@@ -381,7 +325,7 @@ class InferenceCore(QThread):
 
                                                                         if utils.checkInternetAccess():
 
-                                                                            log.info('Alerta enviado ID[' + str(objectID) + ']')
+                                                                            log.debug('Alerta enviado ID[' + str(objectID) + ']')
                                                                             threadEmail = Thread(target=sendMailAlert, args=(self.camRunTime.emailConfig['name'],
                                                                                                                                self.camRunTime.emailConfig['to'],
                                                                                                                                self.camRunTime.emailConfig['subject'],
@@ -390,7 +334,8 @@ class InferenceCore(QThread):
                                                                                                                                self.camRunTime.emailConfig['user'],
                                                                                                                                frame_no_label_email,
                                                                                                                                str(box[6]),
-                                                                                                                               r.get('nameRegion')))
+                                                                                                                               r.get('nameRegion'),
+                                                                                                                               self.camRunTime.nameCam))
                                                                             threadEmail.start()
                                                                             self.camRunTime.listObjectMailAlerted.append(objectID)
                                                                         else:
@@ -717,9 +662,9 @@ class InferenceCore(QThread):
                     #ipCam = utils.camSource(source)
                 elif self.camRunTime.changeIpCam:
                     log.warning('changeIpCam True')
-                    print('changeIpCam True')                    
+                    
                     #self.source = self.statusConfig.data["camSource"]
-                    print('self.camRunTime.source: {}'.format(self.camRunTime.source))
+                    #print('self.camRunTime.source: {}'.format(self.camRunTime.source))
                     self.camRunTime.ipCam, self.camRunTime.error = utils.camSource(self.camRunTime.source)
                     self.camRunTime.ipCam.set(3, self.camRunTime.RES_X)
                     self.camRunTime.ipCam.set(4, self.camRunTime.RES_Y)
@@ -735,7 +680,7 @@ class InferenceCore(QThread):
                     time.sleep(5)
 
         
-        self.stop()
+        #self.stop()
     
     def stop(self):
         #"""Sets run flag to False and waits for thread to finish"""

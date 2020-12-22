@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QWidget, QDialog 
 from PyQt5 import QtCore 
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
 import utilsCore as utils
@@ -10,26 +10,29 @@ import secrets
 import psutil
 from inferenceCore import *
 
+
 from checkLicence.sendingData import checkLoginPv 
 from checkLicence.sendingData import changePasswdPv 
 from checkLicence.sendingData import checkSessionPv
 from checkLicence.sendingData import forgotPasswordPv 
 
-class FormLogin(QWidget):
+class FormLogin(QDialog):
 
     statusConfig = None
     camRunTime = None
     
     token = secrets.token_urlsafe(20)
     logged = False   
-    setBackStatusConfigCamRunTime = pyqtSignal(StatusConfig, CamRunTime)
+    #setBackStatusConfigCamRunTime = pyqtSignal(StatusConfig, CamRunTime)
+    updateStatusLogin = pyqtSignal(bool)
 
     def __init__(self, camRunTimeP, statusConfigP, parent=None ):
         print('init GuiLogin')
 
         super(FormLogin, self).__init__(parent)
-        self.uiLogin = Ui_formLogin()
-        self.uiLogin.setupUi(self)
+        #Dialog = QtWidgets.QDialog()
+        self.uiLogin = Ui_Dialog()
+        self.uiLogin.setupUi(self)        
 
         #self.uiLogin.setWindowModality(QtCore.Qt.ApplicationModal)
 
@@ -61,6 +64,8 @@ class FormLogin(QWidget):
         self.uiLogin.checkBoxLoginAutoStart.stateChanged.connect(self.checkBoxLoginAutoStart)
         
         self.uiLogin.btnAlterarSenha.clicked.connect(self.btnAlterarSenha)
+        
+        
 
     
     def setEnv(self, camRunTimeP, statusConfigP):
@@ -151,7 +156,9 @@ class FormLogin(QWidget):
         log.debug('Login Cancelado')
         self.camRunTime.statusLicence = False
         self.camRunTime.init_video = False
+        self.updateStatusLogin.emit(False)
         utils.stopWatchDog()
+        
         #event.accept()
         self.close()
         #self.windowLogin.close()
@@ -256,7 +263,9 @@ class FormLogin(QWidget):
                 self.logged = True
                 print('initLogin statusLicence: ' + str(self.camRunTime.statusLicence))
                 #self.setBackStatusConfigCamRunTime.emit(self.statusConfig, self.camRunTime)
-                self.close()
+                self.updateStatusLogin.emit(True)
+                self.hide()
+                #self.close()
                 #windowLogin.close()
             
             else:
@@ -266,6 +275,7 @@ class FormLogin(QWidget):
                     print("Erro de conexão com o servidor")
                     self.camRunTime.init_video = True
                     self.camRunTime.statusLicence = True
+                    self.updateStatusLogin.emit(True)
                     log.warning("Liberando acesso")
                     #event.accept()            
                     #self.setBackStatusConfigCamRunTime.emit(self.statusConfig, self.camRunTime)
@@ -276,6 +286,7 @@ class FormLogin(QWidget):
 
                     self.camRunTime.init_video = False
                     self.camRunTime.statusLicence = False
+                    self.updateStatusLogin.emit(False)
                     log.warning("Usuario invalido")
                     print("Usuario invalido")
                     self.uiLogin.lblStatus.setText("Usuário ou senha inválida. Tente novamente")
@@ -293,8 +304,9 @@ class FormLogin(QWidget):
 
 
     def closeEvent(self, event):
-        #self.camRunTime.statusLicence = False
-        #self.camRunTime.init_video = False
+        self.camRunTime.statusLicence = False
+        self.camRunTime.init_video = False
+        self.updateStatusLogin.emit(False)
         utils.stopWatchDog()
         #event.accept()            
         log.info('close formLogin')
