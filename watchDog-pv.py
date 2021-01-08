@@ -11,7 +11,7 @@ import subprocess
 #from subprocess import check_output
 import psutil
 
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.ERROR, filename='watchDog.log')
+
 
 def getTasks(nameProcess):
     r = os.popen('tasklist /v').read().strip().split('\n')
@@ -46,16 +46,16 @@ notResponding = 'Not Responding'
 
 timeInit = time.time()
     
-name = 'portao_virtual_tracking'
-namePid = 'portao_virtual_tracking'
+name = 'pv'
+namePid = 'pv'
 
 if sys.platform == 'linux':
-    app = os.getcwd() + '/portao_virtual_tracking'
+    app = os.getcwd() + '/pv'
     namePid = 'portao_virtual_tracking'
 else:
     #log.info('Windows')
-    app = os.getcwd() + '/portao_virtual_tracking.exe'
-    namePid = 'portao_virtual_tracking.exe'
+    app = os.getcwd() + '/pv.exe'
+    namePid = 'pv.exe'
 
 
 log.info('Iniciando watchDog em 60 segundos...')
@@ -68,12 +68,12 @@ while True:
     
     if not r:
         
-        log.critical('Portão Virtual não está em execução')
+        log.debug('Portão Virtual não está em execução')
         
         timeRunning = (time.time() - timeInit) / 60 #em minutos
         
-        log.critical('Portao Virtual inicializado pela {} vez '.format(timesRestarted))
-        log.critical('Tempo de execução até o momento: {:f} min' .format(timeRunning))
+        log.debug('Portao Virtual inicializado pela {} vez '.format(timesRestarted))
+        log.debug('Tempo de execução até o momento: {:f} min' .format(timeRunning))
 
         #subprocess.Popen([app], creationflags=DETACHED_PROCESS)
         subprocess.Popen(app.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, start_new_session=True, close_fds=True)

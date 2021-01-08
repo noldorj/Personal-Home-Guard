@@ -18,7 +18,7 @@ class CheckStorage(QThread):
     checkStorageRun = True
 
     def __init__(self, camRunTime):
-        log.debug('init CheckStorage')
+        log.debug('CheckStorage::init')
         super().__init__()
         self._run_flag = True
         self.camRunTime = camRunTime
@@ -27,7 +27,7 @@ class CheckStorage(QThread):
 
     def run(self):
     
-        log.debug('run CheckStorage')
+        log.debug('CheckStorage::run')
 
         self.camRunTime.dirVideosOnAlarmesUsedSpace = utils.getDirUsedSpace(self.statusConfig.data["dirVideosOnAlarmes"])
         self.camRunTime.isDiskFull = utils.isDiskFull(self.camRunTime.diskMinUsage) 
@@ -45,16 +45,16 @@ class CheckStorage(QThread):
                 if self.camRunTime.spaceMaxDirVideosOnAlarme > 0 and self.camRunTime.spaceMaxDirVideosOnAlarme <= self.camRunTime.dirVideosOnAlarmesUsedSpace :
                 
                     #avisar por email 1x a cada X tempo ? 
-                    log.debug('#espaço maximo na pasta VideosOnAlarmes atingido')
+                    log.debug('CheckStorage:: Espaço maximo na pasta VideosOnAlarmes atingido')
                     if not self.camRunTime.emailSentFullVideosOnAlarmes:  
                         
                         data = utils.getDate()
                         data_email_sent = data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year']
-                        log.critical('Espaço maximo na pasta {} atingido'.format(self.camRunTime.statusConfig.data["dirVideosOnAlarmes"]))
+                        log.critical('CheckStorage:: Espaço maximo na pasta {} atingido'.format(self.camRunTime.statusConfig.data["dirVideosOnAlarmes"]))
                         threadEmail = Thread(target=sendMail, args=(
 
-                            'Portao Virtual - Falta de espaço  na pasta "Alarmes"',
-                            'Espaço maximo na pasta " {} " atingido. \n\n \
+                            'Portão Virtual - Aviso Falta de Espaço - Pasta "Alarmes"',
+                            'Espaço máximo na pasta " {} " atingido. \n\n \
                             Status do armazenamento - {} \n \
                             Espaço livre em disco em %       : {:3d}% \n \
                             Espaço livre em disco em GB      : {:3.2f} GB \n \
@@ -77,7 +77,7 @@ class CheckStorage(QThread):
                 if self.camRunTime.spaceMaxDirVideosAllTime > 0 and ( self.camRunTime.spaceMaxDirVideosAllTime <= self.camRunTime.dirVideosAllTimeUsedSpace ):
                 
                     if not self.camRunTime.emailSentFullVideosAllTime:  
-                                    log.critical('Espaço maximo na pasta {} atingido'.format(self.camRunTime.statusConfig.data["dirVideosAllTime"]))
+                                    log.critical('CheckStorage:: Espaço maximo na pasta {} atingido'.format(self.camRunTime.statusConfig.data["dirVideosAllTime"]))
 
                                     data = utils.getDate()
                                     data_email_sent = data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year']
@@ -118,7 +118,7 @@ class CheckStorage(QThread):
                         threadEmailDiskFull.start()
                         self.camRunTime.emailSentDiskFull = True
                         
-                        log.info('Email de disco cheio enviado - apagando videos antigos ')
+                        log.debug('Email de disco cheio enviado - apagando videos antigos ')
                         #avisar por email 1x a cada X tempo ? 
                     else:
                         textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a não \
@@ -128,7 +128,7 @@ class CheckStorage(QThread):
                         threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
                         threadEmailDiskFull.start()
                         self.camRunTime.emailSentDiskFull = True
-                        log.info('Email de disco cheio enviado - interromper novos videos')
+                        log.debug('Email de disco cheio enviado - interromper novos videos')
 
 
                     # realmente apaga os videos mais antigos ? 
@@ -150,7 +150,7 @@ class CheckStorage(QThread):
                         if utils.isDiskFull(self.camRunTime.diskMinUsage):
                             log.info('Apagando diretórios de Alarmes')
                             #log.info('Dir: {}'.format(statusConfig.getDirVideosOnAlarmes()))
-                            if utils.freeDiskSpace(statusConfig.getDirVideosOnAlarmes()) == False:
+                            if utils.freeDiskSpace(self.statusConfig.getDirVideosOnAlarmes()) == False:
                                 log.critical('Diretorios de "Vidos Alarme" já está vazio')
 
                                 if not self.camRunTime.emailSentdirVideosOnAlarmesEmpty:

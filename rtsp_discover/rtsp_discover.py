@@ -8,14 +8,14 @@ import time
 import select
 import errno
 from socket import error as socket_error
-import networkscan
+from rtsp_discover.networkscan import *
 from getmac import get_mac_address
 
 from PyQt5.QtCore import QThread
 from PyQt5.QtCore import pyqtSignal 
 
 import os
-import subprocess
+#import subprocess
 
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", stream=sys.stdout, datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO)
@@ -44,9 +44,7 @@ class CamFinder(QThread):
 
     def __init__(self, rtspError):
         super().__init__()
-        self._run_flag = True
-        print('CamFinder __init__')
-        print('rtspError: {}'.format(rtspError))
+        self._run_flag = True        
         self.rtspError = rtspError
         
         if sys.platform == 'linux':
@@ -54,7 +52,7 @@ class CamFinder(QThread):
     
     def stop(self):
         self._run_flag = False
-        self.wait()
+        #self.wait()
     
     
     def is_Unauthorized(self, s):
@@ -63,7 +61,7 @@ class CamFinder(QThread):
 
     def run(self):
 
-        print('CamFinder run')
+        log.debug('CamFinder run')
         #definindo IP Local
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
@@ -78,26 +76,34 @@ class CamFinder(QThread):
         idCam = 0
         
         self.updateProgress.emit(1, listCamEncontradas, listCamAtivas, False)
-        
-        
-       
-        #if OS_PLATFORM == 'linux':
-        #    cmd = 'arp -a'
-        #else:
-        #    cmd = 'arp /a'
             
         myNetwork = IP_LOCAL + '.0/24' 
-        myScan = networkscan.Networkscan(myNetwork)
-        self.updateProgress.emit(3, listCamEncontradas, listCamAtivas, False)
-        myScan.run()
-        self.updateProgress.emit(6, listCamEncontradas, listCamAtivas, False)
+        netStatus = False
         
+        #while not netStatus:
+        try:
+            log.debug('CamFinder:: networkscan.run()')
+            myScan = Networkscan(myNetwork)        
+            myScan.run()
+        except Exception as e:
+            log.error('CamFinder:: error networkscan: {}'.format(str(e)))
+            self.stop()
+        else:
+            netStatus = True
+            log.debug('CamFinder:: networkscan ok')
+            self.updateProgress.emit(3, listCamEncontradas, listCamAtivas, False)
+           
+        
+        log.debug('CamFinder:: iniciando get_mac_address')
         for ip in myScan.list_of_hosts_found:
             mac = get_mac_address(ip=ip)
             self.LIST_IP.append({'id':'0','nome':'nomeCam', 'ip':ip, 'mac':mac, 'port':'0', 'user':'user', 
                 'passwd':'passwd', 'channel':'channel', 'source':'0', 'emUso':'False'})
 
+
+
         
+        self.updateProgress.emit(6, listCamEncontradas, listCamAtivas, False)
         
         #for ipLocal in os.popen(cmd):     
         #    ipLocal = ipLocal.split(' ')
@@ -107,12 +113,10 @@ class CamFinder(QThread):
 
         
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)            
+        
         progressTotal = len(self.LIST_IP) * len(self.LIST_PORT)
         progressI = 1 
-        print('progressTotal: {:d}'.format(progressTotal))
-        print('LIST_IP:   {:d}'.format(len(self.LIST_IP)))
-        print('LIST_PORT: {:d}'.format(len(self.LIST_PORT)))
-        print('-------------- \n\n')
+        log.debug('CamFinder:: iniciando varredura de IPs, Portas')
         
         for ip in self.LIST_IP: 
             
@@ -123,9 +127,6 @@ class CamFinder(QThread):
                 for port in self.LIST_PORT:
 
                     if ip not in listCamAtivas:
-               
-                        log.debug('-------')
-                        log.debug("IP: {}:{}".format(ip.get('ip'), str(port)))
                         
                         try:
                             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)    
@@ -159,7 +160,7 @@ class CamFinder(QThread):
                                                             ipCam, error = utils.camSource(source)                   
                                                             
                                                             if error != '':                                                                    
-                                                                log.info('Erro camSource: {}'.format(error))
+                                                                #log.info('Erro camSource: {}'.format(error))
 
                                                                 if ip not in listCamEncontradas and ip not in listCamAtivas: 
 
@@ -174,10 +175,10 @@ class CamFinder(QThread):
                                                                     idCam = idCam + 1
 
                                                             else:                                    
-                                                                log.info('Cam ativa encontrada')
-                                                                log.info('source: {}'.format(source))
-                                                                log.info('Data: \n {}'.format(dataDescribe.decode()))
-                                                                log.info(' ')
+                                                                log.debug('Cam ativa encontrada')
+                                                                log.debug('source: {}'.format(source))
+                                                                log.debug('Data: \n {}'.format(dataDescribe.decode()))
+                                                                log.debug(' ')
 
                                                                 ip['id'] = str(idCam)
                                                                 ip['nome'] = 'Cam_' + str(idCam)
@@ -191,22 +192,14 @@ class CamFinder(QThread):
                                                     
                         self.updateProgress.emit((progressI/progressTotal)*100, listCamEncontradas, listCamAtivas, False)
                         progressI = progressI + 1
-                        print('progressI: {:d}'.format(progressI))                            
+                        
                                             
                                     
                     s.close()
             # end for in LIST_PORT                            
-                    
-                    #print('progressI: {:f}'.format((progressI/ (len(self.LIST_PORT)*len(self.LIST_IP)) )*100))
-                    
-                
-                #self.updateProgress.emit((progressI / progressTotal)*100, listCamEncontradas, listCamAtivas, False)
-                #progressI = progressI + 1
-                #print('progressI: {:d}'.format(progressI))
-            #print('progressI: {:.2f}'.format((progressI/ (len(self.LIST_PORT)*len(self.LIST_IP)) )*100))
             
         if self.rtspError:
-            print('self.rtspError rtsp_discovery')
+            
             self.updateProgress.emit(100, listCamEncontradas, listCamAtivas, True)    
         else:
             self.updateProgress.emit(100, listCamEncontradas, listCamAtivas, False)    
@@ -214,7 +207,6 @@ class CamFinder(QThread):
         s.close()
         
         
-        #return listCamEncontradas, listCamAtivas 
 
     def create_describe_packet(self, ip):
         #global DESCRIBEPACKET
@@ -239,7 +231,7 @@ class CamFinder(QThread):
         
     def getListCam(self):
 
-            print('getListCam')
+            log.debug('getListCam')
             #definindo IP Local
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.connect(("8.8.8.8", 80))
@@ -263,17 +255,20 @@ class CamFinder(QThread):
             #    cmd = 'arp /a'
                 
             myNetwork = IP_LOCAL + '.0/24' 
-            myScan = networkscan.Networkscan(myNetwork)
+            log.debug('CamFinder:: iniciando networkscan')
+            myScan = Networkscan(myNetwork)
             #self.updateProgress.emit(3, listCamEncontradas, listCamAtivas)
             myScan.run()
             #self.updateProgress.emit(6, listCamEncontradas, listCamAtivas)
+            log.debug('CamFinder:: networkscan finalizado')
             
+            log.debug('CamFinder:: iniciando get_mac_address')
             for ip in myScan.list_of_hosts_found:
                 mac = get_mac_address(ip=ip)
                 self.LIST_IP.append({'id':'0','nome':'nomeCam', 'ip':ip, 'mac':mac, 'port':'0', 'user':'user', 
                     'passwd':'passwd', 'channel':'channel', 'source':'0', 'emUso':'False'})
 
-            
+            log.debug('CamFinder:: get_mac_address ok')
             
             #for ipLocal in os.popen(cmd):     
             #    ipLocal = ipLocal.split(' ')
@@ -332,7 +327,7 @@ class CamFinder(QThread):
                                                                 ipCam, error = utils.camSource(source)                   
                                                                 
                                                                 if error != '':                                                                    
-                                                                    log.info('Erro camSource: {}'.format(error))
+                                                                    #log.info('Erro camSource: {}'.format(error))
 
                                                                     if ip not in listCamEncontradas and ip not in listCamAtivas: 
 

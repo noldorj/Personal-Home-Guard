@@ -27,8 +27,13 @@ if sys.platform == 'linux':
     OS_PLATFORM = 'linux'
 
 
+#locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+
 #locale.setlocale(locale.LC_ALL, 'pt_BR.utf-8')
 #timezone = pytz.timezone("America/Sao_Paulo")
+
+locale.setlocale(locale.LC_ALL, 'en_US.utf-8')
+#locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
     
 
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
@@ -37,8 +42,8 @@ if sys.platform == 'linux':
 def getProcessId(name):
     for proc in psutil.process_iter():
         if proc.name() == name:            
-            log.info('Pid: {:d}'.format(proc.pid))
-            log.info('name: {}'.format(proc.name()))
+            log.debug('getProcessId Pid: {:d}'.format(proc.pid))
+            log.debug('getProcessId name: {}'.format(proc.name()))
             return proc.pid
     return 0
 
@@ -120,12 +125,12 @@ def checkInternetAccess():
 
     conn = httplib.HTTPConnection("www.google.com", timeout=5)
     try:
-        log.info('Checando conexao...')
+        log.debug('Checando conexao...')
         conn.request("HEAD", "/")
         conn.close()
         return True
     except:
-        log.info('Falha na conexao')
+        log.warning('Falha na conexao')
         conn.close()
         return False
 
@@ -135,28 +140,31 @@ def camSource(source = 'webcam'):
     error = ''
     ipCam = None
 
-    if source == 'webcam':
+    if source == 'webcam':        
+        source = 0
+        log.debug('camSource:: WebCam')
+        #ipCam = cv.VideoCapture(0)        
+        #log.debug('capturando da webcam')    
+
+    try:
+        ipCam = cv.VideoCapture(source)
         
-        log.debug('imagem da WebCam')
-        ipCam = cv.VideoCapture(0)
-        log.debug('\n run')('capturando da webcam')
-
-    else:
-
-        try:
-            ipCam = cv.VideoCapture(source)
-        except cv.error as e:
-            status = False
-            log.critical('camSource error: {}'.format(e))
-            
-            error = e
+    except cv.error as e:
+        status = False            
+        log.critical('camSource:: error: {}'.format(e))        
+        error = e
+    else:       
+        if ipCam.isOpened():
+            log.debug('camSource:: Imagem de camera ok')            
         else:
-            if ipCam.isOpened():
-                log.debug('Imagem de camera rstp ok')
-                
+            if source == 0:
+                error = 'webcam'
+                log.debug('camSource:: error webcam')
             else:
                 error = 'rtsp'
                 log.debug('camSource:: error rtsp')
+        
+                
 
     return ipCam, error
 
@@ -253,7 +261,7 @@ def isDiskFull(diskMinUsage):
 
 def freeDiskSpace(dirVideo):
 
-     locale.setlocale(locale.LC_ALL, 'en_US.utf-8')
+     #locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
      #vai apagando um dia por vez até sobrar espaço
      #se não sobrar espaço, avisar o usuário que o disco está cheio por outros motivos
@@ -271,32 +279,54 @@ def freeDiskSpace(dirVideo):
       
      #dirVideo = 'videos_all_time'     
      
-     dirVideo = os.getcwd() + '/' + dirVideo  
+     
+     dirVideo = os.getcwd() + '/' + dirVideo       
      
      dirListFull = glob(dirVideo + '/*')
+     print('dirListFull : {}'.format(dirListFull))    
      
-          
-     for m in dirListFull:         
+     for m in dirListFull:
+        m = m.replace("\\","/")
         dirList.append(m.rsplit('/').pop().__str__())
 
      for y in dirList:
+        y = y.replace("\\","/")
         yearList.append(y.rsplit('-').pop())
      
      for m in dirList:
+        m = m.replace("\\","/")
         monthList.append(m.rsplit('-')[0])
 
      
+     
+     print('dirList: {}'.format(dirList))
+     print('yearList: {}'.format(yearList))
+     print('monthList: {}'.format(monthList))
+     
      if (len(dirList) != 0):
 
+        #dirSorted = sorted(dirList, key=lambda dirList: datetime.strftime(dirList,'%b-%Y'))
         dirSorted = sorted(dirList, key=lambda dirList: datetime.strptime(dirList,'%b-%Y'))
 
         daysDir = glob(dirVideo + '/' + dirSorted[0] + '/*')     
         
-        for d in daysDir:
-           dayList.append(d.rsplit('/').pop())
+        # i = 0
+        # for d in daysDir:
+            # daysDir[i] = d.replace("\\","/")
+            # i = i + 0
         
+        
+        for d in daysDir:
+           print('d: {}'.format(d))
+           d = d.replace("\\","/")
+           print('d replaced: {}'.format(d))
+           dayList.append(d.rsplit('/').pop())
+            
+        print('dayList: {}'.format(dayList))
 
         daysSorted = sorted(dayList, key=lambda dayList: datetime.strptime(dayList,'%d'))
+        
+        print('daysSorted: {}'.format(daysSorted))
         
         iDirSorted = 0 
         iDaysSorted = 0  
@@ -310,8 +340,16 @@ def freeDiskSpace(dirVideo):
                 if iDaysSorted < len(daysSorted):
                 
                     oldestDir = dirVideo + '/' + dirSorted[iDirSorted] + '/' + daysSorted[iDaysSorted]                        
+                    print('dirVideo: {}'.format(dirVideo))
+                    #oldestDir = oldestDir.replace("/","\\")
                     
-                    dirSpace = subprocess.check_output(['du','-sh', oldestDir]).split()[0].decode('utf-8')
+                    print('oldestDir: {}'.format(oldestDir))
+                    # linux dirSpace = subprocess.check_output(['du','-sh', oldestDir]).split()[0].decode('utf-8')
+                    #dirSpace = subprocess.check_output(['du','-sh', oldestDir]).split()[0].decode('utf-8')
+                    dirSpace = 0
+                    for filename in os.listdir(oldestDir):
+                        dirSpace = os.path.getsize(os.path.join(oldestDir, filename))
+                    print('dirSpace: {}'.format(dirSpace))
                    
                     #deletar a pasta do ano/mes/dia mais antigo
                     try:
@@ -321,7 +359,7 @@ def freeDiskSpace(dirVideo):
                     except OSError as e:
                         
                         log.critical('Diretorio nao encontrado')
-                        log.crtical("Error: %s : %s" % (oldestDir, e.strerror))
+                        log.critical("Error: %s : %s" % (oldestDir, e.strerror))
                         #se o diretorio foi apagado, pular para o proximo
                         iDirSorted = iDirSorted + 1
 
@@ -361,38 +399,50 @@ def freeDiskSpace(dirVideo):
 
 
 def getDate():
-    data = time.asctime().split(" ")
+
     
     
-    #if data[0] == 'Mon': data[0] = 'Seg'
-    #if data[0] == 'Tue': data[0] = 'Ter'
-    #if data[0] == 'Wed': data[0] = 'Qua'
-    #if data[0] == 'Thu': data[0] = 'Qui'
-    #if data[0] == 'Fri': data[0] = 'Sex'
-    #if data[0] == 'Sat': data[0] = 'Sab'
-    #if data[0] == 'Sun': data[0] = 'Dom'
-    #
-    #if data[1] == 'Jan': data[1] = 'Jan'
-    #if data[1] == 'Feb': data[1] = 'Fev'
-    #if data[1] == 'Mar': data[1] = 'Mar'
-    #if data[1] == 'Apr': data[1] = 'Abr'
-    #if data[1] == 'May': data[1] = 'Mai'
-    #if data[1] == 'Jun': data[1] = 'Jun'
-    #if data[1] == 'Jul': data[1] = 'Jul'
-    #if data[1] == 'Aug': data[1] = 'Ago'
-    #if data[1] == 'Sep': data[1] = 'Set'
-    #if data[1] == 'Oct': data[1] = 'Out'
-    #if data[1] == 'Nov': data[1] = 'Nov'
-    #if data[1] == 'Dez': data[1] = 'Dez'
+    #print (datetime.now().strftime('%a-%b-%d-%H:%M:%S-%Y'))
+    
+    #data = time.asctime().split(" ")
+    data = datetime.now().strftime('%a-%b-%d-%H:%M:%S-%Y')
+    
+    data = data.split("-")
+    
+    month = data[1][0].upper() + data[1][1] + data[1][2]
+    data = {'day':data[2], 'month':month,'hour':data[3], 'year':data[4], 'weekDay':data[0].lower(), 'minute':data[3].split(":")[1], 'hourOnly':data[3].split(":")[0]}
+    #print('mes: {}'.format(month))
+    #print('getDate data: {}'.format(data))
+        
+    # if data[0] == 'Mon': data[0] = 'Seg'
+    # if data[0] == 'Tue': data[0] = 'Ter'
+    # if data[0] == 'Wed': data[0] = 'Qua'
+    # if data[0] == 'Thu': data[0] = 'Qui'
+    # if data[0] == 'Fri': data[0] = 'Sex'
+    # if data[0] == 'Sat': data[0] = 'Sab'
+    # if data[0] == 'Sun': data[0] = 'Dom'
+    
+    # if data[1] == 'Jan': data[1] = 'Jan'
+    # if data[1] == 'Feb': data[1] = 'Fev'
+    # if data[1] == 'Mar': data[1] = 'Mar'
+    # if data[1] == 'Apr': data[1] = 'Abr'
+    # if data[1] == 'May': data[1] = 'Mai'
+    # if data[1] == 'Jun': data[1] = 'Jun'
+    # if data[1] == 'Jul': data[1] = 'Jul'
+    # if data[1] == 'Aug': data[1] = 'Ago'
+    # if data[1] == 'Sep': data[1] = 'Set'
+    # if data[1] == 'Oct': data[1] = 'Out'
+    # if data[1] == 'Nov': data[1] = 'Nov'
+    # if data[1] == 'Dec': data[1] = 'Dez'
     
     
     #para dias com um digito
-    if data.count("") > 0:
-        data.remove("")
+    # if data.count("") > 0:
+        # data.remove("")
     #minute = data[3].split(":")[1]
     #hourOnly = data[3].split(":")[0]
     #weekDay = data[0].lower()
-    data = {'day':data[2], 'month':data[1],'hour':data[3], 'year':data[4], 'weekDay':data[0].lower(), 'minute':data[3].split(":")[1], 'hourOnly':data[3].split(":")[0]}
+    #data = {'day':data[2], 'month':data[1],'hour':data[3], 'year':data[4], 'weekDay':data[0].lower(), 'minute':data[3].split(":")[1], 'hourOnly':data[3].split(":")[0]}
    
     #print('getDate data:' + str(data))
     
@@ -400,6 +450,8 @@ def getDate():
 
 
 def createDirectory(dirVideos):
+
+    #locale.setlocale(locale.LC_ALL, 'en_US.utf-8')
 
     date = getDate()
     month_dir = '/' + date['month'] + '-' + date['year']
@@ -541,7 +593,7 @@ class StatusConfig:
 
     def isAlarmEmpty(self, regionName):
         status = False 
-        #print('regionName : {}'.format(regionName))
+        print('regionName : {}'.format(regionName))
         for r in self.regions:
             #print('nameRegion {}'.format(r.get("nameRegion")))
             if r.get("nameRegion") == regionName:
@@ -600,7 +652,11 @@ class StatusConfig:
 
         self.saveConfigFile()
 
-
+    def setUserNameLoginConfig(self, userName):
+        self.dataLogin['user'] = userName
+        self.saveConfigLogin()
+    
+    
     def addLoginConfig(self, userName, userPasswd, salvarLogin, loginAutomatico, autoStart):
 
         self.dataLogin['user'] = userName
@@ -754,22 +810,28 @@ class StatusConfig:
 
         self.saveRegionFile()
 
+        
     def addAlarm(self, idRegion, alarm):
 
         edit = False
         i = 0
-        for a in self.regions[idRegion].get('alarm'):
-            if a.get('name') == alarm['name']:
-                self.regions[idRegion].get('alarm')[i] = alarm
-                edit = True
-                break
-            else:
-                i = i+1
+        print('addAlarm:: idRegion: {:d}'.format(idRegion))
+        print('addAlarm:: regionsLen: {:d}'.format(len(self.regions)))
+        
+        if idRegion <= (len(self.regions) - 1):
+            for a in self.regions[idRegion].get('alarm'):                            
+                if a.get('name') == alarm['name']:                
+                    print('edit true')
+                    self.regions[idRegion].get('alarm')[i] = alarm
+                    edit = True
+                    break
+                else:
+                    i = i+1
 
-        if not edit:
-            self.regions[idRegion].get('alarm').append(alarm)
+            if not edit:
+                self.regions[idRegion].get('alarm').append(alarm)
 
-        self.saveRegionFile()
+            self.saveRegionFile()
         #TO-DO try catch toleranca a falhas
 
 
@@ -781,23 +843,23 @@ class StatusConfig:
         self.readConfigLogin(configLogin)
 
     def readConfigLogin(self, fileName = 'lconfig.json'):
-        log.info('Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
+        #log.debug('Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
         self.dataLogin = json.load(open(fileName,'r'))
 
 
     def readConfigFile(self, fileName = 'config.json'):
-        log.info('Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
+        #log.debug('Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
         self.data = json.load(open(fileName,'r'))
 
     def readRegionsFile(self, fileName = 'regions.json'):
-        log.info('Lendo arquivo de regiões: ' + os.getcwd() + '/' + fileName)
+        log.debug('Lendo arquivo de regiões: ' + os.getcwd() + '/' + fileName)
         try:
             self.regions = json.load(open(fileName,'r'))
         except OSError as ex:
 
             log.critical('Arquivo de Regioes inexistente - será criado um novo arquivo') 
         else:
-            log.info('Arquivo de regiões lido com sucesso')
+            log.debug('Arquivo de regiões lido com sucesso')
 
 
     def deleteAlarm(self, regionName, alarmName):
@@ -971,7 +1033,8 @@ class StatusConfig:
 
 def playSound():
     pygame.init()
-    pygame.mixer.music.load('campainha.mp3')
+    log.debug('utilsCore:: campainha tocada')
+    pygame.mixer.music.load('campainha.wav')
     pygame.mixer.init()
     pygame.mixer.music.play(0)
 

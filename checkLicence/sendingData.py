@@ -87,7 +87,7 @@ def forgotPasswordPv(email):
     global statusForgotPasswd, error
 
     try: 
-        log.info("forgotPasswordPv:: conectando...")
+        log.debug("forgotPasswordPv:: conectando...")
         sio.connect(host)
 
     except socketio.exceptions.ConnectionError as  err:
@@ -126,7 +126,7 @@ def checkSessionPv(session):
         error = ''
         checkSession(session)
         sio.wait()
-        #log.info('checkSessionPv: ' + str(sessionStatus))
+        log.debug('checkSessionPv: ' + str(sessionStatus))
 
         #sio.disconnect()
     
@@ -150,7 +150,7 @@ def checkLoginPv(login):
         loginStatus = False
 
     else:
-        log.warning('checkLoginPv:: Conexao efetuada')
+        log.debug('checkLoginPv:: Conexao efetuada')
         checkLogin(login)
         sio.wait()
         #log.info('checkLoginPv:: loginStatus: ' + str(loginStatus))

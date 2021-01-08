@@ -31,6 +31,8 @@ import getpass
 
 from collections import deque
 
+token = secrets.token_urlsafe(20)
+
 loginStatus = False
 
 
@@ -93,9 +95,15 @@ class FormProc(QWidget):
         self.uiConfig.setupUi(self)
         
         #print('else iniciando formConfig')
+        
+        self.camRunTime.token = token
         self.camRunTime.init()
         self.statusConfig = utils.StatusConfig()
         self.checkStorage()
+        
+        
+        
+        
         
         
         if self.statusConfig.getLoginAutomatico() == 'True':
@@ -116,9 +124,12 @@ class FormProc(QWidget):
 
         #implementar logica de checar licença TO-DO
         
-        log.debug('formConfig statusLicence: ' + str(self.camRunTime.statusLicence))
-        log.debug('formConfig errorRtsp: ' + str(self.camRunTime.errorRtsp))
-        log.debug('formConfig loginStatus: ' + str(loginStatus))
+        log.debug(' ')
+        log.debug('initFormConfig:: statusLicence: ' + str(self.camRunTime.statusLicence))
+        log.debug('initFormConfig:: errorRtsp: ' + str(self.camRunTime.errorRtsp))
+        log.debug('initFormConfig:: loginStatus: ' + str(loginStatus))        
+        log.debug(' ')
+        
         #if self.camRunTime.statusLicence and not self.camRunTime.errorRtsp: 
         if not loginStatus:
             log.debug('loginStatus saindo...')
@@ -199,15 +210,17 @@ class FormProc(QWidget):
             self.uiConfig.lblInitStatus.setText('Executando')
 
             
-            if not self.camRunTime.errorRtsp: 
+            if (not self.camRunTime.errorRtsp) and (not self.camRunTime.errorWebcam): 
 
-                log.debug('init Thread OpenCV')        
+                log.debug('initFormConfig:: init Thread OpenCV')        
                 ### Thread OpenCV
                 self.infCam.setCamRunTime(self.camRunTime)
                 self.uiConfig.thread = self.infCam
                 # connect its signal to the update_image slot
                 self.uiConfig.thread.change_pixmap_signal.connect(self.update_image)
                 self.uiConfig.thread.warningSessionLoss.connect(self.warningSessionLoss)
+                self.uiConfig.thread.warningSessionLossFirst.connect(self.warningSessionLossFirst)
+                self.uiConfig.thread.webCamWarning.connect(self.webCamWarning)
                 #self.uiConfig.thread.change_pixmap_signal.connect(self.checkStorage)
                 self.uiConfig.thread.storageFull.connect(self.storageFull)
                 
@@ -220,23 +233,39 @@ class FormProc(QWidget):
                 self.threadStorage.updateStorageInfo.connect(self.checkStorage)
                 self.threadStorage.start()
                                                             
-                utils.initWatchDog() 
-               
+                #utils.initWatchDog()                
 
-            elif self.camRunTime.errorRtsp:
-                log.debug('Erro ao conectar a câmera')
-                self.uiConfig.lblCam1.setText('Câmera com erro de conexão. O sistema está checando se a câmera mudou de IP')              
+            else: 
+                
+                #log.debug('::initFormConfig erroRtsp')
+                
+                if self.camRunTime.errorWebcam:
+                    log.debug('initFormConfig:: Erro ao conectar Webcam')
+                    self.uiConfig.lblCam1.setText('Webcam com erro de conexão ! Cheque seu computador por favor ! ')              
+                    self.uiConfig.lblInitStatus.setText('Webcam com erro de conexão ! Por favor, cheque a configuração da Webcam e reinicie o Portão Virtual ! ')              
+                
+                elif self.camRunTime.errorRtsp:                    
+                    
+                    log.debug('initFormConfig:: Erro ao conectar a câmera')
+                    self.uiConfig.lblCam1.setText('Câmera com erro de conexão. O sistema está checando se a câmera mudou de IP')              
+                    self.uiConfig.lblInitStatus.setText('Câmera com erro de conexão. O sistema está checando se a câmera mudou de IP')              
 
-                self.threadRtspStatus = QThread()
-                self.threadRtspStatus = CamFinder(True)
-                self.threadRtspStatus.updateProgress.connect(self.updateProcurarCam)            
-                self.threadRtspStatus.start()        
+                    self.threadRtspStatus = QThread()
+                    self.threadRtspStatus = CamFinder(True)
+                    self.threadRtspStatus.updateProgress.connect(self.updateProcurarCam)            
+                    self.threadRtspStatus.start()        
 
 
     def run(self):              
         log.debug('run')
         #self.statusConfig = statusConfig        
         #windowConfig.show()
+    
+    
+    @QtCore.pyqtSlot()
+    def webCamWarning(self):
+        self.uiConfig.lblCam1.setText('Por favor, cheque a configuração da sua Webcam e reinicie o Portão Virtual')
+        self.uiConfig.lblInitStatus.setText('Por favor, cheque a configuração da sua Webcam e reinicie o Portão Virtual')
     
     @QtCore.pyqtSlot(QtCore.QPoint)
     def on_positionChanged(self, pos):
@@ -317,10 +346,25 @@ class FormProc(QWidget):
     
     def btnDeleteAlarm(self):
         
-        self.statusConfig.deleteAlarm(self.uiConfig.comboRegions.currentText(), self.uiConfig.comboAlarms.currentText())
-        self.refreshStatusConfig()
-        self.comboRegionsUpdate(0)
-        self.comboAlarmsUpdate(0)
+        print('btnDeleteAlarm:: i: {}'.format(self.uiConfig.comboRegions.currentIndex()))
+        
+        if self.uiConfig.comboRegions.currentIndex() is not -1:
+        
+            if len(self.camRunTime.regions[self.uiConfig.comboRegions.currentIndex()].get('alarm')) <= 1:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Information)
+                msg.setWindowTitle("Região sem alarmes !")
+                msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+                msg.setText("Toda região precisa ter pelo menos um alarme associado ! Não será possível deletar este alarme")
+                msg.exec()
+                
+            else:    
+                self.statusConfig.deleteAlarm(self.uiConfig.comboRegions.currentText(), self.uiConfig.comboAlarms.currentText())
+                self.refreshStatusConfig()
+                self.fillTabGeral()
+                self.comboRegionsUpdate(self.uiConfig.comboRegions.currentIndex())
+                #self.comboAlarmsUpdate(0)
+        
 
     def btnDeleteRegion(self):
         self.statusConfig.deleteRegion(self.uiConfig.comboRegions.currentText())        
@@ -331,6 +375,10 @@ class FormProc(QWidget):
         
         
 
+
+
+
+    # Tab de Configurações - TODO mudar nome depois
     def btnSaveEmail(self):
         #global self.uiConfig
 
@@ -430,12 +478,17 @@ class FormProc(QWidget):
                                   self.uiConfig.txtAvisoUtilizacaoHD.text())
 
 
+            
+            self.uiConfig.lblCam1.clear()
             self.refreshStatusConfig()
-            self.clearFieldsTabGeralEmail()
-            self.fillTabGeral()
-
             self.camRunTime.init() 
+            #self.__init__() #IJF checar
             self.infCam.setCamRunTime(self.camRunTime)
+            #self.clearFieldsTabGeralEmail()
+            self.fillTabGeral()
+            
+
+            
 
     def btnCancelRegion(self):
         if len(self.camRunTime.regions) > 0:
@@ -554,7 +607,8 @@ class FormProc(QWidget):
             
             self.camRunTime.regions = self.statusConfig.getRegions()                        
            
-            self.comboRegionsUpdate(len(self.camRunTime.regions) - 1)
+            self.btnSaveAlarm()
+            #self.comboRegionsUpdate(len(self.camRunTime.regions) - 1)
             
             #self.uiConfig.btnSaveRegion.setEnabled(False)
             self.uiConfig.btnCancelRegion.setEnabled(False)
@@ -562,9 +616,12 @@ class FormProc(QWidget):
             self.camRunTime.portaoVirtualSelecionado = True
             self.camRunTime.ref_point_polygon.clear()
             self.camRunTime.cropPolygon = False
-            self.comboAlarmsUpdate(0)
+            
+            #self.comboAlarmsUpdate(0)
 
     def btnSaveAlarm(self):
+        log.debug('btnSaveAlarm::')
+        print('btnSaveAlarm::')
         statusFields = True
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
@@ -595,15 +652,21 @@ class FormProc(QWidget):
                          'isEmailAlert':'True' if self.uiConfig.checkEmailAlert.isChecked() else 'False',
                          'isSoundAlert':'True' if self.uiConfig.checkAlertSound.isChecked() else 'False'
                         }
-            self.statusConfig.addAlarm(self.uiConfig.comboRegions.currentIndex(), a)
+            self.statusConfig.addAlarm(self.uiConfig.comboRegions.currentIndex(), a)                        
             self.refreshStatusConfig()
 
-            self.comboRegionsUpdate(self.uiConfig.comboRegions.currentIndex())
+            if len(self.camRunTime.regions) > 0:
+                self.comboRegionsUpdate(len(self.camRunTime.regions) - 1)
+            
+            
             self.uiConfig.btnSaveAlarm.setEnabled(True)
-            self.uiConfig.btnDeleteAlarm.setEnabled(False)
+            #self.uiConfig.btnDeleteAlarm.setEnabled(False)
             self.uiConfig.btnCancelAlarm.setEnabled(False)
             self.uiConfig.btnNewAlarm.setEnabled(True)
-            self.uiConfig.comboAlarms.setEnabled(True)
+            self.uiConfig.comboAlarms.setEnabled(True)           
+            
+                
+            
 
     def clearListCameras(self):
         
@@ -611,6 +674,8 @@ class FormProc(QWidget):
         self.uiConfig.comboBoxCamAtivas.clear()
         self.uiConfig.comboBoxCamEncontradas.clear()
         
+        self.uiConfig.txtNomeCamAtiva.clear()
+        self.uiConfig.txtNomeCamDisponivel.clear()
         self.uiConfig.txtUserCamDisponivel.clear()
         self.uiConfig.txtIpCamDisponivel.clear()
         self.uiConfig.txtPasswdCamDisponivel.clear()
@@ -633,6 +698,7 @@ class FormProc(QWidget):
 
     def btnRemoverCamAtiva(self):        
                     
+        log.debug('btnRemoverCamAtiva')
         if self.uiConfig.comboBoxCamAtivas.currentIndex() != -1: 
             
             idCombo = self.uiConfig.comboBoxCamAtivas.currentText().split(':')[0]
@@ -654,6 +720,7 @@ class FormProc(QWidget):
     
     def btnSalvarNomeCamAtiva(self):        
                     
+        log.debug('btnSalvarNomeCamAtiva')
         if self.uiConfig.comboBoxCamAtivas.currentIndex() != -1: 
             
             idCombo = self.uiConfig.comboBoxCamAtivas.currentText().split(':')[0]
@@ -679,8 +746,7 @@ class FormProc(QWidget):
         if len(self.camRunTime.listCamAtivas) > 0 and self.camRunTime.listCamAtivas is not None: 
             idCombo = self.uiConfig.comboBoxCamAtivas.currentText().split(':')[0]
             idCombo = idCombo.replace('[','')
-            idCombo = idCombo.replace(']','')
-            log.debug('idCombo: ' + idCombo)
+            idCombo = idCombo.replace(']','')            
 
             i = 0 
             #zerando a camera ativada anteriormente 
@@ -696,16 +762,19 @@ class FormProc(QWidget):
                     self.uiConfig.txtUrlRstp.setText(cam.get('source'))
                     self.statusConfig.setRtspConfig(cam.get('source'))
                     self.camRunTime.nameCam = cam.get('nome')
-                    self.uiConfig.lblStatusProcurarCam.setText('Camera ativada')
+                    
                 i = i + 1
 
 
+            self.uiConfig.checkBoxWebCam.setCheckState(False)
+            self.uiConfig.txtUrlRstp.setEnabled(True)
             
-            self.statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)
-            
-            self.camRunTime.updateIpCam()
-            
+            self.statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)            
+            self.uiConfig.lblCam1.clear()          
+            self.camRunTime.updateIpCam()            
+            #self.__init__() #IJF checar
             self.fillTabGeral()
+            self.uiConfig.lblStatusProcurarCam.setText('Camera ativada')
             
         else:
             self.uiConfig.lblStatusProcurarCam.setText('Sem câmeras ativas. Clique em "Procurar Câmeras" para uma nova varredura')
@@ -747,13 +816,14 @@ class FormProc(QWidget):
    
         
     def clearFieldsCamConfig(self):
+        self.uiConfig.txtNomeCamAtiva.clear()
         self.uiConfig.txtNomeCamDisponivel.clear()
         self.uiConfig.txtIpCamDisponivel.clear()
         self.uiConfig.txtUserCamDisponivel.clear()
         self.uiConfig.txtPasswdCamDisponivel.clear()
         self.uiConfig.txtPortaCamDisponivel.clear()
         self.uiConfig.txtCanalCamDisponivel.clear()
-        #self.uiConfig.lblStatusTestarCam.clear()
+        self.uiConfig.lblStatusTestarCam.clear()
         
     def comboBoxCamEncontradasStateChanged(self, i):
         
@@ -860,7 +930,13 @@ class FormProc(QWidget):
             ipCam, error = utils.camSource(source)                   
             
             if error != '':                                                                    
-                log.warning('Erro camSource: {}'.format(error))
+                #log.warning('Erro camSource: {}'.format(error))
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Information)
+                msg.setWindowTitle("Configuração inválida")
+                msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+                msg.setText('Configuração inválida, tente outro usuario, senha, porta ou canal')
+                msg.exec()
                 self.uiConfig.lblStatusTestarCam.setText('Configuração inválida, tente outro usuario, senha, porta ou canal')
 
             else:                                    
@@ -879,21 +955,21 @@ class FormProc(QWidget):
                 self.camRunTime.statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)
                 self.camRunTime.statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
                 
-                self.camRunTime.init() 
+                self.camRunTime.__init__() 
                 self.fillTabGeral()
                 self.infCam.setCamRunTime(self.camRunTime)
 
     def btnProcurarCam(self):
         
-        log.debug('Procurando cameras na rede')        
-        log.debug('btnProcurarCam')
+        log.debug('Procurando cameras na rede')                
+        self.uiConfig.lblStatusProcurarCam.setText('Procurando câmeras na rede local. Aguarde por favor...')
 
         self.clearListCameras() 
         
         self.camRunTime.listCamEncontradas.clear()
         self.camRunTime.listCamAtivas.clear()
 
-        self.uiConfig.lblStatusProcurarCam.setText('Procurando câmeras na rede local. Aguarde por favor...')
+        
         self.uiConfig.progressBarProcurarCam.show()
         
         ## Chamar Thread ##
@@ -903,7 +979,7 @@ class FormProc(QWidget):
         self.threadProcurarCam = CamFinder(False)
         self.threadProcurarCam.updateProgress.connect(self.updateProcurarCam)
         self.threadProcurarCam.start()        
-        #print('self.threadProcurarCam.start()')
+        log.debug('self.threadProcurarCam.start()')
 
         
 
@@ -912,6 +988,7 @@ class FormProc(QWidget):
     def updateProcurarCam(self, progress, listCamEncontradas, listCamAtivas, rtspError):
     
         #print('Progress: {:.2f}'.format(progress))
+        log.debug('initFormConfig::updateProcurarCam')
         self.uiConfig.progressBarProcurarCam.show()
         self.uiConfig.progressBarProcurarCam.setValue(progress)
         
@@ -921,6 +998,7 @@ class FormProc(QWidget):
         if not rtspError:
             if progress == 100:    
                 
+                log.debug('initFormConfig::updateProcurarCam:: Processo finalizado. Adicionando cameras')
                 
                 for cam in self.camRunTime.listCamAtivas:
                     self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']: ' + cam.get('ip') + ' : ' + cam.get('port'))
@@ -940,8 +1018,14 @@ class FormProc(QWidget):
                 self.camRunTime.init() 
                 self.fillTabGeral()
                 self.infCam.setCamRunTime(self.camRunTime)
-        else:
+                
+        elif rtspError == 'webcam':
+            log.debug('initFormConfig::updateProcurarCam:: Erro na Webcam')
+            self.uiConfig.lblStatus.setText('Webcam com erro. Cheque a configuração da Webcam e reinicie o Portão Virtual !')
             
+        elif rtspError == 'rtsp':
+            
+            log.debug('initFormConfig::updateProcurarCam:: Checando se a camera mudou de IP')
             #checar se o mac address camEmUso vs nova cam ativa
             camEmUso = self.statusConfig.getCamEmUsoConfig()
             
@@ -964,7 +1048,7 @@ class FormProc(QWidget):
                                 if self.camRunTime.error != '':
                                     self.camRunTime.ipCam = None
                                     self.camRunTime.rtspStatus = False
-                                    log.critical('Erro camSource: {}'.format(self.camRunTime.error))
+                                    log.debug('Erro camSource: {}'.format(self.camRunTime.error))
                 
                                     #ui.lblStatus.setText('Falha em localizar novo IP automaticamente. Tente configurar o endereço RTSP, e clique em "Salvar"')
                                     #ui.lblStatusProcurarCam.setText('Falha em localizar o novo IP automaticamente. Tente configurar uma nova câmera ou fazer uma nova varredura por câmeras clicando em "Procurar Câmeras". ')
@@ -1071,22 +1155,22 @@ class FormProc(QWidget):
         if self.uiConfig.txtAvisoUtilizacaoHD.text() != '0' and len(self.uiConfig.txtAvisoUtilizacaoHD.text()) != 0:
 
             if float(self.uiConfig.txtAvisoUtilizacaoHD.text().replace(',', '.')) < discoLivrePorcentagem:
-                emailSentDiskFull = False 
+                self.camRunTime.emailSentDiskFull = False 
 
         if self.uiConfig.txtDefinirMaximoOnAlarmes.text() != '0' and len(self.uiConfig.txtDefinirMaximoOnAlarmes.text()) != 0:
 
             if float(self.uiConfig.txtDefinirMaximoOnAlarmes.text().replace(',', '.')) < discoLivre:
-                emailSentFullVideosOnAlarmes = False 
+                self.camRunTime.emailSentFullVideosOnAlarmes = False 
 
         if self.uiConfig.txtDefinirMaximoAllTime.text() != '0' and len(self.uiConfig.txtDefinirMaximoAllTime.text()) != 0:
 
             if float(self.uiConfig.txtDefinirMaximoAllTime.text().replace(',', '.')) < discoLivre:
-                emailSentFullVideosAllTime = False 
+                self.camRunTime.emailSentFullVideosAllTime = False 
 
         if statusFields:
 
-            statusConfig.addStorageConfig(
-                    diskMaxUsage, 
+            self.statusConfig.addStorageConfig(
+                    self.camRunTime.diskMaxUsage, 
                     self.uiConfig.txtAvisoUtilizacaoHD.text().replace(',', '.'), 
                     self.uiConfig.txtDefinirMaximoOnAlarmes.text().replace(',', '.'),
                     self.uiConfig.txtDefinirMaximoAllTime.text().replace(',', '.'),
@@ -1094,8 +1178,10 @@ class FormProc(QWidget):
                     "True" if self.uiConfig.radioButtonStopSaveNewVideos.isChecked() else "False"
                     )
         
-            refreshStatusConfig() 
+            self.checkStorage()            
+            self.refreshStatusConfig()             
             self.camRunTime.init() 
+            self.threadStorage.run()
 
     def checkBoxDesabilitarLoginAutomatico(self, state):
         #global LOGIN_AUTOMATICO        
@@ -1115,15 +1201,6 @@ class FormProc(QWidget):
             
     def checkBoxTodosDiasStateChanged(self, state):
         if state == 0:
-           self.uiConfig.checkMon.setCheckState(True)
-           self.uiConfig.checkTue.setCheckState(True)
-           self.uiConfig.checkWed.setCheckState(True)
-           self.uiConfig.checkThur.setCheckState(True)
-           self.uiConfig.checkFri.setCheckState(True)
-           self.uiConfig.checkSat.setCheckState(True)
-           self.uiConfig.checkSun.setCheckState(True)
-        # Qt.Checked 
-        elif (state == 1 or state == 2):
            self.uiConfig.checkMon.setCheckState(False)
            self.uiConfig.checkTue.setCheckState(False)
            self.uiConfig.checkWed.setCheckState(False)
@@ -1131,6 +1208,19 @@ class FormProc(QWidget):
            self.uiConfig.checkFri.setCheckState(False)
            self.uiConfig.checkSat.setCheckState(False)
            self.uiConfig.checkSun.setCheckState(False)
+           
+        # Qt.Checked 
+        elif (state == 1 or state == 2):
+        
+           self.uiConfig.checkMon.setCheckState(True)
+           self.uiConfig.checkTue.setCheckState(True)
+           self.uiConfig.checkWed.setCheckState(True)
+           self.uiConfig.checkThur.setCheckState(True)
+           self.uiConfig.checkFri.setCheckState(True)
+           self.uiConfig.checkSat.setCheckState(True)
+           self.uiConfig.checkSun.setCheckState(True)
+        
+           
     
     
     def checkBoxWebcamStateChanged(self, state):
@@ -1141,6 +1231,13 @@ class FormProc(QWidget):
         elif (state == 1 or state == 2):
             self.uiConfig.txtUrlRstp.clear()
             self.uiConfig.txtUrlRstp.setEnabled(False)
+            #se a webcam está ativa, desativar cameras em uso
+            i = 0             
+            for cam in self.camRunTime.listCamAtivas:
+                self.camRunTime.listCamAtivas[i]['emUso'] = 'False'
+                i = i + 1
+            self.statusConfig.setRtspConfig('webcam')
+            self.camRunTime.nameCam = cam.get('Webcam')
 
     def checkBoxNoLimitsVideosAllTime(self, state):
         if state == 0:
@@ -1167,8 +1264,8 @@ class FormProc(QWidget):
 
     def refreshStatusConfig(self):        
         self.statusConfig = utils.StatusConfig()
-        regions = self.statusConfig.getRegions()
-        self.emailConfig = self.statusConfig.getEmailConfig()
+        self.camRunTime.regions = self.statusConfig.getRegions()
+        self.camRunTime.emailConfig = self.statusConfig.getEmailConfig()
 
     def comboAlarmsUpdate(self, i):
         self.clearFieldsAlarm()
@@ -1177,7 +1274,7 @@ class FormProc(QWidget):
         
         if not self.statusConfig.isAlarmEmpty(self.uiConfig.comboRegions.currentText()) and not self.statusConfig.isRegionsEmpty():
 
-            #print('currentIndex: {:d}'.format(self.uiConfig.comboRegions.currentIndex()))
+            print('comboAlarmsUpdate i: {:d}'.format(i))
             self.uiConfig.btnDeleteAlarm.setEnabled(True)
             a = self.camRunTime.regions[self.uiConfig.comboRegions.currentIndex()].get('alarm')[i]
             self.uiConfig.checkMon.setCheckState(a.get('days').get('mon') == 'True')
@@ -1203,40 +1300,55 @@ class FormProc(QWidget):
 
     def comboRegionsUpdate(self, i):        
 
-        
+        self.refreshStatusConfig()
         self.clearFieldsTabRegiao()
-        #r = regions[i]
-
-        self.uiConfig.comboAlarms.clear()
+        
+        print('comboRegionsUpdate:: i: {:d}'.format(i))
+        
+        #r = regions[i]       
 
         if not self.statusConfig.isRegionsEmpty():
             for r in self.camRunTime.regions:
                 self.uiConfig.comboRegions.addItem(r.get("nameRegion"))
 
-            if len(self.camRunTime.regions) > 0 and len(self.camRunTime.regions) <= i:
+            if i < len(self.camRunTime.regions):
                 r = self.camRunTime.regions[i]
+                print('comboRegionsUpdate:: nameRegion1: {}'.format(r.get('nameRegion')))
             #else:
             #    r = self.camRunTime.regions[0]
                
             if r is not None:
-                self.uiConfig.txtRegionName.insert(r.get('nameRegion'))
-                self.uiConfig.txtThreshold.insert(str(r.get('prob_threshold')))            
+                print('comboRegionsUpdate:: nameRegion: {}'.format(r.get('nameRegion')))
+                self.uiConfig.txtRegionName.setText(r.get('nameRegion'))
+                self.uiConfig.txtThreshold.setText(str(r.get('prob_threshold')))            
                 self.uiConfig.checkPerson.setCheckState(r.get('objectType').get('person')=="True")
                 self.uiConfig.checkCar.setCheckState(r.get('objectType').get('car')=="True")
                 self.uiConfig.checkBike.setCheckState(r.get('objectType').get('bike')=="True")
                 self.uiConfig.checkDog.setCheckState(r.get('objectType').get('dog')=="True")
 
-            if not self.statusConfig.isAlarmEmpty(i):
-                #preenchendo lista de alarmes
-                if not self.statusConfig.isAlarmEmpty(i):
+                self.uiConfig.comboRegions.setCurrentIndex(i)
+                
+                self.uiConfig.comboAlarms.clear()
+                self.clearFieldsAlarm()
+                
+                #preenchendo lista de alarmes                    
+                if not self.statusConfig.isAlarmEmpty(r.get('nameRegion')):                    
                     for a in self.camRunTime.regions[i].get('alarm'):
                         self.uiConfig.comboAlarms.addItem(a.get('name'))                
-                
-            
-            self.uiConfig.comboRegions.setCurrentIndex(i)
-            self.comboAlarmsUpdate(0)
+                    
+                    self.comboAlarmsUpdate(0)
+                    
             self.uiConfig.btnDeleteRegion.setEnabled(True)
             self.uiConfig.btnCancelRegion.setEnabled(False)
+            self.uiConfig.btnSaveRegion.setEnabled(True)
+        else:
+            self.uiConfig.btnDeleteRegion.setEnabled(False)
+            self.uiConfig.btnCancelRegion.setEnabled(False)
+            self.uiConfig.btnSaveRegion.setEnabled(False)
+            
+            
+            
+        
 
     def clearFieldsAlarm(self):
         self.uiConfig.checkMon.setCheckState(False)
@@ -1246,11 +1358,13 @@ class FormProc(QWidget):
         self.uiConfig.checkFri.setCheckState(False)
         self.uiConfig.checkSat.setCheckState(False)
         self.uiConfig.checkSun.setCheckState(False)
+        self.uiConfig.checkTodosDias.setCheckState(False)
         self.uiConfig.checkEmailAlert.setCheckState(False)
         self.uiConfig.checkAlertSound.setCheckState(False)
         self.uiConfig.timeStart.clear()
         self.uiConfig.timeEnd.clear()
         self.uiConfig.txtNameAlarm.clear()
+        #self.uiConfig.comboAlarms.clear()
 
     def clearFieldsTabRegiao(self):
         self.uiConfig.txtRegionName.clear()
@@ -1269,6 +1383,7 @@ class FormProc(QWidget):
         self.uiConfig.checkFri.setCheckState(False)
         self.uiConfig.checkSat.setCheckState(False)
         self.uiConfig.checkSun.setCheckState(False)
+        self.uiConfig.checkTodosDias.setCheckState(False)
         self.uiConfig.timeEnd.clear()
         self.uiConfig.timeStart.clear()
 
@@ -1284,11 +1399,15 @@ class FormProc(QWidget):
         self.uiConfig.txtEmailPassword.clear()
         self.uiConfig.lblStatus.clear()
         self.uiConfig.lblStatusProcurarCam.clear()
+        self.uiConfig.lblInitStatus.clear()
+        
+        self.clearFieldsAlarm()
         
         self.uiConfig.comboBoxCamAtivas.clear()
         self.uiConfig.comboBoxCamEncontradas.clear()
         
         self.clearListCameras()        
+        self.clearFieldsCamConfig()
 
         self.refreshStatusConfig()
 
@@ -1300,6 +1419,8 @@ class FormProc(QWidget):
 
         if self.statusConfig.data.get("camSource") == "webcam":
             self.uiConfig.txtUrlRstp.clear()
+            self.uiConfig.checkBoxWebCam.setCheckState(True)
+            self.camRunTime.nameCam = 'Webcam'           
         else:
             self.uiConfig.txtUrlRstp.setText(self.statusConfig.data.get("camSource"))
 
@@ -1322,7 +1443,9 @@ class FormProc(QWidget):
         self.uiConfig.txtEmailSubject.setText(self.statusConfig.data["emailConfig"].get('subject'))
         self.uiConfig.txtEmailTo.setText(self.statusConfig.data["emailConfig"].get('to'))
         
+        
         self.comboRegionsUpdate(0)
+        #self.comboAlarmsUpdate(0)        
 
 
         #carregar cams previamente escaneadas na rede
@@ -1348,6 +1471,7 @@ class FormProc(QWidget):
                     break
             
             self.uiConfig.txtNomeCamAtiva.setText(nome)
+            self.camRunTime.nameCam = nome
             
         if self.uiConfig.comboBoxCamEncontradas.currentIndex() != -1: 
             self.comboBoxCamEncontradasStateChanged(self.uiConfig.comboBoxCamEncontradas.currentIndex())
@@ -1408,6 +1532,7 @@ class FormProc(QWidget):
             passwd = utils.decrypt(self.statusConfig.dataLogin['passwd'])
             
             self.camRunTime.login = {'user':utils.encrypt(email), 'passwd':utils.encrypt(passwd), 'token':utils.encrypt(self.camRunTime.token)}
+            log.debug('loginAutomatico::TOKEN: {}'.format(self.camRunTime.token))
             
             self.camRunTime.statusLicence, self.camRunTime.error  = checkLoginPv(self.camRunTime.login) 
             #statusLicence = True ## testando apenas IJF
@@ -1495,6 +1620,11 @@ class FormProc(QWidget):
                             threadEmailAlarmesEmpty.start()
                             self.camRunTime.emailSentdirVideosOnAlarmesEmpty = True
     
+    @pyqtSlot()
+    def warningSessionLossFirst(self):
+        log.debug('warningSessionLoss')
+        self.uiConfig.lblInitStatus.setText('Login efetuado em outra máquina. Esta sessão será fechada em breve')
+    
     
     @pyqtSlot()
     def warningSessionLoss(self):
@@ -1503,21 +1633,22 @@ class FormProc(QWidget):
         utils.stopWatchDog()
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
-        msg.setWindowTitle("Perda de sessão")
+        msg.setWindowTitle("Erro")
         msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
         msg.setText("Sua sessão expirou ! Verifique se alguém fez login em outra máquina e faça o login novamente.")
         msg.exec()
     
     @pyqtSlot()
-    def checkStorage(self):
-    
-        #print('checkStorage')
+    def checkStorage(self):    
+        
+        log.debug('initFormConfig::checkStorage')
         self.camRunTime.dirVideosOnAlarmesUsedSpace = utils.getDirUsedSpace(self.statusConfig.data["dirVideosOnAlarmes"])
+        self.camRunTime.dirVideosAllTimeUsedSpace = utils.getDirUsedSpace(self.statusConfig.data['dirVideosAllTime'])
         self.camRunTime.isDiskFull = utils.isDiskFull(self.camRunTime.diskMinUsage) 
         self.camRunTime.diskUsageFree = utils.getDiskUsageFree() 
-        self.camRunTime.diskUsageFreeGb = utils.getDiskUsageFreeGb()
-        self.camRunTime.dirVideosAllTimeUsedSpace = utils.getDirUsedSpace(self.statusConfig.data['dirVideosOnAlarmes'])
-        self.camRunTime.numDaysRecording = utils.getNumDaysRecording()                     
+        self.camRunTime.diskUsageFreeGb = utils.getDiskUsageFreeGb()        
+        self.camRunTime.numDaysRecording = utils.getNumDaysRecording()
+        
                             
    
 

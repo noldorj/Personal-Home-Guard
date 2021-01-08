@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>923</width>
-    <height>806</height>
+    <width>936</width>
+    <height>675</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -21,8 +21,8 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>923</width>
-    <height>806</height>
+    <width>936</width>
+    <height>675</height>
    </size>
   </property>
   <property name="focusPolicy">
@@ -39,7 +39,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>921</width>
+     <width>931</width>
      <height>671</height>
     </rect>
    </property>
@@ -53,7 +53,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>4</number>
       </property>
       <property name="tabsClosable">
        <bool>false</bool>
@@ -65,7 +65,7 @@
        <widget class="QWidget" name="horizontalLayoutWidget_18">
         <property name="geometry">
          <rect>
-          <x>0</x>
+          <x>8</x>
           <y>590</y>
           <width>911</width>
           <height>41</height>
@@ -197,51 +197,27 @@
          <string>+ Região</string>
         </property>
        </widget>
-       <widget class="QWidget" name="horizontalLayoutWidget_19">
+       <widget class="QLabel" name="lblCam1">
         <property name="geometry">
          <rect>
-          <x>0</x>
-          <y>70</y>
+          <x>8</x>
+          <y>90</y>
           <width>911</width>
-          <height>511</height>
+          <height>491</height>
          </rect>
         </property>
-        <layout class="QHBoxLayout" name="gridCam">
-         <item>
-          <widget class="QLabel" name="lblCam1">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>854</width>
-             <height>480</height>
-            </size>
-           </property>
-           <property name="mouseTracking">
-            <bool>true</bool>
-           </property>
-           <property name="frameShape">
-            <enum>QFrame::Box</enum>
-           </property>
-           <property name="frameShadow">
-            <enum>QFrame::Sunken</enum>
-           </property>
-           <property name="midLineWidth">
-            <number>0</number>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="margin">
-            <number>0</number>
-           </property>
-          </widget>
-         </item>
-        </layout>
+        <property name="minimumSize">
+         <size>
+          <width>911</width>
+          <height>491</height>
+         </size>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
        </widget>
       </widget>
       <widget class="QWidget" name="tabRegion">

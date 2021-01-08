@@ -3,6 +3,7 @@ import logging as log
 from objectTracking.pyimagesearch.centroidtracker import CentroidTracker
 import utilsCore as utils
 from rtsp_discover.rtsp_discover import CamFinder
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
 
 
 import numpy as np
@@ -44,8 +45,7 @@ class CamRunTime():
     fernetKey = None
 
     #CHECK_SESSION = 300 # checar sessao a cada 5 min
-    CHECK_SESSION = 20 # checar sessao a cada 5 min
-    #GRAVANDO_TIME = 300 #gravar videos de 5min 
+    CHECK_SESSION = 60 # checar sessao a cada 5 min    
     GRAVANDO_TIME = 300 #gravar videos de 5min 
 
     LOGIN_AUTOMATICO = False
@@ -119,7 +119,8 @@ class CamRunTime():
     source = None
     ipCam = None
     nameCam = 'Camera'
-    error = ''
+    error = ' '
+    errorWebcam = False
     prob_threshold = 60.0 
     #list de objetos identificados pela CNN
     listObjects = []
@@ -168,7 +169,9 @@ class CamRunTime():
     login = None 
     sessionStatus = True
     sessionErrorCount = 2 #numero maximo de erros na sessao
-    token = None
+    errorSession = 0    
+    token = ''
+    #token = secrets.token_urlsafe(20)
 
     #variaveis do disco
     diskMinUsage = 15
@@ -186,34 +189,45 @@ class CamRunTime():
     numDaysRecording = None
     errorRtsp = False
     
+    
+    
+    
             
     def setRtspError(self, status):
-        log.debug('setRtspError')
+        log.debug('camRunTime::setRtspError')
         self.errorRtsp = status
 
     def updateIpCam(self):
-        log.debug('updateIpCam')
+        log.debug('camRunTime::updateIpCam')
         #origem do stream do video
         self.statusConfig = utils.StatusConfig()
         self.source = self.statusConfig.data["camSource"]
         
         
         self.ipCam, self.error = utils.camSource(self.source)
+        log.debug('camRunTime::updateIpCam camSource error: {}'.format(self.error))
         
-        if self.error != '':
+        if self.error == 'rtsp':           
             
-            log.debug('Erro camSource: {}'.format(self.error))
             self.errorRtsp = True
             self.rtspStatus = False 
+            self.errorWebcam = False
             
+        elif self.error == 'webcam':
+            
+            self.errorWebcam = True
+            self.errorRtsp = True
+            self.rtspStatus = False                         
         else:
             self.rtspStatus = True 
+            self.errorWebcam = False
             self.errorRtsp = False
             self.ipCam.set(3, self.RES_X)
             self.ipCam.set(4, self.RES_Y)
-            log.debug('Conexao com camera restabelecida.')            
+            log.debug('camRunTime::updateIpCam: Conexao com camera restabelecida.')            
             
-            self.conectado = False            
+            self.conectado = True            
+            self.init_video = True
             self.frame = None
             self.next_frame = None
             self.changeIpCam = True
@@ -223,9 +237,8 @@ class CamRunTime():
 
         
         log.debug(' ')
-        log.debug('initConfig')
-        log.debug(' ')
-        log.debug('camRunTime init')
+        log.debug('camRunTime::initConfig')       
+        log.debug(' ')       
         
         self.camRunTimeId = secrets.token_urlsafe(5)
       
@@ -243,10 +256,11 @@ class CamRunTime():
 
         self.LOGIN_AUTOMATICO = True if self.statusConfig.getLoginAutomatico() == 'True' else False
         
-        self.token = secrets.token_urlsafe(20)
+        
         email = self.statusConfig.dataLogin['user']
         passwd = utils.decrypt(self.statusConfig.dataLogin['passwd'])        
         self.login = {'user':utils.encrypt(email), 'passwd':utils.encrypt(passwd), 'token':utils.encrypt(self.token)}
+        log.debug('camRunTime::init TOKEN: {}'.format(utils.decrypt(self.login.get('token').decode())))
         
         
         self.gravandoAllTime = True if self.statusConfig.data["isRecordingAllTime"] == 'True' else False
@@ -294,15 +308,16 @@ class CamRunTime():
         
         
         #origem do stream do video
-        self.source = self.statusConfig.data["camSource"]
-        log.debug('source: {}'.format(self.source))
+        self.source = self.statusConfig.data["camSource"]        
         self.ipCam, self.error = utils.camSource(self.source)
 
-        #fourcc = cv.VideoWriter_fourcc(*'X264')
+        #self.fourcc = cv.VideoWriter_fourcc(*'X''2''6''4') erro
         #for linux x264 need to recompile opencv mannually
         self.fourcc = cv.VideoWriter_fourcc(*'X''V''I''D') #menor tamanho de arquivo
-        #fourcc = cv.VideoWriter_fourcc('M','J','P','G')
+        
+        #fourcc = cv.VideoWriter_fourcc(*'M','J','P','G')
         #fourcc = cv.VideoWriter_fourcc(*'MP4V')
+        
         
         self.dirVideosOnAlarmesUsedSpace = utils.getDirUsedSpace(self.statusConfig.data["dirVideosOnAlarmes"])
         self.isDiskFull = utils.isDiskFull(self.diskMinUsage) 
@@ -311,18 +326,24 @@ class CamRunTime():
         self.dirVideosAllTimeUsedSpace = utils.getDirUsedSpace(self.statusConfig.data['dirVideosOnAlarmes'])
         self.numDaysRecording = utils.getNumDaysRecording()                     
 
-        if self.error != '':
+        log.debug('camRunTime::init:: camSource error: {}'.format(self.error))
+        if self.error == 'rtsp':
+            self.errorRtsp = True
+            self.rtspStatus = False 
+            self.errorWebcam = False
             
-            log.debug('Erro camSource: {}'.format(self.error))
+        elif self.error == 'webcam':            
+            self.errorWebcam = True
             self.errorRtsp = True
             self.rtspStatus = False 
             
         else:
             self.rtspStatus = True 
+            self.errorWebcam = False
             self.errorRtsp = False
             self.ipCam.set(3, self.RES_X)
             self.ipCam.set(4, self.RES_Y)
-            log.debug('Conexao com camera restabelecida.')            
+            log.debug('camRunTime:: Conexao com camera restabelecida.')            
             
 
         self.prob_threshold = float(self.statusConfig.data["prob_threshold"])

@@ -21,7 +21,7 @@ class FormLogin(QDialog):
     statusConfig = None
     camRunTime = None
     
-    token = secrets.token_urlsafe(20)
+    
     logged = False   
     #setBackStatusConfigCamRunTime = pyqtSignal(StatusConfig, CamRunTime)
     updateStatusLogin = pyqtSignal(bool)
@@ -33,13 +33,17 @@ class FormLogin(QDialog):
         #Dialog = QtWidgets.QDialog()
         self.uiLogin = Ui_Dialog()
         self.uiLogin.setupUi(self)        
+        
+        
 
         #self.uiLogin.setWindowModality(QtCore.Qt.ApplicationModal)
 
         self.statusConfig = statusConfigP
         self.camRunTime = camRunTimeP
+        
+        
 
-        print('self.statusConfig.dataLogin.get(user):' + self.statusConfig.dataLogin.get('user'))
+        log.debug('initGuiLogin:: self.statusConfig.dataLogin:' + self.statusConfig.dataLogin.get('user'))
 
         if self.statusConfig.dataLogin.get('autoStart') == 'True':
             self.uiLogin.checkBoxLoginAutoStart.setCheckState(True)
@@ -174,7 +178,7 @@ class FormLogin(QDialog):
 
             if (self.uiLogin.txtNovaSenha.text() == self.uiLogin.txtNovaSenha2.text()):
             
-                self.camRunTime.login = {'user':utils.encrypt(self.uiLogin.txtEmail_minhaConta.text()), 'passwd':utils.encrypt(self.uiLogin.txtNovaSenha.text()), 'token':utils.encrypt(self.token)} 
+                self.camRunTime.login = {'user':utils.encrypt(self.uiLogin.txtEmail_minhaConta.text()), 'passwd':utils.encrypt(self.uiLogin.txtNovaSenha.text()), 'token':utils.encrypt(self.camRunTime.token)} 
                 
 
                 self.camRunTime.statusPasswd, self.camRunTime.error = changePasswdPv(self.camRunTime.login)
@@ -235,7 +239,7 @@ class FormLogin(QDialog):
         #checando licenca de usuario no servidor
         #global init_video, statusLicence, self.uiLogin, conexao, login 
 
-        log.info('Checando conexão com a Internet')
+        log.debug('Checando conexão com a Internet')
         self.uiLogin.lblStatus.setText("Checando conexão com a Internet")
 
         self.camRunTime.conexao = utils.checkInternetAccess()
@@ -247,8 +251,9 @@ class FormLogin(QDialog):
             print('Checando licença no servidor - Por favor aguarde')
             self.uiLogin.lblStatus.setText("Conectando com o servidor")
             
-            self.camRunTime.login = {'user':utils.encrypt(self.uiLogin.txtEmail.text()), 'passwd':utils.encrypt(self.uiLogin.txtPasswd.text()), 'token':utils.encrypt(self.token)}
-            #log.info('token: {}'.format(token))
+            self.camRunTime.login = {'user':utils.encrypt(self.uiLogin.txtEmail.text()), 'passwd':utils.encrypt(self.uiLogin.txtPasswd.text()), 'token':utils.encrypt(self.camRunTime.token)}
+            log.debug('btnLogin::TOKEN: {}'.format(self.camRunTime.login.get('token').decode()))
+            utils.setUserNameLoginConfig(self.uiLogin.txtEmail.text())
             
             self.camRunTime.statusLicence, self.camRunTime.error  = checkLoginPv(self.camRunTime.login) 
             #statusLicence = True ## testando apenas IJF
