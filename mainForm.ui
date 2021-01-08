@@ -53,7 +53,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>4</number>
+       <number>3</number>
       </property>
       <property name="tabsClosable">
        <bool>false</bool>
@@ -1118,6 +1118,13 @@
             </property>
            </widget>
           </item>
+          <item row="0" column="3">
+           <widget class="QPushButton" name="btnRemoverCamEncontrada">
+            <property name="text">
+             <string>Remover</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
         <widget class="QWidget" name="formLayoutWidget_12">
@@ -1196,7 +1203,7 @@
          <property name="geometry">
           <rect>
            <x>400</x>
-           <y>120</y>
+           <y>128</y>
            <width>167</width>
            <height>25</height>
           </rect>

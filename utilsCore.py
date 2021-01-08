@@ -261,6 +261,7 @@ def isDiskFull(diskMinUsage):
 
 def freeDiskSpace(dirVideo):
 
+     log.debug('freeDiskSpace::')
      #locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
      #vai apagando um dia por vez até sobrar espaço
@@ -283,7 +284,7 @@ def freeDiskSpace(dirVideo):
      dirVideo = os.getcwd() + '/' + dirVideo       
      
      dirListFull = glob(dirVideo + '/*')
-     print('dirListFull : {}'.format(dirListFull))    
+     #print('dirListFull : {}'.format(dirListFull))    
      
      for m in dirListFull:
         m = m.replace("\\","/")
@@ -299,9 +300,9 @@ def freeDiskSpace(dirVideo):
 
      
      
-     print('dirList: {}'.format(dirList))
-     print('yearList: {}'.format(yearList))
-     print('monthList: {}'.format(monthList))
+     # print('dirList: {}'.format(dirList))
+     # print('yearList: {}'.format(yearList))
+     # print('monthList: {}'.format(monthList))
      
      if (len(dirList) != 0):
 
@@ -317,16 +318,16 @@ def freeDiskSpace(dirVideo):
         
         
         for d in daysDir:
-           print('d: {}'.format(d))
+           #print('d: {}'.format(d))
            d = d.replace("\\","/")
-           print('d replaced: {}'.format(d))
+           #print('d replaced: {}'.format(d))
            dayList.append(d.rsplit('/').pop())
             
-        print('dayList: {}'.format(dayList))
+        #print('dayList: {}'.format(dayList))
 
         daysSorted = sorted(dayList, key=lambda dayList: datetime.strptime(dayList,'%d'))
         
-        print('daysSorted: {}'.format(daysSorted))
+        #print('daysSorted: {}'.format(daysSorted))
         
         iDirSorted = 0 
         iDaysSorted = 0  
@@ -340,16 +341,16 @@ def freeDiskSpace(dirVideo):
                 if iDaysSorted < len(daysSorted):
                 
                     oldestDir = dirVideo + '/' + dirSorted[iDirSorted] + '/' + daysSorted[iDaysSorted]                        
-                    print('dirVideo: {}'.format(dirVideo))
+                    #print('dirVideo: {}'.format(dirVideo))
                     #oldestDir = oldestDir.replace("/","\\")
                     
-                    print('oldestDir: {}'.format(oldestDir))
+                    #print('oldestDir: {}'.format(oldestDir))
                     # linux dirSpace = subprocess.check_output(['du','-sh', oldestDir]).split()[0].decode('utf-8')
                     #dirSpace = subprocess.check_output(['du','-sh', oldestDir]).split()[0].decode('utf-8')
                     dirSpace = 0
                     for filename in os.listdir(oldestDir):
                         dirSpace = os.path.getsize(os.path.join(oldestDir, filename))
-                    print('dirSpace: {}'.format(dirSpace))
+                    #print('dirSpace: {}'.format(dirSpace))
                    
                     #deletar a pasta do ano/mes/dia mais antigo
                     try:
@@ -359,9 +360,10 @@ def freeDiskSpace(dirVideo):
                     except OSError as e:
                         
                         log.critical('Diretorio nao encontrado')
-                        log.critical("Error: %s : %s" % (oldestDir, e.strerror))
+                        log.critical("Error 1: %s : %s" % (oldestDir, e.strerror))
                         #se o diretorio foi apagado, pular para o proximo
                         iDirSorted = iDirSorted + 1
+                        break
 
                         
                     else:
@@ -384,7 +386,8 @@ def freeDiskSpace(dirVideo):
                     except OSError as e:
                         
                         log.critical('Diretorio nao encontrado')
-                        log.crtical("Error: %s : %s" % (oldestDir, e.strerror))
+                        log.crtical("Error 2: %s : %s" % (oldestDir, e.strerror))
+                        break
                         
                     else:
                         log.info('Diretorio {} removido'.format(oldestDir))
@@ -593,7 +596,7 @@ class StatusConfig:
 
     def isAlarmEmpty(self, regionName):
         status = False 
-        print('regionName : {}'.format(regionName))
+        #print('regionName : {}'.format(regionName))
         for r in self.regions:
             #print('nameRegion {}'.format(r.get("nameRegion")))
             if r.get("nameRegion") == regionName:
@@ -781,7 +784,23 @@ class StatusConfig:
         self.data["camListAtivas"] = self.dataCam 
         self.saveConfigFile()
 
+    def addCamEncontradaConfig(self, nome, idCam, ip, mac, port, user, passwd, channel, source):
 
+        cam = {
+            "nome"           : nome,
+            "idCam"          : idCam,
+            "ip"             : ip,
+            "mac"            : mac,
+            "user"           : user,
+            "passwd"         : passwd,
+            "channel"        : channel,
+            "source"         : source,
+            "emUso"          : 'False',
+        }
+
+        
+        self.data["camListAtivas"].append(cam)
+        self.saveConfigFile()
 
     def addRegion(self, nameRegion, alarm, objectType, prob_threshold, pointsPolygon):
 
@@ -815,13 +834,13 @@ class StatusConfig:
 
         edit = False
         i = 0
-        print('addAlarm:: idRegion: {:d}'.format(idRegion))
-        print('addAlarm:: regionsLen: {:d}'.format(len(self.regions)))
+        #print('addAlarm:: idRegion: {:d}'.format(idRegion))
+        #print('addAlarm:: regionsLen: {:d}'.format(len(self.regions)))
         
         if idRegion <= (len(self.regions) - 1):
             for a in self.regions[idRegion].get('alarm'):                            
                 if a.get('name') == alarm['name']:                
-                    print('edit true')
+                    #print('edit true')
                     self.regions[idRegion].get('alarm')[i] = alarm
                     edit = True
                     break

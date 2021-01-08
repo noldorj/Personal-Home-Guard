@@ -38,6 +38,7 @@ class CheckStorage(QThread):
             
         while self.checkStorageRun:
         
+            log.debug('\n checkStorage:: checking')
             self.updateStorageInfo.emit()
             
             if not utils.isDiskFull(self.camRunTime.diskMinUsage):
@@ -106,7 +107,7 @@ class CheckStorage(QThread):
         
             # disco cheio
             else:
-                log.debug('Disco cheio')
+                log.debug('checkStorage:: Disco cheio')
                 if not self.camRunTime.emailSentDiskFull:  
                 
                     if self.camRunTime.eraseOldestFiles:
@@ -136,7 +137,7 @@ class CheckStorage(QThread):
 
                         if utils.freeDiskSpace(self.camRunTime.statusConfig.getDirVideosAllTime()) == False:
                         
-                            log.critical('Diretorios de "Videos 24hs" já está vazio')
+                            log.critical('checkStorage:: Diretorios de "Videos 24hs" já está vazio')
                             if not self.camRunTime.emailSentdirVideosAllTimeEmpty:
                                 textEmail = 'Mesmo apagando a pasta "Videos 24hs", seu HD continua cheio ! \n\n \ Nossa sugestão é que você libere mais espaço para pode gravar os "Videos 24hs"' 
 
@@ -148,7 +149,7 @@ class CheckStorage(QThread):
                     
                         #se ainda não tiver sido suficiente
                         if utils.isDiskFull(self.camRunTime.diskMinUsage):
-                            log.info('Apagando diretórios de Alarmes')
+                            log.debug('checkStorage:: Apagando diretórios de Alarmes')
                             #log.info('Dir: {}'.format(statusConfig.getDirVideosOnAlarmes()))
                             if utils.freeDiskSpace(self.statusConfig.getDirVideosOnAlarmes()) == False:
                                 log.critical('Diretorios de "Vidos Alarme" já está vazio')
@@ -162,10 +163,12 @@ class CheckStorage(QThread):
                                     self.camRunTime.emailSentdirVideosOnAlarmesEmpty = True
                                     
                                     
-            
+            log.debug('checkStorage:: sleep')
             time.sleep(self.CHECK_STORAGE_TIME)    
         
     def stop(self):
         self.checkStorageRun = False
         self._run_flag = False
+        self._running = False
         self.wait()
+        log.debug('CheckStorage:: stop')

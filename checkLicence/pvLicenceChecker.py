@@ -9,12 +9,19 @@ from threading import Thread
 
 from utilsServer import sendMailForgotPasswd
 
-#log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
+#log.root.setLevel(log.DEBUG)
+#log.basicConfig()
 
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pvLicenceServer.log', encoding='utf-8', level=log.DEBUG)
+#for handler in log.root.handlers[:]:
+#    log.root.removeHandler(handler)
+#
+#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.DEBUG, handlers=[log.FileHandler('pv-server.log', 'a', 'utf-8')])
+
+
+#log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.DEBUG, stream=sys.stdout)
 
 #tempo de expiracao da sessao em minutos
-TIME_SESSION = 5
+TIME_SESSION = 2
 
 #host="dbpv.c3jzryxr6fxw.sa-east-1.rds.amazonaws.com"
 host = "dbpv.cswsskc4btjh.sa-east-1.rds.amazonaws.com"  
@@ -198,7 +205,7 @@ def checkLogin(userName, userPassword, userToken):
 
     status = True
     #checar se existe arquivo de sesson 'userName.json'
-    log.info('checkLogin:: Checando arquivo de sessao do userName: ' + userName)
+    log.debug('checkLogin:: Checando arquivo de sessao do userName: ' + userName)
     file = 'sessions/'+ userName + '.json'
     
 
@@ -231,13 +238,13 @@ def checkLogin(userName, userPassword, userToken):
 
                 #checando userToken para garantir logins apenas em uma maquina por vez
                 #se userToken = '0' entao este é o primeiro login com este token gerado pelo PV-Client
-                log.info('Username: : ' + userName)
-                log.info('Token cliente: ' + userToken)
-                log.info('Token servidor: ' + session['userToken'])
+                log.debug('Username: : ' + userName)
+                log.debug('Token cliente: ' + userToken)
+                log.debug('Token servidor: ' + session['userToken'])
                 
                 if session['userToken'] != userToken:
                     #gravo o userToken na sessao
-                    log.info('Primeiro login - sessao on')
+                    log.debug('Primeiro login - sessao on')
                     
                     session['userToken'] = userToken
                     session['loginStatus'] = 'on'
@@ -245,9 +252,9 @@ def checkLogin(userName, userPassword, userToken):
                     session['lastLogin'] = lastLogin
                     session['lastSession'] = lastLogin
 
-                #se for um segundo login, valida o userToken e ativa a sessao
+                #se for um segundo login, valida o userToken e ativa a sessao - apenas para registro no log
                 elif session['userToken'] == userToken:
-                    log.info('Validando login - userToken existente')
+                    log.debug('Validando login - userToken existente')
                     
                     session['loginStatus'] = 'on'
                     session['sessionStatus'] = 'on'
@@ -277,7 +284,7 @@ def checkLogin(userName, userPassword, userToken):
                     log.info('Sessao: {} atualizada'.format(userName))
 
             else:
-                log.info('Login invalido')
+                log.debug('Login invalido')
                 status = False
 
     else:
@@ -364,7 +371,7 @@ def checkSession(userName, userToken):
 
         else:
 
-            log.info('checkSession:: Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))
+            log.debug('checkSession:: Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))
 
             #session = json.load(open('sessions/igor14.json', 'r'))
 
@@ -378,34 +385,59 @@ def checkSession(userName, userToken):
             currentDate = currentDate.strftime('%Y-%b-%d %H:%M')
 
             if (len(minutes)>1):
-                status = False
-                log.critical('checkSession:: Sessão expirou')
+                #status = False
+                if userName == session['userName'] and userToken == session['userToken']:
+                    log.critical('checkSession:: Sessão expirou')
+                    session['sessionStatus'] = 'off'
+                    session['loginStatus'] = 'off'
+                    saveSession(session, userName)
+                    #sessao expirou, mas tem que retornar True se a conexao voltar 
+                    status = True 
+                else:
+                    status = False
+                    log.critical('checkSession:: Sessão expirou. Mas User e Token são válidos')
+                    session['sessionStatus'] = 'off'
+                    session['loginStatus'] = 'off'
                #expirou o tempo , dias já se passaram
             else:
                 minutes = minutes[0].split(':')
                 minutes = int(minutes[1])
 
+                log.debug('checkSession:: lastSession  : {}'.format(lastSession))
+                log.debug('checkSession:: currentDate  : {}'.format(currentDate))
+                log.debug('checkSession:: deltaSession : {}'.format(deltaSession))
+                log.debug('')
+                log.debug('checkSession:: userName          : {}'.format(userName))
+                log.debug('checkSession:: session userName  : {}'.format(session['userName']))
+                log.debug('checkSession:: userToken         : {}'.format(userToken))
+                log.debug('checkSession:: session userToken : {}'.format(session['userToken']))
+                
                 if userName == session['userName'] and userToken == session['userToken']:
+                    
+                    log.debug('checkSession:: minutes    : {}'.format(minutes))
+                    log.debug('checkSession:: expireTime : {}'.format(expireTime))
                     
                     if minutes < expireTime:
                         
                         session['lastSession'] = currentDate.__str__()
                         session['sessionStatus'] = 'on'
                         saveSession(session, userName)
-                        log.info('checkSession:: Sessao validada')
+                        log.info('checkSession:: Sessao [{}] validada'.format(userName))
                         status = True
 
                     else:
-                        #sessao expirou ou token errado
+                        #sessao expirou - apenas para registrar quanto tempo ficou off 
                         session['sessionStatus'] = 'off'
                         session['loginStatus'] = 'off'
                         saveSession(session, userName)
-                        status = False
-                        log.critical('checkSession:: Sessao expirou ou Token inválidos')
+                        #sessao expirou, mas tem que retornar True se a conexao voltar 
+                        #status = False 
+                        status = True 
+                        log.critical('checkSession:: Sessão expirou. Mas User e Token são válidos')
                 else:
-                    #usuario invalido
+                    #usuario ou token invalidos
                     status = False
-                    log.critical('checkSession:: Usuario ou Token inválidos')
+                    log.critical('checkSession:: Usuario [{}] ou Token inválidos'.format(userName))
     else:
         log.critical('checkSession:: Arquivo de sessao: {} não encontrado'.format(file))
         status = False

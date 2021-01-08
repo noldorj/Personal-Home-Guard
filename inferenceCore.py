@@ -514,13 +514,7 @@ class InferenceCore(QThread):
                                 #if out_video_all_time is not None:
                                 #h = nchw[2]
                                 #w = nchw[3]
-                                #print('self.camRunTime.w: {:d}'.format(self.camRunTime.w))
-                                #print('self.camRunTime.h: {:d}'.format(self.camRunTime.h))
-                                # print('self.camRunTime.FPS: {:f}'.format(self.camRunTime.FPS))
-                                # print('self.camRunTime.fourcc: {}'.format(self.camRunTime.fourcc))
-                                # print('self.camRunTime.timeGravandoAll: {:f}'.format(self.camRunTime.timeGravandoAll))
-                                # print('self.camRunTime.GRAVANDO_TIME: {:d}'.format(self.camRunTime.GRAVANDO_TIME))
-                                # print('self.camRunTime.nameVideoAllTime: {}'.format(self.camRunTime.nameVideoAllTime))
+                                
                                 
                                 self.camRunTime.out_video_all_time = cv.VideoWriter(self.camRunTime.nameVideoAllTime, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h))
                                 self.camRunTime.out_video_all_time.write(frame_no_label)

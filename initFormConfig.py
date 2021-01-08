@@ -177,6 +177,7 @@ class FormProc(QWidget):
             #self.uiConfig.btnInitSair.clicked.connect(self.closeEvent)
             self.uiConfig.btnAlterarNomeCamAtiva.clicked.connect(self.btnSalvarNomeCamAtiva)
             self.uiConfig.btnRemoverCamAtiva.clicked.connect(self.btnRemoverCamAtiva)
+            self.uiConfig.btnRemoverCamEncontrada.clicked.connect(self.btnRemoverCamEncontrada)
             self.uiConfig.btnNovaCam.clicked.connect(self.btnNovaCam)
             
             self.uiConfig.progressBarProcurarCam.hide()
@@ -233,7 +234,7 @@ class FormProc(QWidget):
                 self.threadStorage.updateStorageInfo.connect(self.checkStorage)
                 self.threadStorage.start()
                                                             
-                #utils.initWatchDog()                
+                utils.initWatchDog()                
 
             else: 
                 
@@ -346,7 +347,7 @@ class FormProc(QWidget):
     
     def btnDeleteAlarm(self):
         
-        print('btnDeleteAlarm:: i: {}'.format(self.uiConfig.comboRegions.currentIndex()))
+        log.debug('btnDeleteAlarm:: i: {}'.format(self.uiConfig.comboRegions.currentIndex()))
         
         if self.uiConfig.comboRegions.currentIndex() is not -1:
         
@@ -380,6 +381,8 @@ class FormProc(QWidget):
 
     # Tab de Configurações - TODO mudar nome depois
     def btnSaveEmail(self):
+    
+        log.debug('btnSaveEmail::')
         #global self.uiConfig
 
         statusFields = True 
@@ -481,10 +484,8 @@ class FormProc(QWidget):
             
             self.uiConfig.lblCam1.clear()
             self.refreshStatusConfig()
-            self.camRunTime.init() 
-            #self.__init__() #IJF checar
-            self.infCam.setCamRunTime(self.camRunTime)
-            #self.clearFieldsTabGeralEmail()
+            self.camRunTime.init()             
+            self.infCam.setCamRunTime(self.camRunTime)            
             self.fillTabGeral()
             
 
@@ -617,11 +618,13 @@ class FormProc(QWidget):
             self.camRunTime.ref_point_polygon.clear()
             self.camRunTime.cropPolygon = False
             
+            self.camRunTime.init()
+            
             #self.comboAlarmsUpdate(0)
 
     def btnSaveAlarm(self):
         log.debug('btnSaveAlarm::')
-        print('btnSaveAlarm::')
+        #print('btnSaveAlarm::')
         statusFields = True
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
@@ -695,6 +698,29 @@ class FormProc(QWidget):
         self.uiConfig.txtEmailPassword.clear()
         self.uiConfig.lblStatus.clear()
         self.uiConfig.lblStatusProcurarCam.clear()
+        
+        
+    def btnRemoverCamEncontrada(self):        
+        
+                    
+        log.debug('btnRemoverCamEncontrada')
+        if self.uiConfig.comboBoxCamEncontradas.currentIndex() != -1: 
+            
+            idCombo = self.uiConfig.comboBoxCamEncontradas.currentText().split(':')[0]
+            idCombo = idCombo.replace('[','')
+            idCombo = idCombo.replace(']','')
+            
+            i = 0
+            for cam in self.camRunTime.listCamEncontradas:
+                if cam.get('id') == idCombo:
+                    #self.camRunTime.listCamAtivas[i]['nome'] = self.uiConfig.txtNomeCamAtiva.text()                    
+                    break
+                i = i + 1
+            self.camRunTime.listCamEncontradas.pop(i)            
+            self.camRunTime.statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
+            self.fillTabGeral()
+            self.infCam.setCamRunTime(self.camRunTime)
+   
 
     def btnRemoverCamAtiva(self):        
                     
@@ -779,40 +805,58 @@ class FormProc(QWidget):
         else:
             self.uiConfig.lblStatusProcurarCam.setText('Sem câmeras ativas. Clique em "Procurar Câmeras" para uma nova varredura')
 
+    
+    
     def btnNovaCam(self):
         
-        source = 'rtsp://' + self.uiConfig.txtUserCamDisponivel.text() + ':' + self.uiConfig.txtPasswdCamDisponivel.text() + '@' \
-                                    + self.uiConfig.txtIpCamDisponivel.text() + ':' + self.uiConfig.txtPortaCamDisponivel.text() + '/' + self.uiConfig.txtCanalCamDisponivel.text()
+        log.debug('btnNovaCam::')
+        status = False
         
-        
-        #novo id 
-        idMaior = 0
-        for cam in self.camRunTime.listCamAtivas:
-            if int(cam.get('id')) > idMaior:
-                idMaior = int(cam.get('id'))
-                
-        for cam in self.camRunTime.listCamEncontradas:
-            if int(cam.get('id')) > idMaior:
-                idMaior = int(cam.get('id'))
-        
-        idMaior = idMaior + 1
-        
-        novaCam = {'ip':self.uiConfig.txtIpCamDisponivel.text(),
-                   'user':self.uiConfig.txtUserCamDisponivel.text(),
-                   'passwd':self.uiConfig.txtPasswdCamDisponivel.text(),
-                   'channel':self.uiConfig.txtCanalCamDisponivel.text(),
-                   'port':self.uiConfig.txtPortaCamDisponivel.text(),
-                   'source':source,
-                   'emUso':'False',
-                   'id':str(idMaior),
-                   'nome':self.uiConfig.txtNomeCamDisponivel.text(),
-                   'mac':'0'                   
-                   }
+        if len(self.uiConfig.txtNomeCamDisponivel.text()) == 0 \
+           or len(self.uiConfig.txtIpCamDisponivel.text()) == 0 \
+           or len(self.uiConfig.txtUserCamDisponivel.text()) == 0 \
+           or len(self.uiConfig.txtPasswdCamDisponivel.text()) == 0 \
+           or len(self.uiConfig.txtPortaCamDisponivel.text()) == 0 \
+           or len(self.uiConfig.txtCanalCamDisponivel.text()) == 0:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Information)
+                msg.setWindowTitle("Campo em branco")
+                msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+                msg.setText("Por favor, preenchda todos os campos para incluir uma nova câmera ! ")
+                msg.exec()
+        else:
 
-        self.camRunTime.listCamEncontradas.append(novaCam)
-        self.fillTabGeral()
-        self.uiConfig.lblStatusTestarCam.setText('Clique em "Testar Configuração" para checar se esta câmera está funcionando')
-        self.comboBoxCamEncontradasStateChanged(len(self.camRunTime.listCamEncontradas)-1)
+            source = 'rtsp://' + self.uiConfig.txtUserCamDisponivel.text() + ':' + self.uiConfig.txtPasswdCamDisponivel.text() + '@' \
+                                        + self.uiConfig.txtIpCamDisponivel.text() + ':' + self.uiConfig.txtPortaCamDisponivel.text() + '/' + self.uiConfig.txtCanalCamDisponivel.text()
+            #novo id 
+            idMaior = 0
+            for cam in self.camRunTime.listCamAtivas:
+                if int(cam.get('id')) > idMaior:
+                    idMaior = int(cam.get('id'))
+                    
+            for cam in self.camRunTime.listCamEncontradas:
+                if int(cam.get('id')) > idMaior:
+                    idMaior = int(cam.get('id'))
+            
+            idMaior = idMaior + 1
+            
+            novaCam = {'ip':self.uiConfig.txtIpCamDisponivel.text(),
+                       'user':self.uiConfig.txtUserCamDisponivel.text(),
+                       'passwd':self.uiConfig.txtPasswdCamDisponivel.text(),
+                       'channel':self.uiConfig.txtCanalCamDisponivel.text(),
+                       'port':self.uiConfig.txtPortaCamDisponivel.text(),
+                       'source':source,
+                       'emUso':'False',
+                       'id':str(idMaior),
+                       'nome':self.uiConfig.txtNomeCamDisponivel.text(),
+                       'mac':'0'                   
+                       }
+
+            self.camRunTime.listCamEncontradas.append(novaCam)
+            self.camRunTime.statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
+            self.fillTabGeral()
+            self.uiConfig.lblStatusTestarCam.setText('Clique em "Testar Configuração" para checar se esta câmera está funcionando')
+            self.comboBoxCamEncontradasStateChanged(len(self.camRunTime.listCamEncontradas)-1)
    
         
     def clearFieldsCamConfig(self):
@@ -825,37 +869,37 @@ class FormProc(QWidget):
         self.uiConfig.txtCanalCamDisponivel.clear()
         self.uiConfig.lblStatusTestarCam.clear()
         
-    def comboBoxCamEncontradasStateChanged(self, i):
+    # def comboBoxCamEncontradasStateChanged(self, i):
         
-        #print('comboBoxCamEncontradasStateChanged: {:d}'.format(i))
+        # #print('comboBoxCamEncontradasStateChanged: {:d}'.format(i))
         
-        idCombo = None
+        # idCombo = None
         
-        if i != -1: 
-            idCombo = self.uiConfig.comboBoxCamEncontradas.currentText().split(':')[0]
-            idCombo = idCombo.replace('[','')
-            idCombo = idCombo.replace(']','')
-            #print('idCombo: {}'.format(idCombo))            
+        # if i != -1: 
+            # idCombo = self.uiConfig.comboBoxCamEncontradas.currentText().split(':')[0]
+            # idCombo = idCombo.replace('[','')
+            # idCombo = idCombo.replace(']','')
+            # #print('idCombo: {}'.format(idCombo))            
             
             
-            for cam in self.camRunTime.listCamEncontradas:
-                if cam.get('id') == idCombo:
+            # for cam in self.camRunTime.listCamEncontradas:
+                # if cam.get('id') == idCombo:
                     
-                    self.uiConfig.txtNomeCamDisponivel.setText(cam.get('nome'))
-                    self.uiConfig.txtIpCamDisponivel.setText(cam.get('ip'))
-                    self.uiConfig.txtUserCamDisponivel.setText(cam.get('user'))
-                    self.uiConfig.txtPasswdCamDisponivel.setText(cam.get('passwd'))
-                    self.uiConfig.txtPortaCamDisponivel.setText(cam.get('port'))
-                    self.uiConfig.txtCanalCamDisponivel.setText(cam.get('channel'))                    
+                    # self.uiConfig.txtNomeCamDisponivel.setText(cam.get('nome'))
+                    # self.uiConfig.txtIpCamDisponivel.setText(cam.get('ip'))
+                    # self.uiConfig.txtUserCamDisponivel.setText(cam.get('user'))
+                    # self.uiConfig.txtPasswdCamDisponivel.setText(cam.get('passwd'))
+                    # self.uiConfig.txtPortaCamDisponivel.setText(cam.get('port'))
+                    # self.uiConfig.txtCanalCamDisponivel.setText(cam.get('channel'))                    
                     
-                    break
+                    # break
                 
             
             
    
     def comboBoxCamEncontradasStateChanged(self, i):
         
-        #print('comboBoxCamEncontradasStateChanged: {:d}'.format(i))
+        log.debug('comboBoxCamEncontradasStateChanged: {:d}'.format(i))
         nome = None
         idCombo = None
         
@@ -870,7 +914,7 @@ class FormProc(QWidget):
                     self.uiConfig.txtNomeCamDisponivel.setText(cam.get('nome'))
                     self.uiConfig.txtIpCamDisponivel.setText(cam.get('ip'))
                     self.uiConfig.txtUserCamDisponivel.setText(cam.get('user'))
-                    #self.uiConfig.txtPasswdCamDisponivel.setText(cam.get('passwd'))
+                    self.uiConfig.txtPasswdCamDisponivel.setText(cam.get('passwd'))
                     self.uiConfig.txtPortaCamDisponivel.setText(cam.get('port'))
                     self.uiConfig.txtCanalCamDisponivel.setText(cam.get('channel'))
                     break
@@ -903,61 +947,79 @@ class FormProc(QWidget):
     def btnTestarConfigCam(self):
 
         #global listCamAtivas, listCamEncontradas, statusconfig
-        log.debug('Testando configuracao de camera encontrada na rede')
-
-        camConfigurada = None
-        source = None
-       
-        if self.uiConfig.comboBoxCamEncontradas.currentIndex() != -1: 
-
-            idCombo = self.uiConfig.comboBoxCamEncontradas.currentText().split(':')[0]
-            idCombo = idCombo.replace('[','')
-            idCombo = idCombo.replace(']','')
+        log.debug('btnTestarConfigCam::')
         
-            i = 0 
-
-            for cam in self.camRunTime.listCamEncontradas:
-
-                if cam.get('id') == idCombo:
-                    source = 'rtsp://' + self.uiConfig.txtUserCamDisponivel.text() + ':' + self.uiConfig.txtPasswdCamDisponivel.text() + '@' \
-                                    + cam.get('ip') + ':' + self.uiConfig.txtPortaCamDisponivel.text() + '/' + self.uiConfig.txtCanalCamDisponivel.text()
-
-                    camConfigurada = cam
-                    break
-                i = i + 1
-            
-
-            ipCam, error = utils.camSource(source)                   
-            
-            if error != '':                                                                    
-                #log.warning('Erro camSource: {}'.format(error))
+        if len(self.uiConfig.txtNomeCamDisponivel.text()) == 0 \
+           or len(self.uiConfig.txtIpCamDisponivel.text()) == 0 \
+           or len(self.uiConfig.txtUserCamDisponivel.text()) == 0 \
+           or len(self.uiConfig.txtPasswdCamDisponivel.text()) == 0 \
+           or len(self.uiConfig.txtPortaCamDisponivel.text()) == 0 \
+           or len(self.uiConfig.txtCanalCamDisponivel.text()) == 0:
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Information)
-                msg.setWindowTitle("Configuração inválida")
+                msg.setWindowTitle("Campo em branco")
                 msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-                msg.setText('Configuração inválida, tente outro usuario, senha, porta ou canal')
+                msg.setText("Por favor, preenchda todos os campos para incluir uma nova câmera ! ")
                 msg.exec()
-                self.uiConfig.lblStatusTestarCam.setText('Configuração inválida, tente outro usuario, senha, porta ou canal')
+        else:
 
-            else:                                    
-                log.info('Cam ativa encontrada')
-                self.uiConfig.lblStatusTestarCam.setText('Câmera configurada corretamente. Pronto para uso')
-                self.camRunTime.listCamEncontradas.pop(i)
+            self.uiConfig.lblStatusTestarCam.clear()
+            self.uiConfig.lblStatusTestarCam.setText('Testando configuração. Aguarde por favor...')
+            camConfigurada = None
+            source = None
+           
+            if self.uiConfig.comboBoxCamEncontradas.currentIndex() != -1: 
 
-                camConfigurada['user'] = self.uiConfig.txtUserCamDisponivel.text()
-                camConfigurada['passwd'] = self.uiConfig.txtPasswdCamDisponivel.text()
-                camConfigurada['channel'] = self.uiConfig.txtCanalCamDisponivel.text()
-                camConfigurada['source'] = source 
-                camConfigurada['emUso'] = 'False' 
+                idCombo = self.uiConfig.comboBoxCamEncontradas.currentText().split(':')[0]
+                idCombo = idCombo.replace('[','')
+                idCombo = idCombo.replace(']','')
+            
+                i = 0 
+
+                for cam in self.camRunTime.listCamEncontradas:
+
+                    if cam.get('id') == idCombo:
+                        source = 'rtsp://' + self.uiConfig.txtUserCamDisponivel.text() + ':' + self.uiConfig.txtPasswdCamDisponivel.text() + '@' \
+                                        + cam.get('ip') + ':' + self.uiConfig.txtPortaCamDisponivel.text() + '/' + self.uiConfig.txtCanalCamDisponivel.text()
+
+                        camConfigurada = cam
+                        break
+                    i = i + 1
                 
-                self.camRunTime.listCamAtivas.append(camConfigurada)
 
-                self.camRunTime.statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)
-                self.camRunTime.statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
+                log.debug('btnTestarConfigCam:: testando source: {}'.format(source))
+                ipCam, error = utils.camSource(source)                   
                 
-                self.camRunTime.__init__() 
-                self.fillTabGeral()
-                self.infCam.setCamRunTime(self.camRunTime)
+                if error != '':                                                                    
+                    log.warning('btnTestarConfigCam:: Error camSource: {}'.format(error))
+                    msg = QMessageBox()
+                    msg.setIcon(QMessageBox.Information)
+                    msg.setWindowTitle("Configuração inválida")
+                    msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+                    msg.setText('Configuração inválida, tente outro usuario, senha, porta ou canal')
+                    msg.exec()
+                    self.uiConfig.lblStatusTestarCam.setText('Configuração inválida, tente outro usuario, senha, porta ou canal')
+
+                else:                                    
+                    log.info('btnTestarConfigCam:: Cam ativa encontrada')
+                    self.uiConfig.lblStatusTestarCam.setText('Câmera configurada corretamente. Pronto para uso')
+                    self.camRunTime.listCamEncontradas.pop(i)
+
+                    camConfigurada['user'] = self.uiConfig.txtUserCamDisponivel.text()
+                    camConfigurada['passwd'] = self.uiConfig.txtPasswdCamDisponivel.text()
+                    camConfigurada['channel'] = self.uiConfig.txtCanalCamDisponivel.text()
+                    camConfigurada['source'] = source 
+                    camConfigurada['emUso'] = 'False' 
+                    
+                    self.camRunTime.listCamAtivas.append(camConfigurada)
+
+                    self.camRunTime.statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)
+                    self.camRunTime.statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
+                    
+                    self.refreshStatusConfig()
+                    self.camRunTime.__init__() 
+                    self.fillTabGeral()
+                    self.infCam.setCamRunTime(self.camRunTime)
 
     def btnProcurarCam(self):
         
@@ -1089,6 +1151,8 @@ class FormProc(QWidget):
     def btnSaveStorage(self):
 
         global emailSentFullVideosAllTime, emailSentFullVideosOnAlarmes, emailSentDiskFull
+        
+        log.debug('\n btnSaveStorage::')
 
         statusFields = True 
         msg = QMessageBox()
@@ -1134,10 +1198,7 @@ class FormProc(QWidget):
                     msg.exec()
                     self.uiConfig.txtDefinirMaximoOnAlarmes.setFocus()
                     statusFields = False
-
-
-        log.info('txtAvisoUtilizacaoHD: {}'.format(self.uiConfig.txtAvisoUtilizacaoHD.text()))
-        log.info('getDiskUsageFreeGb: {:f}'.format(utils.getDiskUsageFreeGb()))
+  
 
 
         if len(self.uiConfig.txtAvisoUtilizacaoHD.text()) == 0:
@@ -1180,8 +1241,8 @@ class FormProc(QWidget):
         
             self.checkStorage()            
             self.refreshStatusConfig()             
-            self.camRunTime.init() 
-            self.threadStorage.run()
+            self.camRunTime.init()             
+            
 
     def checkBoxDesabilitarLoginAutomatico(self, state):
         #global LOGIN_AUTOMATICO        
@@ -1225,6 +1286,8 @@ class FormProc(QWidget):
     
     def checkBoxWebcamStateChanged(self, state):
     
+        log.debug('checkBoxWebcamStateChanged::')
+        
         if state == 0:
            self.uiConfig.txtUrlRstp.setEnabled(True)
         # Qt.Checked 
@@ -1274,7 +1337,7 @@ class FormProc(QWidget):
         
         if not self.statusConfig.isAlarmEmpty(self.uiConfig.comboRegions.currentText()) and not self.statusConfig.isRegionsEmpty():
 
-            print('comboAlarmsUpdate i: {:d}'.format(i))
+            #print('comboAlarmsUpdate i: {:d}'.format(i))
             self.uiConfig.btnDeleteAlarm.setEnabled(True)
             a = self.camRunTime.regions[self.uiConfig.comboRegions.currentIndex()].get('alarm')[i]
             self.uiConfig.checkMon.setCheckState(a.get('days').get('mon') == 'True')
@@ -1303,7 +1366,7 @@ class FormProc(QWidget):
         self.refreshStatusConfig()
         self.clearFieldsTabRegiao()
         
-        print('comboRegionsUpdate:: i: {:d}'.format(i))
+        #print('comboRegionsUpdate:: i: {:d}'.format(i))
         
         #r = regions[i]       
 
@@ -1313,12 +1376,12 @@ class FormProc(QWidget):
 
             if i < len(self.camRunTime.regions):
                 r = self.camRunTime.regions[i]
-                print('comboRegionsUpdate:: nameRegion1: {}'.format(r.get('nameRegion')))
+                #print('comboRegionsUpdate:: nameRegion1: {}'.format(r.get('nameRegion')))
             #else:
             #    r = self.camRunTime.regions[0]
                
             if r is not None:
-                print('comboRegionsUpdate:: nameRegion: {}'.format(r.get('nameRegion')))
+                #print('comboRegionsUpdate:: nameRegion: {}'.format(r.get('nameRegion')))
                 self.uiConfig.txtRegionName.setText(r.get('nameRegion'))
                 self.uiConfig.txtThreshold.setText(str(r.get('prob_threshold')))            
                 self.uiConfig.checkPerson.setCheckState(r.get('objectType').get('person')=="True")
@@ -1511,6 +1574,11 @@ class FormProc(QWidget):
         self.uiConfig.txtDirUsedVideosOnAlarmes.setText('{:03.2f}'.format(utils.getDirUsedSpace(self.statusConfig.data["dirVideosOnAlarmes"])))
 
         self.uiConfig.txtDiasEstimado.setText('{:d}'.format((utils.getNumDaysRecording())) + ' dias' )        
+        
+        if self.camRunTime.init_video and self.camRunTime.sessionStatus and self.camRunTime.rtspStatus :
+            self.uiConfig.lblInitStatus.setText('Executando')
+        else:
+            self.uiConfig.lblInitStatus.setText('Erro com a sessão, câmera ou configuração. Favor reiniciar o Portão Virtual')
 
     def loginAutomatico(self):
     
