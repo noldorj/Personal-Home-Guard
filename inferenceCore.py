@@ -90,7 +90,7 @@ class InferenceCore(QThread):
                 self.camRunTime.frame = cv.resize(self.camRunTime.frame, (self.camRunTime.RES_X, self.camRunTime.RES_Y))             
                 self.camRunTime.next_frame = cv.resize(self.camRunTime.next_frame, (self.camRunTime.RES_X, self.camRunTime.RES_Y)) 
         
-            cvNet = None
+            self.camRunTime.cvNetTensorFlow = None
             #print('try initOpenVino')
             try:
                 self.camRunTime.nchw, self.camRunTime.exec_net, self.camRunTime.input_blob, self.camRunTime.out_blob = \
@@ -98,11 +98,11 @@ class InferenceCore(QThread):
                     self.camRunTime.openVinoModelBin, self.camRunTime.openVinoCpuExtension, self.camRunTime.openVinoPluginDir)
         
             except:
-                log.critical('Erro ao iniciar OpenVino - checar arquivo de configuracao')
+                log.critical('inferenceCore:: Erro ao iniciar OpenVino - checar arquivo de configuracao')
                 self.camRunTime.initOpenVinoStatus = False
                 self.camRunTime.init_video = False
             else:
-                log.debug('Openvino carregado')
+                log.debug('inferenceCore:: Openvino carregado')
                 self.camRunTime.initOpenVinoStatus = True
                 self.camRunTime.init_video = True
                 log.info(' ')
@@ -111,11 +111,15 @@ class InferenceCore(QThread):
                 self.camRunTime.render_time = 0
         
         else:
-            log.debug("TensorFlow on")
-            cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
-            cvNet = cv.dnn.readNetFromTensorflow(pb, pbtxt)
+            log.debug("inferenceCore:: TensorFlow on")
+            self.camRunTime.init_video = True
+            self.camRunTime.initOpenVinoStatus = False
+            
+            self.camRunTime.cvNetTensorFlow = cv.dnn.readNetFromTensorflow(self.camRunTime.pb, self.camRunTime.pbtxt)
+            self.camRunTime.cvNetTensorFlow = cv.dnn.readNetFromTensorflow(self.camRunTime.pb, self.camRunTime.pbtxt)
         
         self.camRunTime.conectado, self.camRunTime.frame = self.camRunTime.ipCam.read()
+        
         if self.camRunTime.frame is not None:
             self.camRunTime.frame = cv.resize(self.camRunTime.frame, (self.camRunTime.RES_X, self.camRunTime.RES_Y)) 
             (self.camRunTime.h, self.camRunTime.w) = self.camRunTime.frame.shape[:2]
@@ -137,9 +141,12 @@ class InferenceCore(QThread):
         self.initOpenVino()       
 
         while True:
+        
             # print('init_video: {}'.format(self.camRunTime.init_video))
             # print('sessionStatus: {}'.format(self.camRunTime.sessionStatus))
             # print('rtspStatus: {}'.format(self.camRunTime.rtspStatus))
+            # print('conectado: {}'.format(self.camRunTime.conectado))
+            
             # print(' ')
         
             if self.camRunTime.init_video and self.camRunTime.sessionStatus and self.camRunTime.rtspStatus :
@@ -161,8 +168,9 @@ class InferenceCore(QThread):
                             
 
                 
-                if (self.camRunTime.conectado) and (self.camRunTime.frame is not None) and (self.camRunTime.next_frame is not None):
-
+                #if (self.camRunTime.conectado) and (self.camRunTime.frame is not None) and (self.camRunTime.next_frame is not None):
+                if (self.camRunTime.conectado) and (self.camRunTime.frame is not None):
+                    
                     frame_no_label = self.camRunTime.frame.copy()                
                     frame_screen = self.camRunTime.frame.copy()                
                     frame_no_label_email = self.camRunTime.frame.copy()
@@ -217,9 +225,11 @@ class InferenceCore(QThread):
 
                         else:
                             #chamada para a CNN do OpenCV - TensorFlow Object Detection API 
-                            log.debug("CNN via TF Object Detection API")
-                            
-                            self.camRunTime.listObjects, self.camRunTime.listObjectTradking  = objectDetection(frame, idObjeto, listRectanglesDetected, detection, rows, cols)
+                            #log.debug("inferenceCore:: TensorFlow openCV API")                            
+                            self.camRunTime.listObjects, self.camRunTime.listObjectTradking  = objectDetection(self.camRunTime.frame, \
+                                                                                               self.camRunTime.idObjeto, self.camRunTime.listRectanglesDetected, \
+                                                                                               self.camRunTime.detection,  self.camRunTime.rows, \
+                                                                                               self.camRunTime.cols, self.camRunTime.cvNetTensorFlow)
 
                     #sem detecção de objetos
                     if len(self.camRunTime.listObjects) == 0 and self.camRunTime.portaoVirtualSelecionado:
@@ -235,7 +245,7 @@ class InferenceCore(QThread):
 
                     #se tem objetos detectados pela CNN                
                     else:
-                        #print('objetos detectados via openvino')
+                        #print('objetos detectados')
 
                         #objectsTracking = ct.update(listObjectsTracking)
 
@@ -670,7 +680,7 @@ class InferenceCore(QThread):
 
                 else:
                     if not self.camRunTime.conectado:
-                        log.warning('Conectado False - Reconectando em 5 segundos...')
+                        log.warning('inferenceCore:: Conectado False - Reconectando em 5 segundos...')
                         
                         self.source = self.camRunTime.statusConfig.data["camSource"]
                         #init_video = False
@@ -681,6 +691,7 @@ class InferenceCore(QThread):
                         self.camRunTime.conectado, self.camRunTime.frame = self.camRunTime.ipCam.read()
                         self.camRunTime.ret, self.camRunTime.next_frame = self.camRunTime.ipCam.read()
                         #ipCam = utils.camSource(source)
+                        
                     elif self.camRunTime.changeIpCam:
                         log.warning('inferenceCore:: changeIpCam True')
                         

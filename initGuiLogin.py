@@ -27,7 +27,7 @@ class FormLogin(QDialog):
     updateStatusLogin = pyqtSignal(bool)
 
     def __init__(self, camRunTimeP, statusConfigP, parent=None ):
-        print('init GuiLogin')
+        log.debug('initGuiLogin:: __init__')
 
         super(FormLogin, self).__init__(parent)
         #Dialog = QtWidgets.QDialog()
@@ -248,12 +248,12 @@ class FormLogin(QDialog):
         if self.camRunTime.conexao:    
         
             log.info('Checando licença no servidor - Por favor aguarde')
-            print('Checando licença no servidor - Por favor aguarde')
+            #print('Checando licença no servidor - Por favor aguarde')
             self.uiLogin.lblStatus.setText("Conectando com o servidor")
             
             self.camRunTime.login = {'user':utils.encrypt(self.uiLogin.txtEmail.text()), 'passwd':utils.encrypt(self.uiLogin.txtPasswd.text()), 'token':utils.encrypt(self.camRunTime.token)}
             log.debug('btnLogin::TOKEN: {}'.format(self.camRunTime.login.get('token').decode()))
-            utils.setUserNameLoginConfig(self.uiLogin.txtEmail.text())
+            self.statusConfig.setUserNameLoginConfig(self.uiLogin.txtEmail.text())
             
             self.camRunTime.statusLicence, self.camRunTime.error  = checkLoginPv(self.camRunTime.login) 
             #statusLicence = True ## testando apenas IJF
@@ -261,12 +261,12 @@ class FormLogin(QDialog):
 
             if self.camRunTime.statusLicence:
                 
-                print("Usuario logado")
+                #print("Usuario logado")
                 self.camRunTime.init_video = True 
                 self.camRunTime.statusLicence = True
                 #utils.initWatchDog()   
                 self.logged = True
-                print('initLogin statusLicence: ' + str(self.camRunTime.statusLicence))
+                #print('initLogin statusLicence: ' + str(self.camRunTime.statusLicence))
                 #self.setBackStatusConfigCamRunTime.emit(self.statusConfig, self.camRunTime)
                 self.updateStatusLogin.emit(True)
                 self.hide()
@@ -277,7 +277,7 @@ class FormLogin(QDialog):
 
                 #se o servidor estiver fora do ar - libera acesso ao sistema 
                 if self.camRunTime.error == "conexao":
-                    print("Erro de conexão com o servidor")
+                    #print("Erro de conexão com o servidor")
                     self.camRunTime.init_video = True
                     self.camRunTime.statusLicence = True
                     self.updateStatusLogin.emit(True)

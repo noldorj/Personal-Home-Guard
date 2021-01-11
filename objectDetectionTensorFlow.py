@@ -1,3 +1,5 @@
+import cv2 as cv
+
 classes = ["background", "pessoa", "bicileta", "carro", "moto", "airplane", "bus", "train", "truck", "boat", "traffic light", "fire hydrant",
     "unknown", "stop sign", "parking meter", "bench", "bird", "gato", "cachorro", "horse",
     "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "unknown", "backpack",
@@ -10,8 +12,10 @@ classes = ["background", "pessoa", "bicileta", "carro", "moto", "airplane", "bus
     "cell phone", "microwave", "oven", "toaster", "sink", "refrigerator", "unknown",
 "book", "clock", "vase", "scissors", "teddy bear", "hair drier", "toothbrush" ]
 
-def objectDetection(img, idObjeto, listRectanglesDetected, detection, rows, cols):
+def objectDetection(img, idObjeto, listRectanglesDetected, detection, rows, cols, cvNet):
     box = []
+    listObjectsTracking = []
+    listRectanglesDetected = []
 
     #img = cv.imread(img)
     if img is not None:
@@ -37,6 +41,8 @@ def objectDetection(img, idObjeto, listRectanglesDetected, detection, rows, cols
                 classe = classes[idx]
 
                 box = (left, top, right, bottom, label, idx, classe)
+                
+                #print('detected score: {:f}'.format(score))
 
 
                 if  classes[idx] is 'pessoa'   or \
@@ -46,6 +52,7 @@ def objectDetection(img, idObjeto, listRectanglesDetected, detection, rows, cols
                     classes[idx] is 'moto': 
 
 
+                    #print('classe detectada: {}'.format(classes[idx]))
                     boxTracking = (left, top, right, bottom)
 
                     listObjectsTracking.append(boxTracking)

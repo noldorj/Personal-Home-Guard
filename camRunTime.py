@@ -108,6 +108,7 @@ class CamRunTime():
 
     statusConfig = None
     pb = None
+    cvNetTensorFlow = None
     pbtxt = None
     regions = None
     emailConfig = None
@@ -260,7 +261,7 @@ class CamRunTime():
         email = self.statusConfig.dataLogin['user']
         passwd = utils.decrypt(self.statusConfig.dataLogin['passwd'])        
         self.login = {'user':utils.encrypt(email), 'passwd':utils.encrypt(passwd), 'token':utils.encrypt(self.token)}
-        log.debug('camRunTime::init TOKEN: {}'.format(utils.decrypt(self.login.get('token').decode())))
+        #log.debug('camRunTime::init TOKEN: {}'.format(utils.decrypt(self.login.get('token').decode())))
         
         
         self.gravandoAllTime = True if self.statusConfig.data["isRecordingAllTime"] == 'True' else False

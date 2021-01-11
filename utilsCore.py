@@ -656,6 +656,7 @@ class StatusConfig:
         self.saveConfigFile()
 
     def setUserNameLoginConfig(self, userName):
+    
         self.dataLogin['user'] = userName
         self.saveConfigLogin()
     
@@ -832,21 +833,23 @@ class StatusConfig:
         
     def addAlarm(self, idRegion, alarm):
 
+        log.debug('addAlarm::')
         edit = False
         i = 0
         #print('addAlarm:: idRegion: {:d}'.format(idRegion))
         #print('addAlarm:: regionsLen: {:d}'.format(len(self.regions)))
         
-        if idRegion <= (len(self.regions) - 1):
-            for a in self.regions[idRegion].get('alarm'):                            
-                if a.get('name') == alarm['name']:                
-                    #print('edit true')
-                    self.regions[idRegion].get('alarm')[i] = alarm
-                    edit = True
-                    break
-                else:
-                    i = i+1
-
+        if len(self.regions) > 0:
+            if idRegion <= (len(self.regions) - 1):            
+                for a in self.regions[idRegion].get('alarm'):                            
+                    if a.get('name') == alarm['name']:                
+                        #print('edit true')
+                        self.regions[idRegion].get('alarm')[i] = alarm
+                        edit = True
+                        break
+                    else:
+                        i = i+1
+            
             if not edit:
                 self.regions[idRegion].get('alarm').append(alarm)
 
@@ -854,23 +857,23 @@ class StatusConfig:
         #TO-DO try catch toleranca a falhas
 
 
-    def __init__(self, configFile='config.json', regionsFile='regions.json', configLogin='lconfig.json'):
+    def __init__(self, configFile='config/config.json', regionsFile='config/regions.json', configLogin='config/lconfig.json'):
 
         #configuracoes setadas pelo arquivo sobrescrevem as configuracoes padroes
         self.readConfigFile(configFile)
         self.readRegionsFile(regionsFile)
         self.readConfigLogin(configLogin)
 
-    def readConfigLogin(self, fileName = 'lconfig.json'):
+    def readConfigLogin(self, fileName = 'config/lconfig.json'):
         #log.debug('Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
         self.dataLogin = json.load(open(fileName,'r'))
 
 
-    def readConfigFile(self, fileName = 'config.json'):
+    def readConfigFile(self, fileName = 'config/config.json'):
         #log.debug('Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
         self.data = json.load(open(fileName,'r'))
 
-    def readRegionsFile(self, fileName = 'regions.json'):
+    def readRegionsFile(self, fileName = 'config/regions.json'):
         log.debug('Lendo arquivo de regiões: ' + os.getcwd() + '/' + fileName)
         try:
             self.regions = json.load(open(fileName,'r'))
@@ -1005,7 +1008,7 @@ class StatusConfig:
                     print('  Sunday:        {}'.format(a.get('days').get('sun')))
                     print('             ')
 
-    def saveRegionFile(self, file = 'regions.json'):
+    def saveRegionFile(self, file = 'config/regions.json'):
         log.info('Salvando arquivo de regiones: ' + os.getcwd() + '/' + file)
         try:
             json.dump(self.regions, open(file, 'w'), indent=4)
@@ -1018,7 +1021,7 @@ class StatusConfig:
             log.info('Arquivo {} salvo'.format(file))
 
 
-    def saveConfigFile(self, fileName = 'config.json'):
+    def saveConfigFile(self, fileName = 'config/config.json'):
         log.info('Salvando arquivo de configuração: {}/{}'.format(os.getcwd(), fileName))
         #json.dump(self.data, open(file,'w'), indent=4)
         
@@ -1030,7 +1033,7 @@ class StatusConfig:
 
         log.info('Salvando arquivo de configuração: {}/{}'.format(os.getcwd(), fileName))
 
-    def saveConfigLogin(self, fileName = 'lconfig.json'):
+    def saveConfigLogin(self, fileName = 'config/lconfig.json'):
         
         #try:
         #    fp = open("passwords.json","r")

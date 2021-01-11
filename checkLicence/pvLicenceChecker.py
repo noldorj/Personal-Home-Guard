@@ -110,7 +110,7 @@ def changePasswd(userName, userPassword, userToken):
 
     return status
 
-def newUser(userName, userPassword, userEmail, numCameras):
+def newUser(userName, userPassword, userEmail, numCameras, diasLicenca):
 
     log.info("pvLicenceChecker-server:: Criando novo usuario")
 
@@ -135,8 +135,8 @@ def newUser(userName, userPassword, userEmail, numCameras):
 
             else:
 
-                sql =  "INSERT INTO `users` (`userName`, `userPassword`, `userEmail`, `numCameras`) VALUES (%s, %s, %s, %s)"
-                values = (userName, userPassword, userEmail, numCameras) 
+                sql =  "INSERT INTO `users` (`userName`, `userPassword`, `userEmail`, `numCameras`, `diasLicenca`) VALUES (%s, %s, %s, %s, %s)"
+                values = (userName, userPassword, userEmail, numCameras, diasLicenca) 
                 cursor.execute(sql, values)
                 conn.commit()
 
@@ -153,6 +153,15 @@ def newUser(userName, userPassword, userEmail, numCameras):
                     log.info('newUsers:: Usuário cadastrado no banco de dados - userID: {}'.format(userId))
 
                     #criando arquivo de sessao baseado no ID
+
+                    date = getDate()
+                    currentDate = date.get('year') + '-' + date.get('month') + '-' + date.get('day')
+                    currentDate = datetime.strptime(currentDate, '%Y-%b-%d')
+                    currentDate = currentDate.strftime('%Y-%b-%d')
+
+                    #diasLicenca valor 0 significa vitalicia
+                    log.debug('currentDate: {}'.format(currentDate.__str__()))
+
                     session = {
                         'userId':userId,
                         'userName':userName,
@@ -162,19 +171,22 @@ def newUser(userName, userPassword, userEmail, numCameras):
                         'lastSession':'0',
                         'loginStatus':'off',
                         'sessionStatus':'off',
-                        'numCameras':numCameras
+                        'numCameras':numCameras,
+                        'diasLicenca':diasLicenca,
+                        'inicioLicenca':currentDate.__str__()
                     }
                     file = 'sessions/' + str(userName) + '.json'
                     try:
+                        log.debug('Salvando arquivo de sessao: {}'.format(userName))
                         json.dump(session, open(file, 'w'),indent=3)
 
                     except OSError as ex:
                         
-                        log.critical('Erro ao salvar o arquivo de sessao do Usuario: {}'.format(userName))
+                        log.critical('newUsers:: Erro ao salvar o arquivo de sessao do Usuario: {}'.format(userName))
                         status = False
 
                     else:
-                        log.info('newUses:: Arquivo de sessão salvo - Usuario: {}'.format(userName))
+                        log.info('newUsers:: Arquivo de sessão salvo - Usuario: {}'.format(userName))
 
     except Error as error:
 
@@ -233,59 +245,90 @@ def checkLogin(userName, userPassword, userToken):
             #log.info('userPassword: {}'.format(userPassword))
             #log.info('userPassword session: {}'.format(session['userPassword']))
 
-            #checar login
-            if userName == session['userName'] and userPassword == session['userPassword']:
+            #checar versao de testes
+            date = getDate()
+            currentDate = date.get('year') + '-' + date.get('month') + '-' + date.get('day') 
+            currentDate = datetime.strptime(currentDate, '%Y-%b-%d')
+            
+            log.debug('inicioLicenca session : {}'.format(session['inicioLicenca']))
+            
+            inicioLicenca = datetime.strptime(session['inicioLicenca'], '%Y-%b-%d')
+            
+            deltaLicenca = currentDate - inicioLicenca 
 
-                #checando userToken para garantir logins apenas em uma maquina por vez
-                #se userToken = '0' entao este é o primeiro login com este token gerado pelo PV-Client
-                log.debug('Username: : ' + userName)
-                log.debug('Token cliente: ' + userToken)
-                log.debug('Token servidor: ' + session['userToken'])
-                
-                if session['userToken'] != userToken:
-                    #gravo o userToken na sessao
-                    log.debug('Primeiro login - sessao on')
+            log.debug('deltaLicenca : {}'.format(deltaLicenca.__str__().split('-')))
+            log.debug('inicioLicenca : {}'.format(inicioLicenca.__str__()))
+            log.debug('currentDate: {}'.format(currentDate.__str__()))
+
+            if deltaLicenca.__str__() == '0:00:00':
+                delta = 0
+            else:
+                delta = deltaLicenca.__str__().split(',')[0]
+                delta = int(delta.split(' ')[0])
+            
+            log.debug('delta: {:d}'.format(delta))
+
+            if delta <= int(session['diasLicenca']) or session['diasLicenca'] == '0': 
+             
+                #checar login
+                if userName == session['userName'] and userPassword == session['userPassword']:
+
+                    #checando userToken para garantir logins apenas em uma maquina por vez
+                    #se userToken = '0' entao este é o primeiro login com este token gerado pelo PV-Client
+                    log.debug('Username: : ' + userName)
+                    log.debug('Token cliente: ' + userToken)
+                    log.debug('Token servidor: ' + session['userToken'])
                     
-                    session['userToken'] = userToken
-                    session['loginStatus'] = 'on'
-                    session['sessionStatus'] = 'on'
-                    session['lastLogin'] = lastLogin
-                    session['lastSession'] = lastLogin
+                    if session['userToken'] != userToken:
+                        #gravo o userToken na sessao
+                        log.debug('Primeiro login - sessao on')
+                        
+                        session['userToken'] = userToken
+                        session['loginStatus'] = 'on'
+                        session['sessionStatus'] = 'on'
+                        session['lastLogin'] = lastLogin
+                        session['lastSession'] = lastLogin
 
-                #se for um segundo login, valida o userToken e ativa a sessao - apenas para registro no log
-                elif session['userToken'] == userToken:
-                    log.debug('Validando login - userToken existente')
-                    
-                    session['loginStatus'] = 'on'
-                    session['sessionStatus'] = 'on'
-                    session['lastLogin'] = lastLogin
-                    session['lastSession'] = lastLogin
+                    #se for um segundo login, valida o userToken e ativa a sessao - apenas para registro no log
+                    elif session['userToken'] == userToken:
+                        log.debug('Validando login - userToken existente')
+                        
+                        session['loginStatus'] = 'on'
+                        session['sessionStatus'] = 'on'
+                        session['lastLogin'] = lastLogin
+                        session['lastSession'] = lastLogin
 
-                #se for um login devido a perda de sessao anterior ou login em outra maquina
-                elif session['sessionStatus'] == 'off' or session['loginStatus']=='off':
-                    
-                    log.info('Validando perda de sessao')
-                    log.info('Atribuindo novo Token')
+                    #se for um login devido a perda de sessao anterior ou login em outra maquina
+                    elif session['sessionStatus'] == 'off' or session['loginStatus']=='off':
+                        
+                        log.info('Validando perda de sessao')
+                        log.info('Atribuindo novo Token')
 
-                    session['userToken'] = userToken
-                    session['loginStatus'] = 'on'
-                    session['sessionStatus'] = 'on'
-                    session['lastLogin'] = lastLogin
-                    session['lastSession'] = lastLogin
+                        session['userToken'] = userToken
+                        session['loginStatus'] = 'on'
+                        session['sessionStatus'] = 'on'
+                        session['lastLogin'] = lastLogin
+                        session['lastSession'] = lastLogin
 
-                try:
-                    log.info('Atualizando arquivo de sessao: ' + file)
-                    json.dump(session, open(file,'w'),indent=3)
+                    try:
+                        log.info('Atualizando arquivo de sessao: ' + file)
+                        json.dump(session, open(file,'w'),indent=3)
 
-                except OSError as ex:
-                    log.critical('Erro ao gravar arquivo de sessao')
+                    except OSError as ex:
+                        log.critical('Erro ao gravar arquivo de sessao')
+
+                    else:
+                        log.info('Sessao: {} atualizada'.format(userName))
 
                 else:
-                    log.info('Sessao: {} atualizada'.format(userName))
+                    log.debug('Login invalido')
+                    status = False
 
+            #checando diasLicenca 
             else:
-                log.debug('Login invalido')
+                log.critical('checkLogin:: Licenca de teste expirou')
                 status = False
+
 
     else:
         log.critical('checkLogin:: Arquivo de sessao: {} não encontrado'.format(file))

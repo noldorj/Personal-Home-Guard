@@ -43,7 +43,7 @@ for handler in log.root.handlers[:]:
     log.root.removeHandler(handler)
 
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.DEBUG, stream=sys.stdout)
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.DEBUG, handlers=[log.FileHandler('pv.log', 'w', 'utf-8')])
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.DEBUG, handlers=[log.FileHandler('config/pv.log', 'w', 'utf-8')])
 
 #print('camRunTime ID Global: {}'.format(camRunTimeGlobal.camRunTimeId))
 
@@ -181,6 +181,9 @@ class FormProc(QWidget):
             self.uiConfig.btnNovaCam.clicked.connect(self.btnNovaCam)
             
             self.uiConfig.progressBarProcurarCam.hide()
+            
+            self.uiConfig.lblCam1.setMinimumSize(self.camRunTime.RES_X, self.camRunTime.RES_Y) 
+            self.uiConfig.lblCam1.resize(self.camRunTime.RES_X, self.camRunTime.RES_Y) 
 
             
             
@@ -262,7 +265,7 @@ class FormProc(QWidget):
         #self.statusConfig = statusConfig        
         #windowConfig.show()
     
-    
+ 
     @QtCore.pyqtSlot()
     def webCamWarning(self):
         self.uiConfig.lblCam1.setText('Por favor, cheque a configuração da sua Webcam e reinicie o Portão Virtual')
@@ -308,8 +311,8 @@ class FormProc(QWidget):
         h, w, ch = rgb_image.shape
         bytes_per_line = ch * w
         convert_to_Qt_format = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
-        #p = convert_to_Qt_format.scaled(self.camRunTime.RES_X, self.camRunTime.RES_Y, Qt.IgnoreAspectRatio)
-        p = convert_to_Qt_format.scaled(self.uiConfig.lblCam1.frameGeometry().width(), self.uiConfig.lblCam1.frameGeometry().height(), Qt.IgnoreAspectRatio)
+        p = convert_to_Qt_format.scaled(self.camRunTime.RES_X, self.camRunTime.RES_Y, Qt.IgnoreAspectRatio)
+        #p = convert_to_Qt_format.scaled(self.uiConfig.lblCam1.frameGeometry().width(), self.uiConfig.lblCam1.frameGeometry().height(), Qt.IgnoreAspectRatio)
         
         return QPixmap.fromImage(p)
 
@@ -396,7 +399,7 @@ class FormProc(QWidget):
         if len(self.uiConfig.txtEmailName.text()) == 0:
             msg.setText("Campo 'Nome' em branco")
             msg.exec()
-            self.uiConfig.txtEmailNome.setFocus()
+            self.uiConfig.txtEmailName.setFocus()
             statusFields = False
 
         elif len(self.uiConfig.txtEmailPort.text()) == 0:
@@ -556,6 +559,18 @@ class FormProc(QWidget):
             msg.exec()
             self.uiConfig.txtThreshold.setFocus()
             statusFields = False
+            
+        elif len(self.uiConfig.txtThreshold.text()) < 61:
+            msg.setText("Cuidado, valores abaixo de 60% podem causar alarmes falso positivos ! Utilize valores baixos em ambientes com pouca visibilidade/luminosidade apenas")
+            msg.exec()
+            self.uiConfig.txtThreshold.setFocus()
+            
+            
+        elif len(self.uiConfig.txtThreshold.text()) > 74:
+            msg.setText("Cuidado, valores acima de 75% podem dificultar a detecção de pessoas ou carros! Utilize valores altos quando a imagem estiver com boa visibilidade/luminosidade")
+            msg.exec()
+            self.uiConfig.txtThreshold.setFocus()
+            
 
         elif len(self.uiConfig.txtNameAlarm.text()) == 0:
             msg.setText("Campo 'Nome do Alarme' em branco")
@@ -1295,12 +1310,15 @@ class FormProc(QWidget):
             self.uiConfig.txtUrlRstp.clear()
             self.uiConfig.txtUrlRstp.setEnabled(False)
             #se a webcam está ativa, desativar cameras em uso
-            i = 0             
+            i = 0            
+            cam = None
             for cam in self.camRunTime.listCamAtivas:
                 self.camRunTime.listCamAtivas[i]['emUso'] = 'False'
                 i = i + 1
-            self.statusConfig.setRtspConfig('webcam')
-            self.camRunTime.nameCam = cam.get('Webcam')
+            
+            if cam is not None:
+                self.statusConfig.setRtspConfig('webcam')
+                self.camRunTime.nameCam = cam.get('Webcam')
 
     def checkBoxNoLimitsVideosAllTime(self, state):
         if state == 0:
@@ -1495,13 +1513,14 @@ class FormProc(QWidget):
         self.uiConfig.txtEmailSmtp.setText(self.statusConfig.data["emailConfig"].get('smtp'))
         self.uiConfig.txtEmailUser.setText(self.statusConfig.data["emailConfig"].get('user'))
 
-        passwdEmail = utils.decrypt(self.statusConfig.data["emailConfig"].get('password')) 
-
-        self.uiConfig.txtEmailPassword.setText(passwdEmail)
+        passwd = self.statusConfig.data["emailConfig"].get('password')
         
-        if passwdEmail == 'error':
-            self.uiConfig.lblStatus.setText('Cheque se sua senha do email está cadastrada corretamente')
-            self.uiConfig.txtEmailPassword.setFocus()
+        if len(passwd) > 0:
+            passwdEmail = utils.decrypt(passwd) 
+            self.uiConfig.txtEmailPassword.setText(passwdEmail)        
+            if passwdEmail == 'error':
+                self.uiConfig.lblStatus.setText('Cheque se sua senha do email está cadastrada corretamente')
+                self.uiConfig.txtEmailPassword.setFocus()
         
         self.uiConfig.txtEmailSubject.setText(self.statusConfig.data["emailConfig"].get('subject'))
         self.uiConfig.txtEmailTo.setText(self.statusConfig.data["emailConfig"].get('to'))
@@ -1600,7 +1619,7 @@ class FormProc(QWidget):
             passwd = utils.decrypt(self.statusConfig.dataLogin['passwd'])
             
             self.camRunTime.login = {'user':utils.encrypt(email), 'passwd':utils.encrypt(passwd), 'token':utils.encrypt(self.camRunTime.token)}
-            log.debug('loginAutomatico::TOKEN: {}'.format(self.camRunTime.token))
+            #log.debug('loginAutomatico::TOKEN: {}'.format(self.camRunTime.token))
             
             self.camRunTime.statusLicence, self.camRunTime.error  = checkLoginPv(self.camRunTime.login) 
             #statusLicence = True ## testando apenas IJF

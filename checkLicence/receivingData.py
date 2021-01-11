@@ -13,6 +13,15 @@ from pvLicenceChecker import forgotPassword as forgotPasswd
 from pbkdf2 import PBKDF2
 from cryptography.fernet import Fernet
 
+log.root.setLevel(log.DEBUG)
+log.basicConfig()
+
+for handler in log.root.handlers[:]:
+    log.root.removeHandler(handler)
+
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.DEBUG, handlers=[log.FileHandler('pv.log', 'w', 'utf-8')])
+
+
 sio = socketio.Server()
 
 app = socketio.WSGIApp(sio, static_files={
@@ -81,7 +90,7 @@ def changePasswd(sid, login):
 
 @sio.event
 def newUser(sid, login):
-    status = nu(login['user'], login['passwd'], login['userEmail'], login['numCameras']) 
+    status = nu(login['user'], login['passwd'], login['userEmail'], login['numCameras'], login['diasLicenca']) 
     sio.emit('replyNewUser', status, room=sid)
             
 

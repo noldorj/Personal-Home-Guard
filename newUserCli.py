@@ -11,6 +11,10 @@ from smtplib import SMTP_SSL
 
 import secrets
 
+emailCliente = 'igorddf@gmail.com'
+numCameras = '1'
+diasLicenca = '7'
+
 
 def sendMailnewUser(to, port, smtp, userPassword):
 
@@ -50,7 +54,8 @@ log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=s
 
 sio = socketio.Client()
 #ip fixo instancia AWS
-host = "http://ec2-18-230-50-38.sa-east-1.compute.amazonaws.com:5000"
+#host = "http://ec2-18-230-50-38.sa-east-1.compute.amazonaws.com:5000"
+host = "http://pvSessionLB-1827991081.sa-east-1.elb.amazonaws.com:5000"
 
 statusNewUser = False
 
@@ -75,17 +80,14 @@ def replyNewUser(status):
 
 def main():
 
-    passwd = secrets.token_urlsafe(6)
+    passwd = secrets.token_urlsafe(6)    
     
+    print('email       : ' + emailCliente)
+    print('passwd      : ' + passwd)
+    print('numCameras  : ' + numCameras)
+    print('diasLicenca : ' + diasLicenca)
     
-    emailCliente = 'igorddf2@gmail.com'
-    numCameras = '1'
-    
-    print('email:      ' + emailCliente)
-    print('passwd:     ' + passwd)
-    print('numCameras: ' + numCameras)
-    
-    login = {'user':emailCliente, 'passwd':passwd, 'userEmail':emailCliente, 'numCameras':numCameras} 
+    login = {'user':emailCliente, 'passwd':passwd, 'userEmail':emailCliente, 'numCameras':numCameras, 'diasLicenca':diasLicenca} 
     
     try: 
         sio.connect(host)
@@ -106,7 +108,7 @@ def main():
     
     if statusNewUser:
         log.info('Usuario cadastrado com sucesso')
-q
+
         sendMailnewUser(     emailCliente,                            
                             '465',
                             'smtp.gmail.com', 
