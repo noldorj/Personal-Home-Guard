@@ -20,6 +20,7 @@ class CamRunTime():
     #camFinder = CamFinder(False)
 
     camRunTimeId = 0 
+    configEmailStatus = False
     changeIpCam = False
     OS_PLATFORM = 'windows'
     #variaveis globais
@@ -42,10 +43,11 @@ class CamRunTime():
     conexao = False
     frame = None
     rtspStatus = True
+    camEmpty = False
     fernetKey = None
 
-    #CHECK_SESSION = 300 # checar sessao a cada 5 min
-    CHECK_SESSION = 60 # checar sessao a cada 5 min    
+    CHECK_SESSION = 300 # checar sessao a cada 5 min
+    #CHECK_SESSION = 60 # checar sessao a cada 5 min    
     GRAVANDO_TIME = 300 #gravar videos de 5min 
 
     LOGIN_AUTOMATICO = False
@@ -295,6 +297,21 @@ class CamRunTime():
         #Carregando regioes salvas
         self.regions = self.statusConfig.getRegions()
         self.emailConfig = self.statusConfig.getEmailConfig()
+        if self.emailConfig['name'] != '' and \
+                self.emailConfig['port'] != '' and \
+                self.emailConfig['smtp'] != '' and \
+                self.emailConfig['user'] != '' and \
+                self.emailConfig['password'] != '' and \
+                self.emailConfig['subject'] != '' and \
+                self.emailConfig['to'] != '':
+            
+            self.configEmailStatus = True
+            log.debug('camRunTime::init configEmailStatus:'.format(self.configEmailStatus))
+            
+        else:            
+            self.configEmailStatus = False
+            log.debug('camRunTime::init configEmailStatus:'.format(self.configEmailStatus))
+        
         
         
         #se existirem regioes ja selecionadas, o portao virtual é mostrado
@@ -309,8 +326,38 @@ class CamRunTime():
         
         
         #origem do stream do video
-        self.source = self.statusConfig.data["camSource"]        
-        self.ipCam, self.error = utils.camSource(self.source)
+        self.source = self.statusConfig.data["camSource"]
+        
+        if self.source == '':
+            self.error = 'camEmpty'
+            self.camEmpty = True
+            self.errorRtsp = False
+            self.rtspStatus = False
+            self.errorWebcam = False
+        else:            
+            self.ipCam, self.error = utils.camSource(self.source)
+            self.camEmpty = False
+            
+        log.debug('camRunTime::init:: camSource error: {}'.format(self.error))
+        
+        if self.error == 'rtsp':
+            self.errorRtsp = True
+            self.rtspStatus = False
+            self.errorWebcam = False
+            
+        elif self.error == 'webcam':
+            self.errorWebcam = True
+            self.errorRtsp = True
+            self.rtspStatus = False
+            
+        else:
+            self.rtspStatus = True
+            self.errorWebcam = False
+            self.errorRtsp = False
+            if self.ipCam is not None:
+                self.ipCam.set(3, self.RES_X)
+                self.ipCam.set(4, self.RES_Y)
+            log.debug('camRunTime::init:: Conexao com camera restabelecida.')     
 
         #self.fourcc = cv.VideoWriter_fourcc(*'X''2''6''4') erro
         #for linux x264 need to recompile opencv mannually
@@ -325,26 +372,6 @@ class CamRunTime():
         self.diskUsageFree = utils.getDiskUsageFree() 
         self.diskUsageFreeGb = utils.getDiskUsageFreeGb()
         self.dirVideosAllTimeUsedSpace = utils.getDirUsedSpace(self.statusConfig.data['dirVideosOnAlarmes'])
-        self.numDaysRecording = utils.getNumDaysRecording()                     
-
-        log.debug('camRunTime::init:: camSource error: {}'.format(self.error))
-        if self.error == 'rtsp':
-            self.errorRtsp = True
-            self.rtspStatus = False 
-            self.errorWebcam = False
-            
-        elif self.error == 'webcam':            
-            self.errorWebcam = True
-            self.errorRtsp = True
-            self.rtspStatus = False 
-            
-        else:
-            self.rtspStatus = True 
-            self.errorWebcam = False
-            self.errorRtsp = False
-            self.ipCam.set(3, self.RES_X)
-            self.ipCam.set(4, self.RES_Y)
-            log.debug('camRunTime:: Conexao com camera restabelecida.')            
-            
+        self.numDaysRecording = utils.getNumDaysRecording()            
 
         self.prob_threshold = float(self.statusConfig.data["prob_threshold"])

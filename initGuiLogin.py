@@ -43,7 +43,7 @@ class FormLogin(QDialog):
         
         
 
-        log.debug('initGuiLogin:: self.statusConfig.dataLogin:' + self.statusConfig.dataLogin.get('user'))
+        log.debug('initGuiLogin:: dataLogin: ' + self.statusConfig.dataLogin.get('user'))
 
         if self.statusConfig.dataLogin.get('autoStart') == 'True':
             self.uiLogin.checkBoxLoginAutoStart.setCheckState(True)
@@ -185,7 +185,7 @@ class FormLogin(QDialog):
                 
                 if self.camRunTime.statusPasswd:
                     
-                    log.info("Senha alterada com sucesso")
+                    log.info("formLogin::btnAlterarSenha:: Senha alterada com sucesso")
                     self.uiLogin.lblStatus.setText("Senha alterada com sucesso")
                 
                 else:
@@ -239,7 +239,7 @@ class FormLogin(QDialog):
         #checando licenca de usuario no servidor
         #global init_video, statusLicence, self.uiLogin, conexao, login 
 
-        log.debug('Checando conexão com a Internet')
+        log.debug('btnLogin:: Checando conexão com a Internet')
         self.uiLogin.lblStatus.setText("Checando conexão com a Internet")
 
         self.camRunTime.conexao = utils.checkInternetAccess()
@@ -247,12 +247,12 @@ class FormLogin(QDialog):
 
         if self.camRunTime.conexao:    
         
-            log.info('Checando licença no servidor - Por favor aguarde')
+            log.info('btnLogin:: Checando licença no servidor - Por favor aguarde')
             #print('Checando licença no servidor - Por favor aguarde')
             self.uiLogin.lblStatus.setText("Conectando com o servidor")
             
             self.camRunTime.login = {'user':utils.encrypt(self.uiLogin.txtEmail.text()), 'passwd':utils.encrypt(self.uiLogin.txtPasswd.text()), 'token':utils.encrypt(self.camRunTime.token)}
-            log.debug('btnLogin::TOKEN: {}'.format(self.camRunTime.login.get('token').decode()))
+            #log.debug('btnLogin::TOKEN: {}'.format(self.camRunTime.login.get('token').decode()))
             self.statusConfig.setUserNameLoginConfig(self.uiLogin.txtEmail.text())
             
             self.camRunTime.statusLicence, self.camRunTime.error  = checkLoginPv(self.camRunTime.login) 

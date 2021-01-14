@@ -66,10 +66,10 @@ def initWatchDog():
 
     
     if sys.platform == 'linux':    
-        app = os.getcwd() + '/' + 'wd'
+        app = os.getcwd() + '/' + 'config/wd'
     else:
         log.info('Windows WatchDog')
-        app = 'wd.exe'
+        app = 'config/wd.exe'
 
     pid = getProcessId('wd.exe')
     if  pid == 0:
@@ -86,15 +86,15 @@ def initWatchDog():
             #log.info('p_status: {}'.format(p_status))
 
         except Exception as e: 
-            log.critical('Erro initWatchDog: {}'.format(e))
+            log.critical('initWatchDog:: Erro initWatchDog: {}'.format(e))
         else:
-            log.debug('WatchDog carregado. PID: {:d}'.format(getProcessId('wd.exe')))
+            log.debug('initWatchDog:: WatchDog carregado. PID: {:d}'.format(getProcessId('wd.exe')))
     else:
-        log.debug('WatchDog rodando. Pid: {:d}'.format(pid))
+        log.debug('initWatchDog:: WatchDog rodando. Pid: {:d}'.format(pid))
 
 
 def stopWatchDog():
-    log.debug('Encerrando Watchdog')
+    log.debug('stopWatchDog:: Encerrando Watchdog')
 
     if sys.platform == 'linux':    
         namePid = 'wd' 
@@ -112,11 +112,11 @@ def stopWatchDog():
                 os.system("taskkill /f /im " + namePid)
 
         except Exception as e:
-            log.error('Erro matando processo: {:d}'.format(pid))
-            log.error('Error: {}'.format(e))
+            log.error('stopWatchDog:: Erro matando processo: {:d}'.format(pid))
+            log.error('stopWatchDog:: Error: {}'.format(e))
             killProcessId(namePid)
         else:
-            log.debug('WatchDog encerrado. PId: {:d}'.format(pid))
+            log.debug('stopWatchDog:: WatchDog encerrado. PId: {:d}'.format(pid))
 
         pid = getProcessId(namePid) 
 
@@ -689,8 +689,14 @@ class StatusConfig:
     def setRtspConfig(self, camSource):
         self.data["camSource"] = camSource
 
-    def addConfigGeral(self, name, port, smtp, user, password, subject, to, isRecordingAllTime, isRecordingOnAlarmes, dirVideosAllTime, dirVideosOnAlarmes, camSource, diskMinUsage):
+    def addConfigGeral(self, name, servidorEmail, user, password, subject, to, isRecordingAllTime, isRecordingOnAlarmes, dirVideosAllTime, dirVideosOnAlarmes, camSource, diskMinUsage):
+        
+        if servidorEmail == 'Gmail':
+            port = '587'
+            smtp = 'smtp.gmail.com'
+            
         email = {'name':name,
+                 'servidorEmail':servidorEmail,
                  'port':port,
                  'smtp':smtp,
                  'user':user,
@@ -1056,7 +1062,7 @@ class StatusConfig:
 def playSound():
     pygame.init()
     log.debug('utilsCore:: campainha tocada')
-    pygame.mixer.music.load('campainha.wav')
+    pygame.mixer.music.load('config/campainha.mp3')
     pygame.mixer.init()
     pygame.mixer.music.play(0)
 

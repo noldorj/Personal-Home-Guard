@@ -26,4 +26,9 @@ WWW-Authenticate: Digest realm="9656ebf1fcae1122",nonce="gzl48j107xw18P953rp5bSA
 
 MKLDNNPlugin.dll
 cpu_extension_avx2
-C:/Program Files (x86)/Intel/openvino_2019.1.148/inference_engine/bin/intel64Release
+C:/Program Files (x86)/Intel/openvino_2019.1.148/inference_engine/bin/intel64/Release
+
+
+Nome do servidor: smtp.office365.com
+Porta: 587
+Método de criptografia: STARTTLS

@@ -10,9 +10,7 @@ import utilsCore as utils
 import logging as log
 import sys
 
-statusConfig = utils.StatusConfig() 
 
-emailConfig = statusConfig.getEmailConfig()
 
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
 
@@ -32,6 +30,10 @@ def saveImageBox(frame, classe):
 
 
 def sendMail(subject, text):
+
+    statusConfig = utils.StatusConfig() 
+
+    emailConfig = statusConfig.getEmailConfig()
 
     status = False
 
@@ -77,10 +79,11 @@ def sendMail(subject, text):
 
 
 #envia alerta do portao virtual com imagem anexada ao email
-def sendMailAlert(sender, recipients, subject, port, smtp, user, frame, tipoObjetoDetectado, region, nameCam):
-
+def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoObjetoDetectado, region, nameCam):
     
-
+    statusConfig = utils.StatusConfig() 
+    emailConfig = statusConfig.getEmailConfig()
+    
     status = False
 
     img_file = os.getcwd() + '/' + 'foto_alerta.jpg'
@@ -92,7 +95,7 @@ def sendMailAlert(sender, recipients, subject, port, smtp, user, frame, tipoObje
         log.critical('Erro ao salvar a foto: ' + str(error))
         return status
     else:
-        log.debug('Foto alarme salva')
+        log.debug('Foto alarme salva')        
 
 
     try:
@@ -118,9 +121,14 @@ def sendMailAlert(sender, recipients, subject, port, smtp, user, frame, tipoObje
 
     elif tipoObjetoDetectado == 'car':
         tipoObjetoDetectado = 'Carro'
-
-    msg['Subject'] = subject + ' - ' + '"' + tipoObjetoDetectado + '"' + ' na ' + region  + ' [' + nameCam + '] ' + data['hour']
-    msg['From'] = sender
+    
+       
+    if tipoObjetoDetectado == 'teste':
+        msg['Subject'] = 'Portão Virtual - Teste de Email[ ' + sender + ' ] - ' + data['hour']
+    else:        
+        msg['Subject'] = subject + ' - ' + '"' + tipoObjetoDetectado + '"' + ' na ' + region  + ' [' + nameCam + '] ' + data['hour']
+    
+    msg['From'] = user
     msg['To'] = recipients
 
     text = MIMEText('"' + tipoObjetoDetectado + '"' + ' na ' + region + '-  Detectado em ' + data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year'] )
@@ -132,22 +140,31 @@ def sendMailAlert(sender, recipients, subject, port, smtp, user, frame, tipoObje
 
     password = utils.decrypt(emailConfig['password'])
     
-    #smtpObj = smtplib.SMTP('smtp.gmail.com', 587)
-    smtpObj = smtplib.SMTP(smtp, int(port))
-    try:
-        smtpObj.ehlo()
-        smtpObj.starttls()
-        smtpObj.ehlo()
-        smtpObj.login(sender,password)
-        smtpObj.send_message(msg)
-        smtpObj.quit()
+    if servidorEmail == 'Gmail':
+        log.debug('sendMailAlert:: usando Gmail') 
+        log.debug('port: {:d}'.format(int(emailConfig['port'])))
+        log.debug('smtp: {:}'.format(emailConfig['smtp']))
+        log.debug('sender: {:}'.format(sender))
+        log.debug('user: {:}'.format(user))
+        log.debug('password: {:}'.format(password))
+        log.debug(' ')     
+        #smtpObj = smtplib.SMTP('smtp.gmail.com', 587)
+        smtpObj = smtplib.SMTP(emailConfig['smtp'], int(emailConfig['port']))
+        try:
+            smtpObj.ehlo()
+            smtpObj.starttls()
+            #smtpObj.ehlo()
+            smtpObj.login(user, password)
+            smtpObj.send_message(msg)
+            smtpObj.quit()
 
-    except SMTPException as e:
-        log.critical("Error: unable to send email" + str(e))
+        except SMTPException as e:
+            log.critical("sendMailAlert:: Error: unable to send email" + str(e))
 
-    else:
-        log.debug('Email de alerta enviado')
-        status = True
+        else:
+            log.debug('sendMailAlert:: Email de alerta enviado')
+            status = True
 
     return status
+
 

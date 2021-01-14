@@ -225,6 +225,7 @@ class FormProc(QWidget):
                 self.uiConfig.thread.warningSessionLoss.connect(self.warningSessionLoss)
                 self.uiConfig.thread.warningSessionLossFirst.connect(self.warningSessionLossFirst)
                 self.uiConfig.thread.webCamWarning.connect(self.webCamWarning)
+                self.uiConfig.thread.camEmptyWarning.connect(self.camEmptyWarning)
                 #self.uiConfig.thread.change_pixmap_signal.connect(self.checkStorage)
                 self.uiConfig.thread.storageFull.connect(self.storageFull)
                 
@@ -248,6 +249,11 @@ class FormProc(QWidget):
                     self.uiConfig.lblCam1.setText('Webcam com erro de conexão ! Cheque seu computador por favor ! ')              
                     self.uiConfig.lblInitStatus.setText('Webcam com erro de conexão ! Por favor, cheque a configuração da Webcam e reinicie o Portão Virtual ! ')              
                 
+                elif self.camRunTime.camEmpty:
+                    log.debug('initFormConfig:: Camera não configurada')
+                    self.uiConfig.lblCam1.setText('Configura sua câmera ou webcam para iniciar o Portão Virtual !')              
+                    self.uiConfig.lblInitStatus.setText('Configura sua câmera ou webcam para iniciar o Portão Virtual !')              
+                
                 elif self.camRunTime.errorRtsp:                    
                     
                     log.debug('initFormConfig:: Erro ao conectar a câmera')
@@ -265,7 +271,12 @@ class FormProc(QWidget):
         #self.statusConfig = statusConfig        
         #windowConfig.show()
     
- 
+    @QtCore.pyqtSlot()
+    def camEmptyWarning(self):
+        self.uiConfig.lblCam1.setText('Configura sua câmera ou webcam para iniciar o Portão Virtual !')
+        self.uiConfig.lblInitStatus.setText('Configura sua câmera ou webcam para iniciar o Portão Virtual !')
+    
+    
     @QtCore.pyqtSlot()
     def webCamWarning(self):
         self.uiConfig.lblCam1.setText('Por favor, cheque a configuração da sua Webcam e reinicie o Portão Virtual')
@@ -400,19 +411,7 @@ class FormProc(QWidget):
             msg.setText("Campo 'Nome' em branco")
             msg.exec()
             self.uiConfig.txtEmailName.setFocus()
-            statusFields = False
-
-        elif len(self.uiConfig.txtEmailPort.text()) == 0:
-            msg.setText("Campo 'Porta' em branco")
-            msg.exec()
-            self.uiConfig.txtEmailPort.setFocus()
-            statusFields = False
-
-        elif len(self.uiConfig.txtEmailSmtp.text()) == 0:
-            msg.setText("Campo 'SMTP' em branco")
-            msg.exec()
-            self.uiConfig.txtEmailSmtp.setFocus()
-            statusFields = False
+            statusFields = False                
 
         elif len(self.uiConfig.txtEmailUser.text()) == 0:
             msg.setText("Campo 'Usuário' em branco")
@@ -468,10 +467,21 @@ class FormProc(QWidget):
 
              
             passwd = utils.encrypt(self.uiConfig.txtEmailPassword.text())
+            
 
-            self.statusConfig.addConfigGeral(self.uiConfig.txtEmailName.text(),
-                                  self.uiConfig.txtEmailPort.text(),
-                                  self.uiConfig.txtEmailSmtp.text(),
+            if sendMailAlert(self.uiConfig.txtEmailName.text(), \
+                    self.uiConfig.txtEmailTo.text(), \
+                    self.uiConfig.txtEmailSubject.text(), \
+                    self.uiConfig.comboBoxServidorEmail.currentText(), \
+                    self.uiConfig.txtEmailUser.text(), \
+                    self.camRunTime.frame, \
+                    'teste', \
+                    'testeRegion', \
+                    'testeCam'):
+                    
+                    log.debug('btnSaveEmail:: Teste email ok')
+                    self.statusConfig.addConfigGeral(self.uiConfig.txtEmailName.text(),
+                                  self.uiConfig.comboBoxServidorEmail.currentText(),
                                   self.uiConfig.txtEmailUser.text(),
                                   passwd,
                                   self.uiConfig.txtEmailSubject.text(),
@@ -482,14 +492,27 @@ class FormProc(QWidget):
                                   self.uiConfig.txtDirRecordingOnAlarmes.text(),
                                   self.camRunTime.camSource, 
                                   self.uiConfig.txtAvisoUtilizacaoHD.text())
-
-
             
-            self.uiConfig.lblCam1.clear()
-            self.refreshStatusConfig()
-            self.camRunTime.init()             
-            self.infCam.setCamRunTime(self.camRunTime)            
-            self.fillTabGeral()
+                    self.camRunTime.configEmailStatus = True        
+                    self.uiConfig.lblCam1.clear()
+                    self.refreshStatusConfig()
+                    self.camRunTime.init()             
+                    self.infCam.setCamRunTime(self.camRunTime)            
+                    self.fillTabGeral()
+                    
+            else:
+                self.camRunTime.configEmailStatus = False
+                msg.setText("Senha ou usuário inválidos para envio de Email ! Cuidado, os alarmes não serão enviados ! ")
+                msg.exec()
+                self.uiConfig.txtUrlRstp.setFocus()
+                
+                
+                    
+                            
+                             
+            
+            
+            
             
 
             
@@ -560,13 +583,13 @@ class FormProc(QWidget):
             self.uiConfig.txtThreshold.setFocus()
             statusFields = False
             
-        elif len(self.uiConfig.txtThreshold.text()) < 61:
+        elif int(self.uiConfig.txtThreshold.text()) < 61:
             msg.setText("Cuidado, valores abaixo de 60% podem causar alarmes falso positivos ! Utilize valores baixos em ambientes com pouca visibilidade/luminosidade apenas")
             msg.exec()
             self.uiConfig.txtThreshold.setFocus()
             
             
-        elif len(self.uiConfig.txtThreshold.text()) > 74:
+        elif int(self.uiConfig.txtThreshold.text()) > 74:
             msg.setText("Cuidado, valores acima de 75% podem dificultar a detecção de pessoas ou carros! Utilize valores altos quando a imagem estiver com boa visibilidade/luminosidade")
             msg.exec()
             self.uiConfig.txtThreshold.setFocus()
@@ -705,8 +728,8 @@ class FormProc(QWidget):
         
 
         self.uiConfig.txtEmailName.clear()
-        self.uiConfig.txtEmailPort.clear()
-        self.uiConfig.txtEmailSmtp.clear()
+        #self.uiConfig.txtEmailPort.clear()
+        #self.uiConfig.txtEmailSmtp.clear()
         self.uiConfig.txtEmailSubject.clear()
         self.uiConfig.txtEmailTo.clear()
         self.uiConfig.txtEmailUser.clear()
@@ -782,7 +805,7 @@ class FormProc(QWidget):
     def btnAtivarCam(self):
         #global listCamAtivas, self.uiConfig, statusConfig
 
-        log.debug('Ativando camera selecionada')
+        log.debug('btnAtivarCam:: Ativando camera selecionada')
         
         if len(self.camRunTime.listCamAtivas) > 0 and self.camRunTime.listCamAtivas is not None: 
             idCombo = self.uiConfig.comboBoxCamAtivas.currentText().split(':')[0]
@@ -816,6 +839,7 @@ class FormProc(QWidget):
             #self.__init__() #IJF checar
             self.fillTabGeral()
             self.uiConfig.lblStatusProcurarCam.setText('Camera ativada')
+            self.camRunTime.init()
             
         else:
             self.uiConfig.lblStatusProcurarCam.setText('Sem câmeras ativas. Clique em "Procurar Câmeras" para uma nova varredura')
@@ -1472,8 +1496,8 @@ class FormProc(QWidget):
         
 
         self.uiConfig.txtEmailName.clear()
-        self.uiConfig.txtEmailPort.clear()
-        self.uiConfig.txtEmailSmtp.clear()
+        #self.uiConfig.txtEmailPort.clear()
+        #self.uiConfig.txtEmailSmtp.clear()
         self.uiConfig.txtEmailSubject.clear()
         self.uiConfig.txtEmailTo.clear()
         self.uiConfig.txtEmailUser.clear()
@@ -1509,8 +1533,8 @@ class FormProc(QWidget):
         self.uiConfig.txtDirRecordingOnAlarmes.setText(self.statusConfig.data.get("dirVideosOnAlarmes"))
         self.uiConfig.txtAvisoUtilizacaoHD.setText(self.statusConfig.data["storageConfig"].get("diskMinUsage"))
         self.uiConfig.txtEmailName.setText(self.statusConfig.data["emailConfig"].get('name'))
-        self.uiConfig.txtEmailPort.setText(self.statusConfig.data["emailConfig"].get('port'))
-        self.uiConfig.txtEmailSmtp.setText(self.statusConfig.data["emailConfig"].get('smtp'))
+        #self.uiConfig.txtEmailPort.setText(self.statusConfig.data["emailConfig"].get('port'))
+        #self.uiConfig.txtEmailSmtp.setText(self.statusConfig.data["emailConfig"].get('smtp'))
         self.uiConfig.txtEmailUser.setText(self.statusConfig.data["emailConfig"].get('user'))
 
         passwd = self.statusConfig.data["emailConfig"].get('password')

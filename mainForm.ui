@@ -53,7 +53,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <property name="tabsClosable">
        <bool>false</bool>
@@ -232,7 +232,7 @@
          <rect>
           <x>10</x>
           <y>60</y>
-          <width>265</width>
+          <width>291</width>
           <height>197</height>
          </rect>
         </property>
@@ -316,7 +316,7 @@
          <item row="0" column="1">
           <widget class="QLineEdit" name="txtThreshold">
            <property name="text">
-            <string/>
+            <string>65</string>
            </property>
            <property name="placeholderText">
             <string/>
@@ -426,6 +426,12 @@
              <property name="text">
               <string>Todos os dias</string>
              </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="autoRepeat">
+              <bool>true</bool>
+             </property>
              <property name="tristate">
               <bool>false</bool>
              </property>
@@ -463,9 +469,9 @@
            </property>
            <property name="dateTime">
             <datetime>
-             <hour>1</hour>
+             <hour>0</hour>
              <minute>0</minute>
-             <second>59</second>
+             <second>0</second>
              <year>2020</year>
              <month>10</month>
              <day>26</day>
@@ -489,9 +495,9 @@
            </property>
            <property name="time">
             <time>
-             <hour>1</hour>
+             <hour>0</hour>
              <minute>0</minute>
-             <second>59</second>
+             <second>0</second>
             </time>
            </property>
           </widget>
@@ -729,19 +735,15 @@
            <property name="toolTip">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Utilizar vírgula para separar vários destinatários&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
-          </widget>
-         </item>
-         <item row="9" column="0">
-          <widget class="QLabel" name="label_100">
-           <property name="text">
-            <string>Porta:</string>
+           <property name="statusTip">
+            <string extracomment="Separa os destinatários por vírgula"/>
            </property>
           </widget>
          </item>
          <item row="7" column="0">
           <widget class="QLabel" name="label_101">
            <property name="text">
-            <string>Configuração de Email</string>
+            <string>Configuração de Recebimento de Alarmes por Email</string>
            </property>
           </widget>
          </item>
@@ -753,7 +755,11 @@
           </widget>
          </item>
          <item row="13" column="1">
-          <widget class="QLineEdit" name="txtEmailSubject"/>
+          <widget class="QLineEdit" name="txtEmailSubject">
+           <property name="text">
+            <string>PV-Alarme</string>
+           </property>
+          </widget>
          </item>
          <item row="1" column="0">
           <widget class="QLabel" name="label_103">
@@ -772,22 +778,12 @@
          <item row="1" column="1">
           <widget class="QLineEdit" name="txtDirRecordingAllTime"/>
          </item>
-         <item row="9" column="7">
+         <item row="10" column="7">
           <widget class="QLabel" name="label_104">
            <property name="text">
             <string/>
            </property>
           </widget>
-         </item>
-         <item row="10" column="0">
-          <widget class="QLabel" name="label_105">
-           <property name="text">
-            <string>SMTP:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="10" column="1">
-          <widget class="QLineEdit" name="txtEmailSmtp"/>
          </item>
          <item row="12" column="0">
           <widget class="QLabel" name="label_106">
@@ -795,12 +791,6 @@
             <string>Senha:</string>
            </property>
           </widget>
-         </item>
-         <item row="11" column="1">
-          <widget class="QLineEdit" name="txtEmailUser"/>
-         </item>
-         <item row="9" column="1">
-          <widget class="QLineEdit" name="txtEmailPort"/>
          </item>
          <item row="4" column="0">
           <widget class="QCheckBox" name="checkBoxWebCam">
@@ -833,13 +823,6 @@
            </property>
           </widget>
          </item>
-         <item row="11" column="0">
-          <widget class="QLabel" name="label_109">
-           <property name="text">
-            <string>Usuário:</string>
-           </property>
-          </widget>
-         </item>
          <item row="6" column="1">
           <spacer name="horizontalSpacer_4">
            <property name="orientation">
@@ -856,7 +839,7 @@
          <item row="8" column="0">
           <widget class="QLabel" name="label_110">
            <property name="text">
-            <string>Nome:</string>
+            <string>Nome para identificar este Computador:</string>
            </property>
           </widget>
          </item>
@@ -887,6 +870,46 @@
           <widget class="QCheckBox" name="checkBoxDesabilitarLoginAutomatico">
            <property name="text">
             <string>Login Automatico</string>
+           </property>
+          </widget>
+         </item>
+         <item row="9" column="0">
+          <widget class="QLabel" name="label_130">
+           <property name="text">
+            <string>Provedor de Email:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="9" column="1">
+          <widget class="QComboBox" name="comboBoxServidorEmail">
+           <item>
+            <property name="text">
+             <string>Gmail</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Outlook</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Yahoo</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item row="10" column="0">
+          <widget class="QLabel" name="label_109">
+           <property name="text">
+            <string>Usuário:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="10" column="1">
+          <widget class="QLineEdit" name="txtEmailUser">
+           <property name="statusTip">
+            <string extracomment="usuario@provedor.com"/>
            </property>
           </widget>
          </item>
@@ -1553,6 +1576,81 @@
    </layout>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>tabConfig</tabstop>
+  <tabstop>btnInitAddRegiao</tabstop>
+  <tabstop>btnNewRegion</tabstop>
+  <tabstop>txtRegionName</tabstop>
+  <tabstop>checkPerson</tabstop>
+  <tabstop>checkCar</tabstop>
+  <tabstop>checkBike</tabstop>
+  <tabstop>checkDog</tabstop>
+  <tabstop>txtThreshold</tabstop>
+  <tabstop>txtNameAlarm</tabstop>
+  <tabstop>checkTodosDias</tabstop>
+  <tabstop>checkMon</tabstop>
+  <tabstop>checkTue</tabstop>
+  <tabstop>checkWed</tabstop>
+  <tabstop>checkThur</tabstop>
+  <tabstop>checkEmailAlert</tabstop>
+  <tabstop>checkFri</tabstop>
+  <tabstop>checkSat</tabstop>
+  <tabstop>checkSun</tabstop>
+  <tabstop>checkAlertSound</tabstop>
+  <tabstop>timeStart</tabstop>
+  <tabstop>timeEnd</tabstop>
+  <tabstop>btnSaveRegion</tabstop>
+  <tabstop>btnDeleteRegion</tabstop>
+  <tabstop>btnCancelRegion</tabstop>
+  <tabstop>btnSaveAlarm</tabstop>
+  <tabstop>btnDeleteAlarm</tabstop>
+  <tabstop>btnCancelAlarm</tabstop>
+  <tabstop>checkBoxVideoRecordingAllTime</tabstop>
+  <tabstop>checkBoxVideoRecordingOnAlarmes</tabstop>
+  <tabstop>checkBoxWebCam</tabstop>
+  <tabstop>checkBoxDesabilitarLoginAutomatico</tabstop>
+  <tabstop>txtDirRecordingAllTime</tabstop>
+  <tabstop>txtDirRecordingOnAlarmes</tabstop>
+  <tabstop>txtUrlRstp</tabstop>
+  <tabstop>txtEmailName</tabstop>
+  <tabstop>comboBoxServidorEmail</tabstop>
+  <tabstop>txtEmailUser</tabstop>
+  <tabstop>txtEmailPassword</tabstop>
+  <tabstop>txtEmailSubject</tabstop>
+  <tabstop>txtEmailTo</tabstop>
+  <tabstop>btnSaveEmail</tabstop>
+  <tabstop>btnProcurarCam</tabstop>
+  <tabstop>comboBoxCamAtivas</tabstop>
+  <tabstop>txtNomeCamAtiva</tabstop>
+  <tabstop>btnAtivarCam</tabstop>
+  <tabstop>btnRemoverCamAtiva</tabstop>
+  <tabstop>btnAlterarNomeCamAtiva</tabstop>
+  <tabstop>comboBoxCamEncontradas</tabstop>
+  <tabstop>btnTestarConfigCam</tabstop>
+  <tabstop>btnRemoverCamEncontrada</tabstop>
+  <tabstop>txtNomeCamDisponivel</tabstop>
+  <tabstop>txtIpCamDisponivel</tabstop>
+  <tabstop>txtUserCamDisponivel</tabstop>
+  <tabstop>txtPasswdCamDisponivel</tabstop>
+  <tabstop>txtPortaCamDisponivel</tabstop>
+  <tabstop>txtCanalCamDisponivel</tabstop>
+  <tabstop>btnNovaCam</tabstop>
+  <tabstop>txtDefinirMaximoAllTime</tabstop>
+  <tabstop>txtDefinirMaximoOnAlarmes</tabstop>
+  <tabstop>txtAvisoUtilizacaoHD</tabstop>
+  <tabstop>checkBoxNoLimitsVideosAllTime</tabstop>
+  <tabstop>checkBoxNoLimitsVideosOnAlarmes</tabstop>
+  <tabstop>radioButtonDeleteOldestFiles</tabstop>
+  <tabstop>radioButtonStopSaveNewVideos</tabstop>
+  <tabstop>btnSaveStorage</tabstop>
+  <tabstop>txtDirUsedVideosAllTime</tabstop>
+  <tabstop>txtDirUsedVideosOnAlarmes</tabstop>
+  <tabstop>txtDiasEstimado</tabstop>
+  <tabstop>txtAvailableHD</tabstop>
+  <tabstop>btnNewAlarm</tabstop>
+  <tabstop>comboAlarms</tabstop>
+  <tabstop>comboRegions</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
