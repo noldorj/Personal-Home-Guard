@@ -694,6 +694,15 @@ class StatusConfig:
         if servidorEmail == 'Gmail':
             port = '587'
             smtp = 'smtp.gmail.com'
+        
+        elif servidorEmail == 'Outlook':
+            port = '587'
+            smtp = 'smtp.office365.com'
+            
+        elif servidorEmail == 'Yahoo':
+            port = '995'
+            smtp = 'smtp.mail.yahoo.com'
+        
             
         email = {'name':name,
                  'servidorEmail':servidorEmail,

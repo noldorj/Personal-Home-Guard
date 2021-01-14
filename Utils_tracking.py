@@ -124,7 +124,7 @@ def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoO
     
        
     if tipoObjetoDetectado == 'teste':
-        msg['Subject'] = 'Portão Virtual - Teste de Email[ ' + sender + ' ] - ' + data['hour']
+        msg['Subject'] = 'Portão Virtual - Teste de Email [ ' + sender + ' ] - ' + data['hour']
     else:        
         msg['Subject'] = subject + ' - ' + '"' + tipoObjetoDetectado + '"' + ' na ' + region  + ' [' + nameCam + '] ' + data['hour']
     
@@ -140,31 +140,64 @@ def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoO
 
     password = utils.decrypt(emailConfig['password'])
     
-    if servidorEmail == 'Gmail':
-        log.debug('sendMailAlert:: usando Gmail') 
-        log.debug('port: {:d}'.format(int(emailConfig['port'])))
-        log.debug('smtp: {:}'.format(emailConfig['smtp']))
-        log.debug('sender: {:}'.format(sender))
-        log.debug('user: {:}'.format(user))
-        log.debug('password: {:}'.format(password))
-        log.debug(' ')     
+    
+    log.debug('port: {:d}'.format(int(emailConfig['port'])))
+    log.debug('smtp: {:}'.format(emailConfig['smtp']))
+    log.debug('sender: {:}'.format(sender))
+    log.debug('user: {:}'.format(user))
+    log.debug('password: {:}'.format(password))
+    log.debug('password: {:}'.format(password))
+    log.debug(' ')     
+        
+    #if servidorEmail == 'Gmail':
+    
+    log.debug('sendMailAlert:: servidorEmail: {} '.format(emailConfig['servidorEmail']))
+        
         #smtpObj = smtplib.SMTP('smtp.gmail.com', 587)
+    
+    try:
         smtpObj = smtplib.SMTP(emailConfig['smtp'], int(emailConfig['port']))
-        try:
-            smtpObj.ehlo()
-            smtpObj.starttls()
-            #smtpObj.ehlo()
-            smtpObj.login(user, password)
-            smtpObj.send_message(msg)
-            smtpObj.quit()
+        smtpObj.ehlo()
+        smtpObj.starttls()
+        #smtpObj.ehlo()
+        smtpObj.login(user, password)
+        smtpObj.send_message(msg)
+        smtpObj.quit()
 
-        except SMTPException as e:
-            log.critical("sendMailAlert:: Error: unable to send email" + str(e))
+    except SMTPException as e:
+        log.critical("sendMailAlert:: Error: unable to send email" + str(e))       
+        return False
+    
+    except Exception as e:
+        log.critical("sendMailAlert:: Error: unable to send email" + str(e))       
+        return False
 
-        else:
-            log.debug('sendMailAlert:: Email de alerta enviado')
-            status = True
+    else:
+        log.debug('sendMailAlert:: Email de alerta enviado')
+        status = True
 
+    # elif servidorEmail == 'Outlook':
+    
+        # log.debug('sendMailAlert:: usando Outlook') 
+        # #smtpObj = smtplib.SMTP(smtp.office365.com, 587)
+        # smtpObj = smtplib.SMTP(emailConfig['smtp'], int(emailConfig['port']))
+        # try:
+            # smtpObj.ehlo()
+            # smtpObj.starttls()
+            # #smtpObj.ehlo()
+            # smtpObj.login(user, password)
+            # smtpObj.send_message(msg)
+            # smtpObj.quit()
+
+        # except SMTPException as e:
+            # log.critical("sendMailAlert:: Error Outlook: unable to send email" + str(e))
+        # else:
+            # log.debug('sendMailAlert:: Email de alerta enviado')
+            # status = True
+            
+     
+    
+    
     return status
 
 

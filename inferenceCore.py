@@ -285,115 +285,117 @@ class InferenceCore(QThread):
 
                                                 if self.camRunTime.prob_threshold_returned >= int(r.get('prob_threshold')):
 
-                                                    if self.isIdInsideRegion(centroid, r.get('pointsPolygon')):
+                                                    #evitar regioes que foram inseridas sem determinar o box pela GUI
+                                                    if len(r.get('pointsPolygon')) > 0:
+                                                        if self.isIdInsideRegion(centroid, r.get('pointsPolygon')):
 
-                                                        self.camRunTime.tEmptyEnd = time.time()
-                                                        self.camRunTime.tEmpty = self.camRunTime.tEmptyEnd - self.camRunTime.tEmptyStart
+                                                            self.camRunTime.tEmptyEnd = time.time()
+                                                            self.camRunTime.tEmpty = self.camRunTime.tEmptyEnd - self.camRunTime.tEmptyStart
 
-                                                        self.camRunTime.tEmptyStart = time.time()
+                                                            self.camRunTime.tEmptyStart = time.time()
 
-                                                        #enquanto tiver objetos dentro da regiao o video eh gravado, independente do alarme
-                                                         
-                                                        if self.camRunTime.statusConfig.data["isRecordingOnAlarmes"] == 'True':
-                                                            self.camRunTime.gravandoOnAlarmes = True
+                                                            #enquanto tiver objetos dentro da regiao o video eh gravado, independente do alarme
+                                                             
+                                                            if self.camRunTime.statusConfig.data["isRecordingOnAlarmes"] == 'True':
+                                                                self.camRunTime.gravandoOnAlarmes = True
 
-                                                        #checando alarmes 
-                                                        d = utils.getDate()
-                                                        weekDay = d['weekDay']
-                                                        minute = int(d['minute'])
-                                                        hour = int(d['hourOnly'])
+                                                            #checando alarmes 
+                                                            d = utils.getDate()
+                                                            weekDay = d['weekDay']
+                                                            minute = int(d['minute'])
+                                                            hour = int(d['hourOnly'])
 
-                                                        currentMinutes = (hour * 60) + minute
+                                                            currentMinutes = (hour * 60) + minute
 
-                                                        for a in r.get('alarm'):
+                                                            for a in r.get('alarm'):
 
-                                                            startMinutes = (int(a.get('time').get('start').get('hour'))*60) + int(a.get('time').get('start').get('min'))
-                                                            endMinutes = (int(a.get('time').get('end').get('hour'))*60) + int(a.get('time').get('end').get('min'))
+                                                                startMinutes = (int(a.get('time').get('start').get('hour'))*60) + int(a.get('time').get('start').get('min'))
+                                                                endMinutes = (int(a.get('time').get('end').get('hour'))*60) + int(a.get('time').get('end').get('min'))
 
 
-                                                            if a.get('days').get(weekDay) == "True":
+                                                                if a.get('days').get(weekDay) == "True":
 
-                                                                if currentMinutes >= startMinutes and currentMinutes < endMinutes:
+                                                                    if currentMinutes >= startMinutes and currentMinutes < endMinutes:
 
-                                                                    if self.camRunTime.tSoundLimit > 0:
+                                                                        if self.camRunTime.tSoundLimit > 0:
 
-                                                                        self.camRunTime.tSoundEnd = time.time()
-                                                                        self.camRunTime.tSound = self.camRunTime.tSoundEnd - self.camRunTime.tSoundStart
+                                                                            self.camRunTime.tSoundEnd = time.time()
+                                                                            self.camRunTime.tSound = self.camRunTime.tSoundEnd - self.camRunTime.tSoundStart
 
-                                                                        if self.camRunTime.tSound < self.camRunTime.tSoundLimit:
-                                                                            self.camRunTime.stopSound = True
-                                                                        else:
-                                                                            self.camRunTime.stopSound = False
-                                                                            self.camRunTime.tSoundLimit = 0
-
-                                                                    if a.get('isSoundAlert') == "True" and not self.camRunTime.stopSound:
-                                                                        
-                                                                        #evitar campainhas seguidas para mesmo objeto
-                                                                        if self.camRunTime.listObjectSoundAlerted.count(objectID) == 0:
-                                                                            log.debug('inferenceCore:: campainha tocada')
-                                                                            utils.playSound()
-                                                                            self.camRunTime.listObjectSoundAlerted.append(objectID)
-
-                                                                    if a.get('isEmailAlert') == "True":
-
-                                                                        #evitar emails seguidos para mesmo objeto
-                                                                        if self.camRunTime.listObjectMailAlerted.count(objectID) == 0:
-
-                                                                            log.debug('inferenceCore:: Enviando alerta por email')
-                                                                            #salvando foto para treinamento
-                                                                            #crop no box
-                                                                            #left, top, right, bottom
-                                                                            #frame_no_label = frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
-                                                                            #saveImageBox(frame_no_label, str(box[6]))
-
-                                                                            if utils.checkInternetAccess():
-
-                                                                                
-                                                                                if self.camRunTime.configEmailStatus:
-                                                                                    log.debug('inferenceCore:: Alerta enviado ID[' + str(objectID) + ']')
-                                                                                    threadEmail = Thread(target=sendMailAlert, args=(self.camRunTime.emailConfig['name'],
-                                                                                                                                       self.camRunTime.emailConfig['to'],
-                                                                                                                                       self.camRunTime.emailConfig['subject'],
-                                                                                                                                       self.camRunTime.emailConfig['servidorEmail'],
-                                                                                                                                       self.camRunTime.emailConfig['user'],
-                                                                                                                                       frame_no_label_email,
-                                                                                                                                       str(box[6]), #tipo de objeto detectado
-                                                                                                                                       r.get('nameRegion'),
-                                                                                                                                       self.camRunTime.nameCam))
-                                                                                    threadEmail.start()
-                                                                                else:
-                                                                                    log.critical('inferenceCore:: configEmailStatus: '.format(self.camRunTime.configEmailStatus))
-                                                                                
-                                                                                
-                                                                                self.camRunTime.listObjectMailAlerted.append(objectID)
+                                                                            if self.camRunTime.tSound < self.camRunTime.tSoundLimit:
+                                                                                self.camRunTime.stopSound = True
                                                                             else:
-                                                                                alertaNaoEnviado = [self.camRunTime.emailConfig['name'],
-                                                                                                      self.camRunTime.emailConfig['to'],
-                                                                                                      self.camRunTime.emailConfig['subject'],
-                                                                                                      self.camRunTime.emailConfig['servidorEmail'],
-                                                                                                      self.camRunTime.emailConfig['user'],
-                                                                                                      frame_no_label_email,
-                                                                                                      str(box[6]),
-                                                                                                      r.get('nameRegion'),
-                                                                                                      self.camRunTime.nameCam]
+                                                                                self.camRunTime.stopSound = False
+                                                                                self.camRunTime.tSoundLimit = 0
 
-                                                                                self.camRunTime.pilhaAlertasNaoEnviados.append(alertaNaoEnviado)
-                                                                                
-                                                                                self.camRunTime.listObjectMailAlerted.append(objectID)
+                                                                        if a.get('isSoundAlert') == "True" and not self.camRunTime.stopSound:
+                                                                            
+                                                                            #evitar campainhas seguidas para mesmo objeto
+                                                                            if self.camRunTime.listObjectSoundAlerted.count(objectID) == 0:
+                                                                                log.debug('inferenceCore:: campainha tocada')
+                                                                                utils.playSound()
+                                                                                self.camRunTime.listObjectSoundAlerted.append(objectID)
 
-                                                                                log.critical('Sem conexao com a Internet - Alarmes serão enviados assim que houver conexao')
-                                                                                log.critical('Numero de alarmes não enviados até o momento: {:d}'.format(len(pilhaAlertasNaoEnviados)))
-                                                        #end loop alarms
-                                                    else:
+                                                                        if a.get('isEmailAlert') == "True":
 
-                                                        self.camRunTime.tEmptyEnd = time.time()
-                                                        self.camRunTime.tEmpty = self.camRunTime.tEmptyEnd - self.camRunTime.tEmptyStart
+                                                                            #evitar emails seguidos para mesmo objeto
+                                                                            if self.camRunTime.listObjectMailAlerted.count(objectID) == 0:
 
-                                                        if self.camRunTime.tEmpty > 10:
-                                                            self.camRunTime.gravandoOnAlarmes = False
-                                                            self.camRunTime.newVideo = True
-                                                            self.camRunTime.releaseVideoOnAlarmes = True
-                                                            #suspend_screensaver()
+                                                                                log.debug('inferenceCore:: Enviando alerta por email')
+                                                                                #salvando foto para treinamento
+                                                                                #crop no box
+                                                                                #left, top, right, bottom
+                                                                                #frame_no_label = frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
+                                                                                #saveImageBox(frame_no_label, str(box[6]))
+
+                                                                                if utils.checkInternetAccess():
+
+                                                                                    
+                                                                                    if self.camRunTime.configEmailStatus:
+                                                                                        log.debug('inferenceCore:: Alerta enviado ID[' + str(objectID) + ']')
+                                                                                        threadEmail = Thread(target=sendMailAlert, args=(self.camRunTime.emailConfig['name'],
+                                                                                                                                           self.camRunTime.emailConfig['to'],
+                                                                                                                                           self.camRunTime.emailConfig['subject'],
+                                                                                                                                           self.camRunTime.emailConfig['servidorEmail'],
+                                                                                                                                           self.camRunTime.emailConfig['user'],
+                                                                                                                                           frame_no_label_email,
+                                                                                                                                           str(box[6]), #tipo de objeto detectado
+                                                                                                                                           r.get('nameRegion'),
+                                                                                                                                           self.camRunTime.nameCam))
+                                                                                        threadEmail.start()
+                                                                                    else:
+                                                                                        log.critical('inferenceCore:: configEmailStatus: '.format(self.camRunTime.configEmailStatus))
+                                                                                    
+                                                                                    
+                                                                                    self.camRunTime.listObjectMailAlerted.append(objectID)
+                                                                                else:
+                                                                                    alertaNaoEnviado = [self.camRunTime.emailConfig['name'],
+                                                                                                          self.camRunTime.emailConfig['to'],
+                                                                                                          self.camRunTime.emailConfig['subject'],
+                                                                                                          self.camRunTime.emailConfig['servidorEmail'],
+                                                                                                          self.camRunTime.emailConfig['user'],
+                                                                                                          frame_no_label_email,
+                                                                                                          str(box[6]),
+                                                                                                          r.get('nameRegion'),
+                                                                                                          self.camRunTime.nameCam]
+
+                                                                                    self.camRunTime.pilhaAlertasNaoEnviados.append(alertaNaoEnviado)
+                                                                                    
+                                                                                    self.camRunTime.listObjectMailAlerted.append(objectID)
+
+                                                                                    log.critical('Sem conexao com a Internet - Alarmes serão enviados assim que houver conexao')
+                                                                                    log.critical('Numero de alarmes não enviados até o momento: {:d}'.format(len(pilhaAlertasNaoEnviados)))
+                                                            #end loop alarms
+                                                        else:
+
+                                                            self.camRunTime.tEmptyEnd = time.time()
+                                                            self.camRunTime.tEmpty = self.camRunTime.tEmptyEnd - self.camRunTime.tEmptyStart
+
+                                                            if self.camRunTime.tEmpty > 10:
+                                                                self.camRunTime.gravandoOnAlarmes = False
+                                                                self.camRunTime.newVideo = True
+                                                                self.camRunTime.releaseVideoOnAlarmes = True
+                                                                #suspend_screensaver()
 
 
                                                     #end if isIdInsideRegion

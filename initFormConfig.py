@@ -468,19 +468,7 @@ class FormProc(QWidget):
              
             passwd = utils.encrypt(self.uiConfig.txtEmailPassword.text())
             
-
-            if sendMailAlert(self.uiConfig.txtEmailName.text(), \
-                    self.uiConfig.txtEmailTo.text(), \
-                    self.uiConfig.txtEmailSubject.text(), \
-                    self.uiConfig.comboBoxServidorEmail.currentText(), \
-                    self.uiConfig.txtEmailUser.text(), \
-                    self.camRunTime.frame, \
-                    'teste', \
-                    'testeRegion', \
-                    'testeCam'):
-                    
-                    log.debug('btnSaveEmail:: Teste email ok')
-                    self.statusConfig.addConfigGeral(self.uiConfig.txtEmailName.text(),
+            self.statusConfig.addConfigGeral(self.uiConfig.txtEmailName.text(),
                                   self.uiConfig.comboBoxServidorEmail.currentText(),
                                   self.uiConfig.txtEmailUser.text(),
                                   passwd,
@@ -493,6 +481,23 @@ class FormProc(QWidget):
                                   self.camRunTime.camSource, 
                                   self.uiConfig.txtAvisoUtilizacaoHD.text())
             
+            log.debug('initFormConfig:: servidorEmail: {}'.format(self.uiConfig.comboBoxServidorEmail.currentText()))
+            if sendMailAlert(self.uiConfig.txtEmailName.text(), \
+                    self.uiConfig.txtEmailTo.text(), \
+                    self.uiConfig.txtEmailSubject.text(), \
+                    self.uiConfig.comboBoxServidorEmail.currentText(), \
+                    self.uiConfig.txtEmailUser.text(), \
+                    self.camRunTime.frame, \
+                    'teste', \
+                    'testeRegion', \
+                    'testeCam'):
+                    
+                    log.debug('btnSaveEmail:: Teste email ok')
+                    
+                    msg.setText("Teste de Email Ok - Cheque seu email para confirmar se recebeu este alerta")
+                    msg.exec()
+                    
+            
                     self.camRunTime.configEmailStatus = True        
                     self.uiConfig.lblCam1.clear()
                     self.refreshStatusConfig()
@@ -504,7 +509,7 @@ class FormProc(QWidget):
                 self.camRunTime.configEmailStatus = False
                 msg.setText("Senha ou usuário inválidos para envio de Email ! Cuidado, os alarmes não serão enviados ! ")
                 msg.exec()
-                self.uiConfig.txtUrlRstp.setFocus()
+                
                 
                 
                     
@@ -567,6 +572,7 @@ class FormProc(QWidget):
         msg.setIcon(QMessageBox.Information)
         msg.setWindowTitle("Campo em branco")
         msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        #print('ref_point_polygon: {:d}'.format(len(self.camRunTime.ref_point_polygon)))
         #global ref_point_polygon, portaoVirtualSelecionado, cropPolygon
 
         #checando campos em branco
@@ -583,29 +589,30 @@ class FormProc(QWidget):
             self.uiConfig.txtThreshold.setFocus()
             statusFields = False
             
-        elif int(self.uiConfig.txtThreshold.text()) < 61:
+        elif float(self.uiConfig.txtThreshold.text()) < 61:
             msg.setText("Cuidado, valores abaixo de 60% podem causar alarmes falso positivos ! Utilize valores baixos em ambientes com pouca visibilidade/luminosidade apenas")
             msg.exec()
             self.uiConfig.txtThreshold.setFocus()
             
             
-        elif int(self.uiConfig.txtThreshold.text()) > 74:
+        elif float(self.uiConfig.txtThreshold.text()) > 74:
             msg.setText("Cuidado, valores acima de 75% podem dificultar a detecção de pessoas ou carros! Utilize valores altos quando a imagem estiver com boa visibilidade/luminosidade")
             msg.exec()
             self.uiConfig.txtThreshold.setFocus()
-            
 
         elif len(self.uiConfig.txtNameAlarm.text()) == 0:
             msg.setText("Campo 'Nome do Alarme' em branco")
             msg.exec()
             self.uiConfig.txtNameAlarm.setFocus()
             statusFields = False
-
-        elif len(self.camRunTime.ref_point_polygon) == 0 and not self.statusConfig.checkNameRegion(self.uiConfig.txtRegionName.text()):
-            msg.setText("Região não selecionada! manter tecla CTRL pressionada até selecionar todos os pontos desejados")
+            
+        elif len(self.camRunTime.ref_point_polygon) < 3:
+            msg.setText("Região não selecionada ! Através da aba ""Câmeras"" clique com o mouse até formar uma região de interesse  ")
             msg.exec()
             self.camRunTime.portaoVirtualSelecionado = False
-
+            statusFields = False
+        
+        #elif len(self.camRunTime.ref_point_polygon) >= 3 and not self.statusConfig.checkNameRegion(self.uiConfig.txtRegionName.text()):
 
         points = []
 
@@ -1538,6 +1545,11 @@ class FormProc(QWidget):
         self.uiConfig.txtEmailUser.setText(self.statusConfig.data["emailConfig"].get('user'))
 
         passwd = self.statusConfig.data["emailConfig"].get('password')
+        
+        if self.statusConfig.data["emailConfig"].get('servidorEmail') == 'Gmail':
+            self.uiConfig.comboBoxServidorEmail.setCurrentIndex(0)
+        else:
+            self.uiConfig.comboBoxServidorEmail.setCurrentIndex(1)
         
         if len(passwd) > 0:
             passwdEmail = utils.decrypt(passwd) 
