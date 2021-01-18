@@ -9,6 +9,8 @@ import logging as log
 import secrets
 import psutil
 from inferenceCore import *
+import winshell
+from win32com.client import Dispatch
 
 
 from checkLicence.sendingData import checkLoginPv 
@@ -40,8 +42,6 @@ class FormLogin(QDialog):
 
         self.statusConfig = statusConfigP
         self.camRunTime = camRunTimeP
-        
-        
 
         log.debug('initGuiLogin:: dataLogin: ' + self.statusConfig.dataLogin.get('user'))
 
@@ -66,6 +66,7 @@ class FormLogin(QDialog):
         self.uiLogin.checkBoxSalvarLogin.stateChanged.connect(self.checkBoxSalvarLogin)
         self.uiLogin.checkBoxLoginAutomatico.stateChanged.connect(self.checkBoxLoginAutomatico)
         self.uiLogin.checkBoxLoginAutoStart.stateChanged.connect(self.checkBoxLoginAutoStart)
+        self.uiLogin.checkBoxAtalhoDesktop.stateChanged.connect(self.checkBoxAtalhoDesktop)
         
         self.uiLogin.btnAlterarSenha.clicked.connect(self.btnAlterarSenha)
         
@@ -83,12 +84,20 @@ class FormLogin(QDialog):
 
     def checkBoxLoginAutoStart(self, state):
       
+        
+        
+        #criando o atalho
+        #desktop = winshell.desktop()
+        
+
 
         if self.camRunTime.OS_PLATFORM == 'windows':
             ATALHO_PATH = 'PortaoVirtual.lnk'
             USER_NAME = getpass.getuser()       
             ROOT_PATH = os.path.splitdrive(os.environ['WINDIR'])[0]    
             AUTO_START_PATH = ROOT_PATH + '/Users/' + USER_NAME + '/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup' 
+
+            
            
         
         if state == 0:
@@ -107,8 +116,49 @@ class FormLogin(QDialog):
             self.statusConfig.setLoginAutoStart('True')  
             
             if not os.path.exists(AUTO_START_PATH + '/' + ATALHO_PATH):              
-                shutil.copy2(ATALHO_PATH, AUTO_START_PATH) # complete target filename given
+                
+                path = os.path.join(AUTO_START_PATH, "PortaoVirtual.lnk")
+                target = os.getcwd() + '/' + 'pv.exe'
+                wDir = os.getcwd()
+                #icon = r"P:\Media\Media Player Classic\mplayerc.exe"
+                shell = Dispatch('WScript.Shell')
+                shortcut = shell.CreateShortCut(path)
+                shortcut.Targetpath = target
+                shortcut.WorkingDirectory = wDir
+                #shortcut.IconLocation = icon
+                shortcut.save()
+                print('AUTO_START_PATH: {}'.format(AUTO_START_PATH))
+                #shutil.copy2(ATALHO_PATH, AUTO_START_PATH) # complete target filename given
 
+    def checkBoxAtalhoDesktop(self, state):
+    
+        log.debug('checkBoxAtalhoDesktop:: Removendo atalho desktop')
+        desktop = winshell.desktop()
+        path = os.path.join(desktop, "PortaoVirtual.lnk")
+        
+        if state == 0:
+        
+            self.statusConfig.setAtalhoDesktop('False')
+            if os.path.exists(path):
+                os.remove(path)
+            else:
+                log.info("checkBoxAtalhoDesktop:: Atalho no Desktop já foi removido")
+            
+            self.statusConfig.setAtalhoDesktop('False')
+
+        elif (state == 1 or state == 2):                    
+            
+            target = os.getcwd() + '/' + 'pv.exe'
+            wDir = os.getcwd()            
+            shell = Dispatch('WScript.Shell')
+            shortcut = shell.CreateShortCut(path)
+            shortcut.Targetpath = target
+            shortcut.WorkingDirectory = wDir
+            #shortcut.IconLocation = icon
+            shortcut.save()                        
+            self.statusConfig.setAtalhoDesktop('True')
+            log.debug('checkBoxAtalhoDesktop:: Atalho desktop criado')
+    
     def checkBoxLoginAutomatico(self, state):
         #global LOGIN_AUTOMATICO, self.statusConfig        
         print('checkBoxLoginAutomatico')

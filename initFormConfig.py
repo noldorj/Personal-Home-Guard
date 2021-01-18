@@ -160,10 +160,12 @@ class FormProc(QWidget):
            
             self.uiConfig.checkBoxNoLimitsVideosAllTime.stateChanged.connect(self.checkBoxNoLimitsVideosAllTime)
             self.uiConfig.checkBoxNoLimitsVideosOnAlarmes.stateChanged.connect(self.checkBoxNoLimitsVideosOnAlarmes)
+            self.uiConfig.checkBoxDesativarAlarmes.stateChanged.connect(self.checkBoxDesativarAlarmes)
 
             self.uiConfig.comboRegions.activated['int'].connect(self.comboRegionsUpdate)
             self.uiConfig.comboAlarms.activated['int'].connect(self.comboAlarmsUpdate)
             self.uiConfig.comboBoxCamAtivas.activated['int'].connect(self.comboBoxCamAtivasStateChanged)
+
             self.uiConfig.comboBoxCamEncontradas.activated['int'].connect(self.comboBoxCamEncontradasStateChanged)
             self.uiConfig.btnSaveAlarm.clicked.connect(self.btnSaveAlarm)
             self.uiConfig.btnSaveRegion.clicked.connect(self.btnSaveRegion)
@@ -227,7 +229,7 @@ class FormProc(QWidget):
                 self.uiConfig.thread.webCamWarning.connect(self.webCamWarning)
                 self.uiConfig.thread.camEmptyWarning.connect(self.camEmptyWarning)
                 #self.uiConfig.thread.change_pixmap_signal.connect(self.checkStorage)
-                self.uiConfig.thread.storageFull.connect(self.storageFull)
+                #self.uiConfig.thread.storageFull.connect(self.storageFull)
                 
                 # start the thread
                 self.uiConfig.thread.start()
@@ -236,6 +238,7 @@ class FormProc(QWidget):
                 self.threadStorage = QtCore.QThread()
                 self.threadStorage = CheckStorage(self.camRunTime)
                 self.threadStorage.updateStorageInfo.connect(self.checkStorage)
+                self.threadStorage.warningHDCheio.connect(self.warningHDCheio)
                 self.threadStorage.start()
                                                             
                 utils.initWatchDog()                
@@ -275,6 +278,18 @@ class FormProc(QWidget):
     def camEmptyWarning(self):
         self.uiConfig.lblCam1.setText('Configura sua câmera ou webcam para iniciar o Portão Virtual !')
         self.uiConfig.lblInitStatus.setText('Configura sua câmera ou webcam para iniciar o Portão Virtual !')
+    
+    @QtCore.pyqtSlot()
+    def warningHDCheio(self):
+        log.debug('warningHDCheio::')
+        self.uiConfig.lblCam1.setText('Seu HD está cheio ! Libere mais espaço antes de configurar e começar a utilizar o Portão Virtual!')
+        self.uiConfig.lblInitStatus.setText('Seu HD está cheio ! Libere mais espaço antes de configurar e começar a utilizar o Portão Virtual!')
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setWindowTitle("HD sem espaço !")
+        msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        msg.setText("Seu HD está cheio ! Libere mais espaço antes de configurar e começar a utilizar o Portão Virtual!")
+        msg.exec()
     
     
     @QtCore.pyqtSlot()
@@ -445,20 +460,24 @@ class FormProc(QWidget):
             statusFields = False
 
 
-        elif  self.uiConfig.checkBoxVideoRecordingOnAlarmes.isChecked() and len(self.uiConfig.txtDirRecordingOnAlarmes.text()) ==  0:
+        elif self.uiConfig.checkBoxVideoRecordingOnAlarmes.isChecked() and len(self.uiConfig.txtDirRecordingOnAlarmes.text()) ==  0:
             msg.setText("Campo 'Diretório de gravação de Alarmes' em branco")
             msg.exec()
             self.uiConfig.txtDirRecordingOnAlarmes.setFocus()
             statusFields = False
 
-
-
-        elif  self.uiConfig.checkBoxWebCam.isChecked() and len(self.uiConfig.txtUrlRstp.text()) > 0:
+        elif self.uiConfig.checkBoxWebCam.isChecked() and len(self.uiConfig.txtUrlRstp.text()) > 0:
             msg.setText("Escolha somente 'Capturar da Webcam' ou 'Câmera RSTP'")
             msg.exec()
             self.uiConfig.txtUrlRstp.setFocus()
             self.camRunTime.statusFields = False
-
+            
+        elif self.camRunTime.camEmpty:
+            log.debug('initFormConfig::btnSaveEmail Aviso efetuado de configuracao da camera primeiro antes de teste de Email')
+            self.uiConfig.lblStatus.setText('Para efetuar o teste de email, você precisa ter uma câmera configurada corretamente')
+            msg.setText("Configure sua câmera primeiro !")
+            msg.exec()                
+            statusFields = False
 
         if statusFields:
             self.camRunTime.camSource = "webcam" if self.uiConfig.checkBoxWebCam.isChecked() else self.uiConfig.txtUrlRstp.text()
@@ -481,7 +500,8 @@ class FormProc(QWidget):
                                   self.camRunTime.camSource, 
                                   self.uiConfig.txtAvisoUtilizacaoHD.text())
             
-            log.debug('initFormConfig:: servidorEmail: {}'.format(self.uiConfig.comboBoxServidorEmail.currentText()))
+            log.debug('initFormConfig:: servidorEmail: {}'.format(self.uiConfig.comboBoxServidorEmail.currentText()))            
+            
             if sendMailAlert(self.uiConfig.txtEmailName.text(), \
                     self.uiConfig.txtEmailTo.text(), \
                     self.uiConfig.txtEmailSubject.text(), \
@@ -573,7 +593,7 @@ class FormProc(QWidget):
         msg.setWindowTitle("Campo em branco")
         msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
         #print('ref_point_polygon: {:d}'.format(len(self.camRunTime.ref_point_polygon)))
-        #global ref_point_polygon, portaoVirtualSelecionado, cropPolygon
+        
 
         #checando campos em branco
 
@@ -611,6 +631,12 @@ class FormProc(QWidget):
             msg.exec()
             self.camRunTime.portaoVirtualSelecionado = False
             statusFields = False
+           
+        elif self.camRunTime.camEmpty:
+            msg.setText("Configure sua câmera primeiro !")
+            msg.exec()
+            self.camRunTime.portaoVirtualSelecionado = False
+            statusFields = False
         
         #elif len(self.camRunTime.ref_point_polygon) >= 3 and not self.statusConfig.checkNameRegion(self.uiConfig.txtRegionName.text()):
 
@@ -633,9 +659,9 @@ class FormProc(QWidget):
                     }]
 
         objectType = {'person':'True' if self.uiConfig.checkPerson.isChecked() else 'False',
-                      'car':'True' if self.uiConfig.checkCar.isChecked() else 'False',
-                      'bike':'True' if self.uiConfig.checkBike.isChecked() else 'False',
-                      'dog':'True' if self.uiConfig.checkDog.isChecked() else 'False'}
+                      'car':'True' if self.uiConfig.checkCar.isChecked() else 'False'}
+                      #'bike':'True' if self.uiConfig.checkBike.isChecked() else 'False',
+                      #'dog':'True' if self.uiConfig.checkDog.isChecked() else 'False'}
 
 
         if statusFields:
@@ -1289,7 +1315,21 @@ class FormProc(QWidget):
             self.refreshStatusConfig()             
             self.camRunTime.init()             
             
-
+    def checkBoxDesativarAlarmes(self, state):
+        
+        log.debug('::checkBoxPararAlarmes')
+        
+        if state == 0:            
+            log.info('checkBoxPararAlarmes desligado')
+            self.statusConfig.setDesativarAlarmes('False')
+            
+        elif (state == 1 or state == 2):            
+            log.info('checkBoxPararAlarmes ligado')
+            self.statusConfig.setDesativarAlarmes('True')
+            
+    
+    
+    
     def checkBoxDesabilitarLoginAutomatico(self, state):
         #global LOGIN_AUTOMATICO        
         
@@ -1435,8 +1475,8 @@ class FormProc(QWidget):
                 self.uiConfig.txtThreshold.setText(str(r.get('prob_threshold')))            
                 self.uiConfig.checkPerson.setCheckState(r.get('objectType').get('person')=="True")
                 self.uiConfig.checkCar.setCheckState(r.get('objectType').get('car')=="True")
-                self.uiConfig.checkBike.setCheckState(r.get('objectType').get('bike')=="True")
-                self.uiConfig.checkDog.setCheckState(r.get('objectType').get('dog')=="True")
+                #self.uiConfig.checkBike.setCheckState(r.get('objectType').get('bike')=="True")
+                #self.uiConfig.checkDog.setCheckState(r.get('objectType').get('dog')=="True")
 
                 self.uiConfig.comboRegions.setCurrentIndex(i)
                 
@@ -1485,9 +1525,9 @@ class FormProc(QWidget):
         self.uiConfig.comboAlarms.clear()
         self.uiConfig.comboRegions.clear()        
         self.uiConfig.checkPerson.setCheckState(False)
-        self.uiConfig.checkBike.setCheckState(False)
+        #self.uiConfig.checkBike.setCheckState(False)
         self.uiConfig.checkCar.setCheckState(False)
-        self.uiConfig.checkDog.setCheckState(False)
+        #self.uiConfig.checkDog.setCheckState(False)
         self.uiConfig.checkMon.setCheckState(False)
         self.uiConfig.checkTue.setCheckState(False)
         self.uiConfig.checkWed.setCheckState(False)
@@ -1524,6 +1564,8 @@ class FormProc(QWidget):
         self.refreshStatusConfig()
 
         self.uiConfig.checkBoxDesabilitarLoginAutomatico.setCheckState( True if self.statusConfig.getLoginAutomatico() == "True" else False )
+        
+        self.uiConfig.checkBoxDesativarAlarmes.setCheckState( True if self.statusConfig.getDesativarAlarmes() == "True" else False )
 
         self.uiConfig.checkBoxVideoRecordingOnAlarmes.setCheckState( True if self.statusConfig.data.get("isRecordingOnAlarmes") == "True" else False )
 
@@ -1545,6 +1587,8 @@ class FormProc(QWidget):
         self.uiConfig.txtEmailUser.setText(self.statusConfig.data["emailConfig"].get('user'))
 
         passwd = self.statusConfig.data["emailConfig"].get('password')
+        
+        
         
         if self.statusConfig.data["emailConfig"].get('servidorEmail') == 'Gmail':
             self.uiConfig.comboBoxServidorEmail.setCurrentIndex(0)
@@ -1689,59 +1733,59 @@ class FormProc(QWidget):
             log.info("Erro de conexao com a Internet")
             #uiLogin.lblStatus.setText("Cheque sua conexão com a Internet por favor e tente mais tarde")
 
-    @pyqtSlot()
-    def storageFull(self):
-        log.debug('storageFull')
-        if not self.camRunTime.emailSentDiskFull:  
-            if self.camRunTime.eraseOldestFiles:
-                textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a deletar \
-                        os videos mais antigos, recomendamos que aumente seu espaço em disco \
-                        para não perder as gravações realizadas.'
+    # @pyqtSlot()
+    # def storageFull(self):
+        # log.debug('storageFull')
+        # if not self.camRunTime.emailSentDiskFull:  
+            # if self.camRunTime.eraseOldestFiles:
+                # textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a deletar \
+                        # os videos mais antigos, recomendamos que aumente seu espaço em disco \
+                        # para não perder as gravações realizadas.'
 
-                threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
-                threadEmailDiskFull.start()
-                self.camRunTime.emailSentDiskFull = True
-                log.info('Email de disco cheio enviado - apagando videos antigos ')
-                #avisar por email 1x a cada X tempo ? 
-            else:
-                textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a não \
-                        gravar videos novos, recomendamos que aumente seu espaço em disco \
-                        para poder novos videos quando ocorrer futuros alarmes.'
+                # threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
+                # threadEmailDiskFull.start()
+                # self.camRunTime.emailSentDiskFull = True
+                # log.info('Email de disco cheio enviado - apagando videos antigos ')
+                # #avisar por email 1x a cada X tempo ? 
+            # else:
+                # textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a não \
+                        # gravar videos novos, recomendamos que aumente seu espaço em disco \
+                        # para poder novos videos quando ocorrer futuros alarmes.'
 
-                threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
-                threadEmailDiskFull.start()
-                self.camRunTime.emailSentDiskFull = True
-                log.info('Email de disco cheio enviado - interromper novos videos')
+                # threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
+                # threadEmailDiskFull.start()
+                # self.camRunTime.emailSentDiskFull = True
+                # log.info('Email de disco cheio enviado - interromper novos videos')
 
 
-            # realmente apaga os videos mais antigos ? 
-            if self.camRunTime.eraseOldestFiles:
+            # # realmente apaga os videos mais antigos ? 
+            # if self.camRunTime.eraseOldestFiles:
 
-                if utils.freeDiskSpace(self.camRunTime.statusConfig.getDirVideosAllTime()) == False:
+                # if utils.freeDiskSpace(self.camRunTime.statusConfig.getDirVideosAllTime()) == False:
                 
-                    log.critical('Diretorios de "Videos 24hs" já está vazio')
-                    if not self.camRunTime.emailSentdirVideosAllTimeEmpty:
-                        textEmail = 'Mesmo apagando a pasta "Videos 24hs", seu HD continua cheio ! \n\n \ Nossa sugestão é que você libere mais espaço para pode gravar os "Videos 24hs"' 
+                    # log.critical('Diretorios de "Videos 24hs" já está vazio')
+                    # if not self.camRunTime.emailSentdirVideosAllTimeEmpty:
+                        # textEmail = 'Mesmo apagando a pasta "Videos 24hs", seu HD continua cheio ! \n\n \ Nossa sugestão é que você libere mais espaço para pode gravar os "Videos 24hs"' 
 
-                        threadEmailAllEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos 24hs" apagada - seu HD está cheio !',textEmail))
-                        threadEmailAllEmpty.start()
-                        self.camRunTime.emailSentdirVideosAllTimeEmpty = True
+                        # threadEmailAllEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos 24hs" apagada - seu HD está cheio !',textEmail))
+                        # threadEmailAllEmpty.start()
+                        # self.camRunTime.emailSentdirVideosAllTimeEmpty = True
 
             
-                #se ainda não tiver sido suficiente
-                if utils.isDiskFull(self.camRunTime.diskMinUsage):
-                    log.info('Apagando diretórios de Alarmes')
-                    #log.info('Dir: {}'.format(statusConfig.getDirVideosOnAlarmes()))
-                    if utils.freeDiskSpace(statusConfig.getDirVideosOnAlarmes()) == False:
-                        log.critical('Diretorios de "Vidos Alarme" já está vazio')
+                # #se ainda não tiver sido suficiente
+                # if utils.isDiskFull(self.camRunTime.diskMinUsage):
+                    # log.info('Apagando diretórios de Alarmes')
+                    # #log.info('Dir: {}'.format(statusConfig.getDirVideosOnAlarmes()))
+                    # if utils.freeDiskSpace(statusConfig.getDirVideosOnAlarmes()) == False:
+                        # log.critical('Diretorios de "Vidos Alarme" já está vazio')
 
-                        if not self.camRunTime.emailSentdirVideosOnAlarmesEmpty:
-                            textEmail = 'Mesmo apagando a pasta "Videos Alarme", seu HD continua cheio ! \n\n  \
-                                     Nossa sugestão é que você libere mais espaço para pode gravar os "Videos Alarme"' 
+                        # if not self.camRunTime.emailSentdirVideosOnAlarmesEmpty:
+                            # textEmail = 'Mesmo apagando a pasta "Videos Alarme", seu HD continua cheio ! \n\n  \
+                                     # Nossa sugestão é que você libere mais espaço para pode gravar os "Videos Alarme"' 
                                     
-                            threadEmailAlarmesEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos Alarmes" apagada - seu HD está cheio !',textEmail))
-                            threadEmailAlarmesEmpty.start()
-                            self.camRunTime.emailSentdirVideosOnAlarmesEmpty = True
+                            # threadEmailAlarmesEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos Alarmes" apagada - seu HD está cheio !',textEmail))
+                            # threadEmailAlarmesEmpty.start()
+                            # self.camRunTime.emailSentdirVideosOnAlarmesEmpty = True
     
     @pyqtSlot()
     def warningSessionLossFirst(self):
@@ -1771,6 +1815,10 @@ class FormProc(QWidget):
         self.camRunTime.diskUsageFree = utils.getDiskUsageFree() 
         self.camRunTime.diskUsageFreeGb = utils.getDiskUsageFreeGb()        
         self.camRunTime.numDaysRecording = utils.getNumDaysRecording()
+        
+        if self.camRunTime.isDiskFull:
+            self.uiConfig.lblInitStatus.setText('Seu HD está cheio, aumente seu espaço em disco !') 
+            
         
                             
    

@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>590</width>
-    <height>295</height>
+    <width>651</width>
+    <height>352</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,15 +24,15 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>581</width>
-     <height>251</height>
+     <width>611</width>
+     <height>291</height>
     </rect>
    </property>
    <property name="contextMenuPolicy">
     <enum>Qt::NoContextMenu</enum>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="tab_3">
     <attribute name="title">
@@ -120,10 +120,10 @@
     <widget class="QPushButton" name="btnEsqueciSenha">
      <property name="geometry">
       <rect>
-       <x>100</x>
+       <x>83</x>
        <y>179</y>
-       <width>141</width>
-       <height>31</height>
+       <width>171</width>
+       <height>41</height>
       </rect>
      </property>
      <property name="font">
@@ -138,9 +138,9 @@
     <widget class="QCheckBox" name="checkBoxSalvarLogin">
      <property name="geometry">
       <rect>
-       <x>320</x>
+       <x>310</x>
        <y>130</y>
-       <width>111</width>
+       <width>161</width>
        <height>23</height>
       </rect>
      </property>
@@ -151,9 +151,9 @@
     <widget class="QCheckBox" name="checkBoxLoginAutomatico">
      <property name="geometry">
       <rect>
-       <x>320</x>
+       <x>310</x>
        <y>160</y>
-       <width>151</width>
+       <width>201</width>
        <height>23</height>
       </rect>
      </property>
@@ -164,14 +164,27 @@
     <widget class="QCheckBox" name="checkBoxLoginAutoStart">
      <property name="geometry">
       <rect>
-       <x>320</x>
+       <x>310</x>
        <y>190</y>
-       <width>221</width>
+       <width>241</width>
        <height>23</height>
       </rect>
      </property>
      <property name="text">
       <string>Iniciar junto com o Windows</string>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="checkBoxAtalhoDesktop">
+     <property name="geometry">
+      <rect>
+       <x>310</x>
+       <y>220</y>
+       <width>261</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Criar atalho na Área de Trabalho</string>
      </property>
     </widget>
    </widget>
@@ -266,8 +279,8 @@
    <property name="geometry">
     <rect>
      <x>0</x>
-     <y>260</y>
-     <width>581</width>
+     <y>300</y>
+     <width>611</width>
      <height>31</height>
     </rect>
    </property>
@@ -279,6 +292,23 @@
    </property>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>txtEmail</tabstop>
+  <tabstop>txtPasswd</tabstop>
+  <tabstop>btnLogin</tabstop>
+  <tabstop>btnExit</tabstop>
+  <tabstop>checkBoxSalvarLogin</tabstop>
+  <tabstop>checkBoxLoginAutomatico</tabstop>
+  <tabstop>checkBoxLoginAutoStart</tabstop>
+  <tabstop>checkBoxAtalhoDesktop</tabstop>
+  <tabstop>btnEsqueciSenha</tabstop>
+  <tabstop>txtEmail_minhaConta</tabstop>
+  <tabstop>txtPasswd_minhaConta</tabstop>
+  <tabstop>txtNovaSenha</tabstop>
+  <tabstop>txtNovaSenha2</tabstop>
+  <tabstop>btnAlterarSenha</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

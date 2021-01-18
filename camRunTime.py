@@ -21,6 +21,7 @@ class CamRunTime():
 
     camRunTimeId = 0 
     configEmailStatus = False
+    desativarAlarmes = False
     changeIpCam = False
     OS_PLATFORM = 'windows'
     #variaveis globais

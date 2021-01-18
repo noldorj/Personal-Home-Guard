@@ -30,7 +30,7 @@ def sendMailnewUser(to, port, smtp, userPassword):
 
     body = ('Obrigado pela sua compra do software Portao Virtual ! \n\n Dados do seu login: \
         \n\n Usuário: {} \n Senha: {} . \n\n Recomendamos que você altere a senha o quanto antes. \
-    \n Link para download: https://drive.google.com/file/d/1elpHYxlDHgqxZSJGNpOUcATNY7P6DkgT/view?usp=sharing \n \
+    \n Link para download: https://drive.google.com/drive/folders/1KJqqV3464PX3yCBw_iS958xzD0Rq9mg0?usp=sharing \n \
     \n\n Atenciosamente, \n\n Equipe Portao Virtual \n\n www.portaovirtual.com.br ').format(to, userPassword)
 
     message = 'Subject: {} \n\n {}'.format(subject, body)

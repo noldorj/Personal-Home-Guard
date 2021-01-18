@@ -22,6 +22,8 @@ Server: H264DVR 1.0
 Cseq: 2
 WWW-Authenticate: Digest realm="9656ebf1fcae1122",nonce="gzl48j107xw18P953rp5bSAlK8SMK8Av"
 
+contato@portaovirtual.com.br
+ujluwhekbucclvap
 
 
 MKLDNNPlugin.dll

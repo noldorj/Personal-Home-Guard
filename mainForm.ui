@@ -190,8 +190,8 @@
        <widget class="QPushButton" name="btnInitAddRegiao">
         <property name="geometry">
          <rect>
-          <x>3</x>
-          <y>14</y>
+          <x>10</x>
+          <y>20</y>
           <width>111</width>
           <height>41</height>
          </rect>
@@ -233,7 +233,7 @@
           <x>10</x>
           <y>60</y>
           <width>291</width>
-          <height>197</height>
+          <height>111</height>
          </rect>
         </property>
         <layout class="QFormLayout" name="formRegion">
@@ -254,20 +254,13 @@
            </property>
           </widget>
          </item>
-         <item row="6" column="1">
-          <widget class="QCheckBox" name="checkDog">
+         <item row="3" column="1">
+          <widget class="QCheckBox" name="checkPerson">
            <property name="text">
-            <string>Cachorro</string>
+            <string>Pessoa</string>
            </property>
-           <property name="tristate">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="1">
-          <widget class="QCheckBox" name="checkBike">
-           <property name="text">
-            <string>Moto</string>
+           <property name="autoRepeat">
+            <bool>true</bool>
            </property>
            <property name="tristate">
             <bool>false</bool>
@@ -279,15 +272,8 @@
            <property name="text">
             <string>Carro</string>
            </property>
-           <property name="tristate">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="1">
-          <widget class="QCheckBox" name="checkPerson">
-           <property name="text">
-            <string>Pessoa</string>
+           <property name="autoRepeat">
+            <bool>true</bool>
            </property>
            <property name="tristate">
             <bool>false</bool>
@@ -300,7 +286,7 @@
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>280</y>
+          <y>180</y>
           <width>160</width>
           <height>41</height>
          </rect>
@@ -359,6 +345,9 @@
              <property name="text">
               <string>Seg</string>
              </property>
+             <property name="autoRepeat">
+              <bool>true</bool>
+             </property>
              <property name="tristate">
               <bool>false</bool>
              </property>
@@ -368,6 +357,9 @@
             <widget class="QCheckBox" name="checkFri">
              <property name="text">
               <string>Sex</string>
+             </property>
+             <property name="autoRepeat">
+              <bool>true</bool>
              </property>
              <property name="tristate">
               <bool>false</bool>
@@ -379,6 +371,9 @@
              <property name="text">
               <string>Ter</string>
              </property>
+             <property name="autoRepeat">
+              <bool>true</bool>
+             </property>
              <property name="tristate">
               <bool>false</bool>
              </property>
@@ -388,6 +383,9 @@
             <widget class="QCheckBox" name="checkSat">
              <property name="text">
               <string>Sab</string>
+             </property>
+             <property name="autoRepeat">
+              <bool>true</bool>
              </property>
              <property name="tristate">
               <bool>false</bool>
@@ -399,6 +397,9 @@
              <property name="text">
               <string>Qua</string>
              </property>
+             <property name="autoRepeat">
+              <bool>true</bool>
+             </property>
              <property name="tristate">
               <bool>false</bool>
              </property>
@@ -409,12 +410,18 @@
              <property name="text">
               <string>Dom</string>
              </property>
+             <property name="autoRepeat">
+              <bool>true</bool>
+             </property>
             </widget>
            </item>
            <item row="9" column="0">
             <widget class="QCheckBox" name="checkThur">
              <property name="text">
               <string>Qui</string>
+             </property>
+             <property name="autoRepeat">
+              <bool>true</bool>
              </property>
              <property name="tristate">
               <bool>false</bool>
@@ -571,6 +578,9 @@
            <property name="checked">
             <bool>false</bool>
            </property>
+           <property name="autoRepeat">
+            <bool>true</bool>
+           </property>
            <property name="tristate">
             <bool>false</bool>
            </property>
@@ -580,6 +590,9 @@
           <widget class="QCheckBox" name="checkAlertSound">
            <property name="text">
             <string>Alerta Sonoro</string>
+           </property>
+           <property name="autoRepeat">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -672,8 +685,8 @@
        <widget class="QWidget" name="horizontalLayoutWidget_22">
         <property name="geometry">
          <rect>
-          <x>0</x>
-          <y>399</y>
+          <x>10</x>
+          <y>230</y>
           <width>391</width>
           <height>41</height>
          </rect>
@@ -905,6 +918,16 @@
           <widget class="QLineEdit" name="txtEmailUser">
            <property name="statusTip">
             <string extracomment="usuario@provedor.com"/>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="1">
+          <widget class="QCheckBox" name="checkBoxDesativarAlarmes">
+           <property name="text">
+            <string>Desativar envio de alarmes</string>
+           </property>
+           <property name="autoRepeat">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -1572,14 +1595,11 @@
   </widget>
  </widget>
  <tabstops>
-  <tabstop>tabConfig</tabstop>
   <tabstop>btnInitAddRegiao</tabstop>
   <tabstop>btnNewRegion</tabstop>
   <tabstop>txtRegionName</tabstop>
   <tabstop>checkPerson</tabstop>
   <tabstop>checkCar</tabstop>
-  <tabstop>checkBike</tabstop>
-  <tabstop>checkDog</tabstop>
   <tabstop>txtThreshold</tabstop>
   <tabstop>txtNameAlarm</tabstop>
   <tabstop>checkTodosDias</tabstop>

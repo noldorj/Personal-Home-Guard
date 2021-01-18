@@ -86,7 +86,7 @@ def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoO
     
     status = False
 
-    img_file = os.getcwd() + '/' + 'foto_alerta.jpg'
+    img_file = os.getcwd() + '/config/' + 'foto_alerta.jpg'
 
     try:
         cv.imwrite(img_file, frame)
@@ -109,6 +109,8 @@ def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoO
 
     data = utils.getDate()
     msg = MIMEMultipart()
+    
+    log.debug('sendMailAlert:: tipoObjetoDetectado antes: {}'.format(tipoObjetoDetectado))
 
     if tipoObjetoDetectado == 'person':
         tipoObjetoDetectado = 'Pessoa'
@@ -121,6 +123,8 @@ def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoO
 
     elif tipoObjetoDetectado == 'car':
         tipoObjetoDetectado = 'Carro'
+        
+    log.debug('sendMailAlert:: tipoObjetoDetectado depois: {}'.format(tipoObjetoDetectado))
     
        
     if tipoObjetoDetectado == 'teste':

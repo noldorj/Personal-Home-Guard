@@ -281,7 +281,9 @@ def freeDiskSpace(dirVideo):
      #dirVideo = 'videos_all_time'     
      
      
+     
      dirVideo = os.getcwd() + '/' + dirVideo       
+     print('dirVideo: {}'.format(dirVideo))
      
      dirListFull = glob(dirVideo + '/*')
      #print('dirListFull : {}'.format(dirListFull))    
@@ -300,9 +302,10 @@ def freeDiskSpace(dirVideo):
 
      
      
-     # print('dirList: {}'.format(dirList))
-     # print('yearList: {}'.format(yearList))
-     # print('monthList: {}'.format(monthList))
+     
+     print('dirList: {}'.format(dirList))
+     print('yearList: {}'.format(yearList))
+     print('monthList: {}'.format(monthList))
      
      if (len(dirList) != 0):
 
@@ -516,6 +519,7 @@ class StatusConfig:
             "openVinoPluginDir" : "/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64",
             "openVinoModelBin"  : "./computer_vision_sdk/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP32/person-vehicle-bike-detection-crossroad-0078.bin",
             "openVinoDevice"    : "CPU",
+            "desativarAlarmes"  : "False",
             "emailConfig"    : [ {'port':'587', 
                               'smtp':'smtp.gmail.com',
                               'user':'user@user.com', 
@@ -577,6 +581,9 @@ class StatusConfig:
     def getEmailConfig(self):
         return self.data["emailConfig"]
 
+    def getDesativarAlarmes(self):
+        return self.data["desativarAlarmes"]
+    
     def getLoginAutomatico(self):
         return self.dataLogin["loginAutomatico"]
 
@@ -675,11 +682,21 @@ class StatusConfig:
 
         self.dataLogin['loginAutomatico'] = status 
         self.saveConfigLogin()
+        
+    def setAtalhoDesktop(self, status):
+        self.dataLogin['atalhoDesktop'] = status 
+        self.saveConfigLogin()
     
     def setLoginAutoStart(self, status):
 
         self.dataLogin['autoStart'] = status 
         self.saveConfigLogin()
+    
+    def setDesativarAlarmes(self, status):
+
+        self.data['desativarAlarmes'] = status 
+        self.saveConfigFile()
+    
     
     def setLoginAutomatico(self, status):
 

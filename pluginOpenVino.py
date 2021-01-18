@@ -56,6 +56,9 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
     #log.critical('pluginSO: {}'.format(plugin_SO))
 
     plugin = None
+    
+    
+    
 
     try: 
 
@@ -76,8 +79,12 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
     
         try: 
             log.info('CPU_Extension: "{}" sendo carregado...'.format(cpu_extension))
-            #print('CPU_Extension: "{}" sendo carregado...'.format(cpu_extension))
-            plugin.add_cpu_extension(plugin_dir + '/' + cpu_extension)
+            #print('CPU_Extension: "{}" sendo carregado...'.format(cpu_extension))            
+            
+            if plugin_dir == "":
+                plugin.add_cpu_extension(cpu_extension)
+            else:
+                plugin.add_cpu_extension(plugin_dir + '/' + cpu_extension)
 
         except Exception as e:
 
@@ -87,9 +94,16 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
             try:
                 log.info('Tentando AVX2 plugin')
                 if plugin_SO == 'linux':
-                    plugin.add_cpu_extension(plugin_dir + '/' + 'libcpu_extension_avx2.so')
-                else:
-                    plugin.add_cpu_extension(plugin_dir + '/' + 'cpu_extension_avx2.dll')
+                
+                    if plugin_dir == "":
+                        plugin.add_cpu_extension('libcpu_extension_avx2.so')
+                    else:
+                        plugin.add_cpu_extension(plugin_dir + '/' + 'libcpu_extension_avx2.so')
+                else:                
+                    if plugin_dir == "":
+                        plugin.add_cpu_extension('cpu_extension_avx2.dll')
+                    else:
+                        plugin.add_cpu_extension(plugin_dir + '/' + 'cpu_extension_avx2.dll')
 
             except Exception as e:
             
@@ -99,9 +113,15 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
                 try:
                     if plugin_SO == 'linux':
                         log.info('Tentando AVX-SSE4 plugin')
-                        plugin.add_cpu_extension(plugin_dir + '/' + 'libcpu_extension_sse4.so')
+                        if plugin_dir == "":
+                            plugin.add_cpu_extension('libcpu_extension_sse4.so')
+                        else:
+                            plugin.add_cpu_extension(plugin_dir + '/' + 'libcpu_extension_sse4.so')
                     else:
-                        plugin.add_cpu_extension(plugin_dir + '/' + 'cpu_extension_sse4.dll')
+                        if plugin_dir == "":
+                            plugin.add_cpu_extension('cpu_extension_sse4.dll')
+                        else:
+                            plugin.add_cpu_extension(plugin_dir + '/' + 'cpu_extension_sse4.dll')
 
                 except Exception as e:
                     log.error('cpu_extension usado: "libcpu_extension_sse4" ')
