@@ -146,6 +146,7 @@ class FormProc(QWidget):
             
             
             self.uiConfig.btnSaveEmail.clicked.connect(self.btnSaveEmail)
+            self.uiConfig.btnSaveConfigGravacao.clicked.connect(self.btnSaveConfigGravacao)            
             self.uiConfig.btnSaveStorage.clicked.connect(self.btnSaveStorage)
             
 
@@ -404,7 +405,50 @@ class FormProc(QWidget):
         self.comboAlarmsUpdate(0)
         
         
+    def btnSaveConfigGravacao(self):
+        log.debug('btnSaveEmail::')
+        #global self.uiConfig
 
+        statusFields = True 
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setWindowTitle("Campo em branco")
+        msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+
+        #checando campos em branco
+        if self.uiConfig.checkBoxVideoRecordingAllTime.isChecked() and len(self.uiConfig.txtDirRecordingAllTime.text()) ==  0:
+            msg.setText("Campo 'Diretório de gravação 24h' em branco")
+            msg.exec()
+            self.uiConfig.txtDirRecordingAllTime.setFocus()
+            statusFields = False
+
+        elif self.uiConfig.checkBoxVideoRecordingOnAlarmes.isChecked() and len(self.uiConfig.txtDirRecordingOnAlarmes.text()) ==  0:
+            msg.setText("Campo 'Diretório de gravação de Alarmes' em branco")
+            msg.exec()
+            self.uiConfig.txtDirRecordingOnAlarmes.setFocus()
+            statusFields = False
+
+        elif self.uiConfig.checkBoxWebCam.isChecked() and len(self.uiConfig.txtUrlRstp.text()) > 0:
+            msg.setText("Escolha somente 'Capturar da Webcam' ou 'Câmera RSTP'")
+            msg.exec()
+            self.uiConfig.txtUrlRstp.setFocus()
+            self.camRunTime.statusFields = False
+            
+        if statusFields:
+            self.camRunTime.camSource = "webcam" if self.uiConfig.checkBoxWebCam.isChecked() else self.uiConfig.txtUrlRstp.text()
+            self.camRunTime.isRecordingAllTime = "True" if self.uiConfig.checkBoxVideoRecordingAllTime.isChecked() else "False"
+            self.camRunTime.isRecordingOnAlarmes = "True" if self.uiConfig.checkBoxVideoRecordingOnAlarmes.isChecked() else "False"
+            
+            
+            self.statusConfig.setConfigGravacao(self.camRunTime.isRecordingAllTime,
+                                  self.camRunTime.isRecordingOnAlarmes,
+                                  self.uiConfig.txtDirRecordingAllTime.text(),
+                                  self.uiConfig.txtDirRecordingOnAlarmes.text(),
+                                  self.camRunTime.camSource,
+                                  self.uiConfig.txtAvisoUtilizacaoHD.text())
+            
+            
+            self.camRunTime.init()
 
 
 
@@ -451,26 +495,6 @@ class FormProc(QWidget):
             msg.exec()
             self.uiConfig.txtEmailTo.setFocus()
             statusFields = False
-
-
-        elif  self.uiConfig.checkBoxVideoRecordingAllTime.isChecked() and len(self.uiConfig.txtDirRecordingAllTime.text()) ==  0:
-            msg.setText("Campo 'Diretório de gravação 24h' em branco")
-            msg.exec()
-            self.uiConfig.txtDirRecordingAllTime.setFocus()
-            statusFields = False
-
-
-        elif self.uiConfig.checkBoxVideoRecordingOnAlarmes.isChecked() and len(self.uiConfig.txtDirRecordingOnAlarmes.text()) ==  0:
-            msg.setText("Campo 'Diretório de gravação de Alarmes' em branco")
-            msg.exec()
-            self.uiConfig.txtDirRecordingOnAlarmes.setFocus()
-            statusFields = False
-
-        elif self.uiConfig.checkBoxWebCam.isChecked() and len(self.uiConfig.txtUrlRstp.text()) > 0:
-            msg.setText("Escolha somente 'Capturar da Webcam' ou 'Câmera RSTP'")
-            msg.exec()
-            self.uiConfig.txtUrlRstp.setFocus()
-            self.camRunTime.statusFields = False
             
         elif self.camRunTime.camEmpty:
             log.debug('initFormConfig::btnSaveEmail Aviso efetuado de configuracao da camera primeiro antes de teste de Email')
@@ -1726,6 +1750,13 @@ class FormProc(QWidget):
 
                     self.camRunTime.init_video = False
                     log.warning("Usuario invalido")
+                    self.statusConfig.setLoginAutomatico('False')
+                    msg = QMessageBox()
+                    msg.setIcon(QMessageBox.Information)
+                    msg.setWindowTitle("Login inválido")
+                    msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+                    msg.setText("Usuário ou senha inválido, o login automático foi desabilitado ! Por favor, reinicie o Portão Virtual novamente corrigindo sua senha ou usuário ! ")
+                    msg.exec()
                     #uiLogin.lblStatus.setText("Usuário ou senha inválida. Tente novamente")
 
         else:

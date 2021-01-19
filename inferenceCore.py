@@ -351,7 +351,7 @@ class InferenceCore(QThread):
                                                                                 if utils.checkInternetAccess():
 
                                                                                     
-                                                                                    if self.camRunTime.configEmailStatus and not self.camRuntime.desativarAlarmes:
+                                                                                    if self.camRunTime.configEmailStatus and not self.camRunTime.desativarAlarmes:
                                                                                         log.debug('inferenceCore:: Alerta enviado ID[' + str(objectID) + ']' + 'Tipo: ' + str(typeObject))
                                                                                         threadEmail = Thread(target=sendMailAlert, args=(self.camRunTime.emailConfig['name'],
                                                                                                                                            self.camRunTime.emailConfig['to'],
@@ -431,7 +431,7 @@ class InferenceCore(QThread):
                                                 if utils.checkInternetAccess():
 
                                                     
-                                                    if self.camRunTime.configEmailStatus and not self.camRuntime.desativarAlarmes:
+                                                    if self.camRunTime.configEmailStatus and not self.camRunTime.desativarAlarmes:
                                                         log.debug('inferenceCore:: Alerta enviado ID[' + str(objectID) + ']')
                                                         threadEmail = Thread(target=sendMailAlert, args=(self.camRunTime.emailConfig['name'],
                                                                                                            self.camRunTime.emailConfig['to'],
@@ -586,7 +586,7 @@ class InferenceCore(QThread):
                             #print('Conexao com a Internet estabelecida')
                             self.camRunTime.STOP_ALL = False
 
-                            if self.camRunTime.configEmailStatus and not self.camRuntime.desativarAlarmes:
+                            if self.camRunTime.configEmailStatus and not self.camRunTime.desativarAlarmes:
                                 while (len(self.camRunTime.pilhaAlertasNaoEnviados) > 0) and (self.camRunTime.STOP_ALL == False):  
                                     #enviando alerta de emails anteriores
                                     log.debug('inferenceCore:: Enviando alerta de emails anteriores')

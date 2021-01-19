@@ -231,26 +231,62 @@ def getDiskUsedGb():
 def getNumDaysRecording():
     
     #cada dia consome +- 24 GB
-    total, used, free = shutil.disk_usage("/")
+    statusConfig = StatusConfig()    
+    particao = statusConfig.getDirVideosAllTime()
+    particao = particao.split(':')
+    if len(particao) > 1:
+        particao = particao[0] + ':/'
+    else:
+        particao = '/'
+        
+    total, used, free = shutil.disk_usage(particao)
     days = (free // (2**30)) / 24
     return int(days)
 
 
 def getDiskUsageFreeGb():
-    total, used, free = shutil.disk_usage("/")
+
+    statusConfig = StatusConfig()    
+    particao = statusConfig.getDirVideosAllTime()
+    particao = particao.split(':')
+    if len(particao) > 1:
+        particao = particao[0] + ':/'
+    else:
+        particao = '/'
+
+    total, used, free = shutil.disk_usage(particao)
     return (free / (2**30))
 
 
 def getDiskUsageFree():
 
-    total, used, free = shutil.disk_usage("/")
+    statusConfig = StatusConfig()    
+    particao = statusConfig.getDirVideosAllTime()
+    particao = particao.split(':')
+    if len(particao) > 1:
+        particao = particao[0] + ':/'
+    else:
+        particao = '/'
+    
+    log.debug('getDiskUsageFree:: particao: {}'.format(particao))    
+    total, used, free = shutil.disk_usage(particao)
+    #total, used, free = shutil.disk_usage("/")
     return int((free / total)*100)
 
 
 def isDiskFull(diskMinUsage):
     
+    statusConfig = StatusConfig()    
+    particao = statusConfig.getDirVideosAllTime()
+    particao = particao.split(':')
+    if len(particao) > 1:
+        particao = particao[0] + ':/'
+    else:
+        particao = '/'
+        
+        
     isFull = False 
-    total, used, free = shutil.disk_usage("/")
+    total, used, free = shutil.disk_usage(particao)
 
     if ((free / total)*100) <= float(diskMinUsage):
        
@@ -277,12 +313,12 @@ def freeDiskSpace(dirVideo):
      dayList = []
      
      totalLiberado = 0.0
-      
-     #dirVideo = 'videos_all_time'     
      
+     particao = dirVideo.split(':')
      
+     if len(particao) == 1:        
+        dirVideo = os.getcwd() + '/' + dirVideo       
      
-     dirVideo = os.getcwd() + '/' + dirVideo       
      print('dirVideo: {}'.format(dirVideo))
      
      dirListFull = glob(dirVideo + '/*')
@@ -404,9 +440,7 @@ def freeDiskSpace(dirVideo):
      #log.info('Total liberado: {:f}'.format(totalLiberado))
 
 
-def getDate():
-
-    
+def getDate():    
     
     #print (datetime.now().strftime('%a-%b-%d-%H:%M:%S-%Y'))
     
@@ -474,14 +508,14 @@ def createDirectory(dirVideos):
     except OSError as ex:
 
         if ex.errno == 17:
-            log.debug('Diretorio ' + current_dir + month_dir + today_dir + ' existente.')
+            log.debug('createDirectory:: Diretorio ' + current_dir + month_dir + today_dir + ' existente.')
             status = True
         else:
-            log.error('Erro ao criar o diretorio: ' + current_dir + month_dir + today_dir)
+            log.error('createDirectory:: Erro ao criar o diretorio: ' + current_dir + month_dir + today_dir)
             log.error(ex.__str__())
 
     else:
-        log.debug("Diretorio " + current_dir + month_dir + today_dir + " criado com sucesso")
+        log.debug("createDirectory:: Diretorio " + current_dir + month_dir + today_dir + " criado com sucesso")
         status = True
 
     dir_temp = current_dir + month_dir + today_dir
@@ -703,6 +737,16 @@ class StatusConfig:
         self.dataLogin['loginAutomatico'] = status 
         self.saveConfigLogin()
 
+    def setConfigGravacao(self, isRecordingAllTime, isRecordingOnAlarmes, dirVideosAllTime, dirVideosOnAlarmes, camSource, diskMinUsage):
+        self.data["isRecordingAllTime"] = isRecordingAllTime
+        self.data["isRecordingOnAlarmes"] = isRecordingOnAlarmes
+        self.data["dirVideosAllTime"] = dirVideosAllTime
+        self.data["dirVideosOnAlarmes"] = dirVideosOnAlarmes
+        self.data["camSource"] = camSource        
+        self.data["diskMinUsage"] = diskMinUsage
+        
+        self.saveConfigFile()
+    
     def setRtspConfig(self, camSource):
         self.data["camSource"] = camSource
 
