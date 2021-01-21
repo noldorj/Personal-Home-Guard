@@ -8,7 +8,9 @@ from PyQt5.QtWidgets import QWidget
 #from initFormConfig import FormProc
 from mainForm import *
 from formLogin import *
+from formTermos import *
 from initGuiLogin import *
+from initGuiTermo import *
 from objectTracking.pyimagesearch.centroidtracker import CentroidTracker
 from camRunTime import *
 from utilsCore import StatusConfig
@@ -96,29 +98,32 @@ class FormProc(QWidget):
         
         #print('else iniciando formConfig')
         
-        self.camRunTime.token = token
-        self.camRunTime.init()
+        self.camRunTime.token = token        
         self.statusConfig = utils.StatusConfig()
-        self.checkStorage()
         
-        
+        if self.statusConfig.getPrimeiroUso() == 'True':        
+            windowTermo = FormTermo()                                    
+            windowTermo.exec_()
+            
+            self.statusConfig = utils.StatusConfig()
+                        
+            if self.statusConfig.getPrimeiroUso() == 'True':
+                self._run_flag = False 
+                sys.exit()            
         
         
         
         
         if self.statusConfig.getLoginAutomatico() == 'True':
-            log.debug('Iniciando login automatico')
-            #print('Iniciando login automatico')
+            log.debug('Iniciando login automatico')            
             self.loginAutomatico()
             
             
         else:
         
             ## CHAMANDO TELA DE LOGIN ## 
-            #ui_Dialog = Ui_Dialog()                
-            windowLogin = FormLogin(self.camRunTime, self.statusConfig)            
-            #uiLogin.setupUi(windowLogin)                               
-            # #windowLogin.setBackStatusConfigCamRunTime.connect(self.updateStatusConfigCamRunTime)                            
+            
+            windowLogin = FormLogin(self.camRunTime, self.statusConfig)                        
             windowLogin.updateStatusLogin.connect(updateStatusLogin)               
             windowLogin.exec_()
 
@@ -132,12 +137,15 @@ class FormProc(QWidget):
         
         #if self.camRunTime.statusLicence and not self.camRunTime.errorRtsp: 
         if not loginStatus:
-            log.debug('loginStatus saindo...')
+            log.debug('initFormConfig loginStatus saindo...')
             utils.stopWatchDog() 
             self._run_flag = False 
             sys.exit()            
             
         else: 
+            
+            self.camRunTime.init()
+            self.checkStorage()
             
             #slots            
             tracker = MouseTracker(self.uiConfig.lblCam1)
@@ -406,7 +414,7 @@ class FormProc(QWidget):
         
         
     def btnSaveConfigGravacao(self):
-        log.debug('btnSaveEmail::')
+        log.debug('btnSaveConfigGravacao::')
         #global self.uiConfig
 
         statusFields = True 
@@ -449,6 +457,15 @@ class FormProc(QWidget):
             
             
             self.camRunTime.init()
+            
+            self.uiConfig.progressBarDisponivelHD.setValue(utils.getDiskUsageFree())
+            self.uiConfig.txtAvailableHD.setText('{:03.2f}'.format((utils.getDiskUsageFreeGb())))
+            self.uiConfig.txtDirUsedVideosAllTime.setText('{:03.2f}'.format(utils.getDirUsedSpace(self.statusConfig.data["dirVideosAllTime"])))
+            self.uiConfig.txtDirUsedVideosOnAlarmes.setText('{:03.2f}'.format(utils.getDirUsedSpace(self.statusConfig.data["dirVideosOnAlarmes"])))
+
+            self.uiConfig.txtDiasEstimado.setText('{:d}'.format((utils.getNumDaysRecording())) + ' dias' )        
+            
+            
 
 
 
@@ -650,7 +667,7 @@ class FormProc(QWidget):
             self.uiConfig.txtNameAlarm.setFocus()
             statusFields = False
             
-        elif len(self.camRunTime.ref_point_polygon) < 3:
+        elif len(self.camRunTime.ref_point_polygon) < 3 and not self.statusConfig.checkNameRegion(self.uiConfig.txtRegionName.text()):
             msg.setText("Região não selecionada ! Através da aba ""Câmeras"" clique com o mouse até formar uma região de interesse  ")
             msg.exec()
             self.camRunTime.portaoVirtualSelecionado = False
@@ -690,7 +707,8 @@ class FormProc(QWidget):
 
         if statusFields:
 
-            if len(self.camRunTime.ref_point_polygon) == 0 and self.statusConfig.checkNameRegion(self.uiConfig.txtRegionName.text()):
+            if self.statusConfig.checkNameRegion(self.uiConfig.txtRegionName.text()):
+            
                 points = self.statusConfig.getRegion(self.uiConfig.txtRegionName.text()).get('pointsPolygon')
 
             else:
@@ -1846,6 +1864,16 @@ class FormProc(QWidget):
         self.camRunTime.diskUsageFree = utils.getDiskUsageFree() 
         self.camRunTime.diskUsageFreeGb = utils.getDiskUsageFreeGb()        
         self.camRunTime.numDaysRecording = utils.getNumDaysRecording()
+        
+        
+        self.uiConfig.progressBarDisponivelHD.setValue(utils.getDiskUsageFree())
+        self.uiConfig.txtAvailableHD.setText('{:03.2f}'.format((utils.getDiskUsageFreeGb())))
+        self.uiConfig.txtDirUsedVideosAllTime.setText('{:03.2f}'.format(utils.getDirUsedSpace(self.statusConfig.data["dirVideosAllTime"])))
+        self.uiConfig.txtDirUsedVideosOnAlarmes.setText('{:03.2f}'.format(utils.getDirUsedSpace(self.statusConfig.data["dirVideosOnAlarmes"])))
+
+        self.uiConfig.txtDiasEstimado.setText('{:d}'.format((utils.getNumDaysRecording())) + ' dias' )        
+        
+        
         
         if self.camRunTime.isDiskFull:
             self.uiConfig.lblInitStatus.setText('Seu HD está cheio, aumente seu espaço em disco !') 

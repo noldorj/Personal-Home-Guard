@@ -53,7 +53,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>4</number>
       </property>
       <property name="tabsClosable">
        <bool>false</bool>
@@ -730,6 +730,13 @@
          </rect>
         </property>
         <layout class="QGridLayout" name="gridLayout_9">
+         <item row="7" column="1">
+          <widget class="QPushButton" name="btnSaveConfigGravacao">
+           <property name="text">
+            <string>Salvar Configurações</string>
+           </property>
+          </widget>
+         </item>
          <item row="2" column="0">
           <widget class="QCheckBox" name="checkBoxVideoRecordingOnAlarmes">
            <property name="sizePolicy">
@@ -788,9 +795,6 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="1">
-          <widget class="QLineEdit" name="txtDirRecordingAllTime"/>
-         </item>
          <item row="11" column="7">
           <widget class="QLabel" name="label_104">
            <property name="text">
@@ -843,7 +847,7 @@
            </property>
            <property name="sizeHint" stdset="0">
             <size>
-             <width>40</width>
+             <width>60</width>
              <height>20</height>
             </size>
            </property>
@@ -875,9 +879,6 @@
             <string>Diretório de gravação (Alarmes) :</string>
            </property>
           </widget>
-         </item>
-         <item row="3" column="1">
-          <widget class="QLineEdit" name="txtDirRecordingOnAlarmes"/>
          </item>
          <item row="6" column="0">
           <widget class="QCheckBox" name="checkBoxDesabilitarLoginAutomatico">
@@ -938,12 +939,11 @@
            </property>
           </widget>
          </item>
-         <item row="7" column="1">
-          <widget class="QPushButton" name="btnSaveConfigGravacao">
-           <property name="text">
-            <string>Salvar Configurações</string>
-           </property>
-          </widget>
+         <item row="3" column="1">
+          <widget class="QLineEdit" name="txtDirRecordingOnAlarmes"/>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="txtDirRecordingAllTime"/>
          </item>
         </layout>
        </widget>

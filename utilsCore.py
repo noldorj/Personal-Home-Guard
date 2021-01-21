@@ -224,7 +224,15 @@ def getDirUsedSpace(start_path):
     return (total_size / (2**30))
 
 def getDiskUsedGb():
-    total, used, free = shutil.disk_usage("/")
+    statusConfig = StatusConfig()    
+    particao = statusConfig.getDirVideosAllTime()
+    particao = particao.split(':')
+    if len(particao) > 1:
+        particao = particao[0] + ':/'
+    else:
+        particao = '/'
+    
+    total, used, free = shutil.disk_usage(particao)
     return (used / (2**30))
 
 
@@ -618,6 +626,9 @@ class StatusConfig:
     def getDesativarAlarmes(self):
         return self.data["desativarAlarmes"]
     
+    def getPrimeiroUso(self):
+        return self.data["primeiroUso"]
+    
     def getLoginAutomatico(self):
         return self.dataLogin["loginAutomatico"]
 
@@ -712,6 +723,11 @@ class StatusConfig:
 
         self.saveConfigLogin()
         
+    def setPrimeiroUso(self, status):
+        self.data['primeiroUso'] = status 
+        self.saveConfigFile()
+
+
     def setLoginAutomatico(self, status):
 
         self.dataLogin['loginAutomatico'] = status 
