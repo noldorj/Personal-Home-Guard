@@ -45,7 +45,9 @@ for handler in log.root.handlers[:]:
     log.root.removeHandler(handler)
 
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.DEBUG, stream=sys.stdout)
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.DEBUG, handlers=[log.FileHandler('config/pv.log', 'w', 'utf-8')])
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, handlers=[log.FileHandler('config/pv.log', 'w', 'utf-8')])
+log.getLogger('socketio').setLevel(log.ERROR)
+log.getLogger('engineio').setLevel(log.ERROR)
 
 #print('camRunTime ID Global: {}'.format(camRunTimeGlobal.camRunTimeId))
 
@@ -115,7 +117,7 @@ class FormProc(QWidget):
         
         
         if self.statusConfig.getLoginAutomatico() == 'True':
-            log.debug('Iniciando login automatico')            
+            log.info('Iniciando login automatico')            
             self.loginAutomatico()
             
             
@@ -129,15 +131,15 @@ class FormProc(QWidget):
 
         #implementar logica de checar licença TO-DO
         
-        log.debug(' ')
-        log.debug('initFormConfig:: statusLicence: ' + str(self.camRunTime.statusLicence))
-        log.debug('initFormConfig:: errorRtsp: ' + str(self.camRunTime.errorRtsp))
-        log.debug('initFormConfig:: loginStatus: ' + str(loginStatus))        
-        log.debug(' ')
+        log.info(' ')
+        log.info('initFormConfig:: statusLicence: ' + str(self.camRunTime.statusLicence))
+        log.info('initFormConfig:: errorRtsp: ' + str(self.camRunTime.errorRtsp))
+        log.info('initFormConfig:: loginStatus: ' + str(loginStatus))        
+        log.info(' ')
         
         #if self.camRunTime.statusLicence and not self.camRunTime.errorRtsp: 
         if not loginStatus:
-            log.debug('initFormConfig loginStatus saindo...')
+            log.info('initFormConfig loginStatus saindo...')
             utils.stopWatchDog() 
             self._run_flag = False 
             sys.exit()            
@@ -227,7 +229,7 @@ class FormProc(QWidget):
             
             if (not self.camRunTime.errorRtsp) and (not self.camRunTime.errorWebcam): 
 
-                log.debug('initFormConfig:: init Thread OpenCV')        
+                log.info('initFormConfig:: init Thread OpenCV')        
                 ### Thread OpenCV
                 self.infCam.setCamRunTime(self.camRunTime)
                 self.uiConfig.thread = self.infCam
@@ -254,21 +256,21 @@ class FormProc(QWidget):
 
             else: 
                 
-                #log.debug('::initFormConfig erroRtsp')
+                #log.info('::initFormConfig erroRtsp')
                 
                 if self.camRunTime.errorWebcam:
-                    log.debug('initFormConfig:: Erro ao conectar Webcam')
+                    log.info('initFormConfig:: Erro ao conectar Webcam')
                     self.uiConfig.lblCam1.setText('Webcam com erro de conexão ! Cheque seu computador por favor ! ')              
                     self.uiConfig.lblInitStatus.setText('Webcam com erro de conexão ! Por favor, cheque a configuração da Webcam e reinicie o Portão Virtual ! ')              
                 
                 elif self.camRunTime.camEmpty:
-                    log.debug('initFormConfig:: Camera não configurada')
+                    log.info('initFormConfig:: Camera não configurada')
                     self.uiConfig.lblCam1.setText('Configura sua câmera ou webcam para iniciar o Portão Virtual !')              
                     self.uiConfig.lblInitStatus.setText('Configura sua câmera ou webcam para iniciar o Portão Virtual !')              
                 
                 elif self.camRunTime.errorRtsp:                    
                     
-                    log.debug('initFormConfig:: Erro ao conectar a câmera')
+                    log.info('initFormConfig:: Erro ao conectar a câmera')
                     self.uiConfig.lblCam1.setText('Câmera com erro de conexão. O sistema está checando se a câmera mudou de IP')              
                     self.uiConfig.lblInitStatus.setText('Câmera com erro de conexão. O sistema está checando se a câmera mudou de IP')              
 
@@ -279,7 +281,7 @@ class FormProc(QWidget):
 
 
     def run(self):              
-        log.debug('run')
+        log.info('run')
         #self.statusConfig = statusConfig        
         #windowConfig.show()
     
@@ -290,7 +292,7 @@ class FormProc(QWidget):
     
     @QtCore.pyqtSlot()
     def warningHDCheio(self):
-        log.debug('warningHDCheio::')
+        log.info('warningHDCheio::')
         self.uiConfig.lblCam1.setText('Seu HD está cheio ! Libere mais espaço antes de configurar e começar a utilizar o Portão Virtual!')
         self.uiConfig.lblInitStatus.setText('Seu HD está cheio ! Libere mais espaço antes de configurar e começar a utilizar o Portão Virtual!')
         msg = QMessageBox()
@@ -357,7 +359,7 @@ class FormProc(QWidget):
         #self.wait()           
 
     def closeEvent(self, event):                
-        log.debug('closeEvent')
+        log.info('closeEvent')
         utils.stopWatchDog()
         self._run_flag = False                       
         
@@ -385,7 +387,7 @@ class FormProc(QWidget):
     
     def btnDeleteAlarm(self):
         
-        log.debug('btnDeleteAlarm:: i: {}'.format(self.uiConfig.comboRegions.currentIndex()))
+        log.info('btnDeleteAlarm:: i: {}'.format(self.uiConfig.comboRegions.currentIndex()))
         
         if self.uiConfig.comboRegions.currentIndex() is not -1:
         
@@ -414,7 +416,7 @@ class FormProc(QWidget):
         
         
     def btnSaveConfigGravacao(self):
-        log.debug('btnSaveConfigGravacao::')
+        log.info('btnSaveConfigGravacao::')
         #global self.uiConfig
 
         statusFields = True 
@@ -472,7 +474,7 @@ class FormProc(QWidget):
     # Tab de Configurações - TODO mudar nome depois
     def btnSaveEmail(self):
     
-        log.debug('btnSaveEmail::')
+        log.info('btnSaveEmail::')
         #global self.uiConfig
 
         statusFields = True 
@@ -514,7 +516,7 @@ class FormProc(QWidget):
             statusFields = False
             
         elif self.camRunTime.camEmpty:
-            log.debug('initFormConfig::btnSaveEmail Aviso efetuado de configuracao da camera primeiro antes de teste de Email')
+            log.info('initFormConfig::btnSaveEmail Aviso efetuado de configuracao da camera primeiro antes de teste de Email')
             self.uiConfig.lblStatus.setText('Para efetuar o teste de email, você precisa ter uma câmera configurada corretamente')
             msg.setText("Configure sua câmera primeiro !")
             msg.exec()                
@@ -541,7 +543,7 @@ class FormProc(QWidget):
                                   self.camRunTime.camSource, 
                                   self.uiConfig.txtAvisoUtilizacaoHD.text())
             
-            log.debug('initFormConfig:: servidorEmail: {}'.format(self.uiConfig.comboBoxServidorEmail.currentText()))            
+            log.info('initFormConfig:: servidorEmail: {}'.format(self.uiConfig.comboBoxServidorEmail.currentText()))            
             
             if sendMailAlert(self.uiConfig.txtEmailName.text(), \
                     self.uiConfig.txtEmailTo.text(), \
@@ -553,7 +555,7 @@ class FormProc(QWidget):
                     'testeRegion', \
                     'testeCam'):
                     
-                    log.debug('btnSaveEmail:: Teste email ok')
+                    log.info('btnSaveEmail:: Teste email ok')
                     
                     msg.setText("Teste de Email Ok - Cheque seu email para confirmar se recebeu este alerta")
                     msg.exec()
@@ -736,7 +738,7 @@ class FormProc(QWidget):
             #self.comboAlarmsUpdate(0)
 
     def btnSaveAlarm(self):
-        log.debug('btnSaveAlarm::')
+        log.info('btnSaveAlarm::')
         #print('btnSaveAlarm::')
         statusFields = True
         msg = QMessageBox()
@@ -816,7 +818,7 @@ class FormProc(QWidget):
     def btnRemoverCamEncontrada(self):        
         
                     
-        log.debug('btnRemoverCamEncontrada')
+        log.info('btnRemoverCamEncontrada')
         if self.uiConfig.comboBoxCamEncontradas.currentIndex() != -1: 
             
             idCombo = self.uiConfig.comboBoxCamEncontradas.currentText().split(':')[0]
@@ -837,7 +839,7 @@ class FormProc(QWidget):
 
     def btnRemoverCamAtiva(self):        
                     
-        log.debug('btnRemoverCamAtiva')
+        log.info('btnRemoverCamAtiva')
         if self.uiConfig.comboBoxCamAtivas.currentIndex() != -1: 
             
             idCombo = self.uiConfig.comboBoxCamAtivas.currentText().split(':')[0]
@@ -859,7 +861,7 @@ class FormProc(QWidget):
     
     def btnSalvarNomeCamAtiva(self):        
                     
-        log.debug('btnSalvarNomeCamAtiva')
+        log.info('btnSalvarNomeCamAtiva')
         if self.uiConfig.comboBoxCamAtivas.currentIndex() != -1: 
             
             idCombo = self.uiConfig.comboBoxCamAtivas.currentText().split(':')[0]
@@ -880,7 +882,7 @@ class FormProc(QWidget):
     def btnAtivarCam(self):
         #global listCamAtivas, self.uiConfig, statusConfig
 
-        log.debug('btnAtivarCam:: Ativando camera selecionada')
+        log.info('btnAtivarCam:: Ativando camera selecionada')
         
         if len(self.camRunTime.listCamAtivas) > 0 and self.camRunTime.listCamAtivas is not None: 
             idCombo = self.uiConfig.comboBoxCamAtivas.currentText().split(':')[0]
@@ -897,7 +899,7 @@ class FormProc(QWidget):
             for cam in self.camRunTime.listCamAtivas:
                 if cam.get('id') == idCombo:
                     self.camRunTime.listCamAtivas[i]['emUso'] = 'True'
-                    log.debug('cam source: ' + cam.get('source'))
+                    log.info('cam source: ' + cam.get('source'))
                     self.uiConfig.txtUrlRstp.setText(cam.get('source'))
                     self.statusConfig.setRtspConfig(cam.get('source'))
                     self.camRunTime.nameCam = cam.get('nome')
@@ -923,7 +925,7 @@ class FormProc(QWidget):
     
     def btnNovaCam(self):
         
-        log.debug('btnNovaCam::')
+        log.info('btnNovaCam::')
         status = False
         
         if len(self.uiConfig.txtNomeCamDisponivel.text()) == 0 \
@@ -1013,7 +1015,7 @@ class FormProc(QWidget):
    
     def comboBoxCamEncontradasStateChanged(self, i):
         
-        log.debug('comboBoxCamEncontradasStateChanged: {:d}'.format(i))
+        log.info('comboBoxCamEncontradasStateChanged: {:d}'.format(i))
         nome = None
         idCombo = None
         
@@ -1061,7 +1063,7 @@ class FormProc(QWidget):
     def btnTestarConfigCam(self):
 
         #global listCamAtivas, listCamEncontradas, statusconfig
-        log.debug('btnTestarConfigCam::')
+        log.info('btnTestarConfigCam::')
         
         if len(self.uiConfig.txtNomeCamDisponivel.text()) == 0 \
            or len(self.uiConfig.txtIpCamDisponivel.text()) == 0 \
@@ -1101,7 +1103,7 @@ class FormProc(QWidget):
                     i = i + 1
                 
 
-                log.debug('btnTestarConfigCam:: testando source: {}'.format(source))
+                log.info('btnTestarConfigCam:: testando source: {}'.format(source))
                 ipCam, error = utils.camSource(source)                   
                 
                 if error != '':                                                                    
@@ -1137,7 +1139,7 @@ class FormProc(QWidget):
 
     def btnProcurarCam(self):
         
-        log.debug('Procurando cameras na rede')                
+        log.info('Procurando cameras na rede')                
         self.uiConfig.lblStatusProcurarCam.setText('Procurando câmeras na rede local. Aguarde por favor...')
 
         self.clearListCameras() 
@@ -1155,7 +1157,7 @@ class FormProc(QWidget):
         self.threadProcurarCam = CamFinder(False)
         self.threadProcurarCam.updateProgress.connect(self.updateProcurarCam)
         self.threadProcurarCam.start()        
-        log.debug('self.threadProcurarCam.start()')
+        log.info('self.threadProcurarCam.start()')
 
         
 
@@ -1164,7 +1166,7 @@ class FormProc(QWidget):
     def updateProcurarCam(self, progress, listCamEncontradas, listCamAtivas, rtspError):
     
         #print('Progress: {:.2f}'.format(progress))
-        log.debug('initFormConfig::updateProcurarCam')
+        log.info('initFormConfig::updateProcurarCam')
         self.uiConfig.progressBarProcurarCam.show()
         self.uiConfig.progressBarProcurarCam.setValue(progress)
         
@@ -1174,7 +1176,7 @@ class FormProc(QWidget):
         if not rtspError:
             if progress == 100:    
                 
-                log.debug('initFormConfig::updateProcurarCam:: Processo finalizado. Adicionando cameras')
+                log.info('initFormConfig::updateProcurarCam:: Processo finalizado. Adicionando cameras')
                 
                 for cam in self.camRunTime.listCamAtivas:
                     self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']: ' + cam.get('ip') + ' : ' + cam.get('port'))
@@ -1196,12 +1198,12 @@ class FormProc(QWidget):
                 self.infCam.setCamRunTime(self.camRunTime)
                 
         elif rtspError == 'webcam':
-            log.debug('initFormConfig::updateProcurarCam:: Erro na Webcam')
+            log.info('initFormConfig::updateProcurarCam:: Erro na Webcam')
             self.uiConfig.lblStatus.setText('Webcam com erro. Cheque a configuração da Webcam e reinicie o Portão Virtual !')
             
         elif rtspError == 'rtsp':
             
-            log.debug('initFormConfig::updateProcurarCam:: Checando se a camera mudou de IP')
+            log.info('initFormConfig::updateProcurarCam:: Checando se a camera mudou de IP')
             #checar se o mac address camEmUso vs nova cam ativa
             camEmUso = self.statusConfig.getCamEmUsoConfig()
             
@@ -1214,9 +1216,9 @@ class FormProc(QWidget):
                         if cam.get('mac') == camEmUso.get('mac'):
                             if cam.get('ip') != camEmUso.get('ip'):                               
                 
-                                log.debug('Camera em uso mudou de IP')
-                                log.debug('Camera em uso IP: {}'.format(camEmUso.get('ip')))
-                                log.debug('Novo IP: {}'.format(cam.get('ip')))
+                                log.info('Camera em uso mudou de IP')
+                                log.info('Camera em uso IP: {}'.format(camEmUso.get('ip')))
+                                log.info('Novo IP: {}'.format(cam.get('ip')))
                 
                                 
                                 self.camRunTime.ipCam, self.camRunTime.error = utils.camSource(cam.get('source'))
@@ -1224,7 +1226,7 @@ class FormProc(QWidget):
                                 if self.camRunTime.error != '':
                                     self.camRunTime.ipCam = None
                                     self.camRunTime.rtspStatus = False
-                                    log.debug('Erro camSource: {}'.format(self.camRunTime.error))
+                                    log.info('Erro camSource: {}'.format(self.camRunTime.error))
                 
                                     #ui.lblStatus.setText('Falha em localizar novo IP automaticamente. Tente configurar o endereço RTSP, e clique em "Salvar"')
                                     #ui.lblStatusProcurarCam.setText('Falha em localizar o novo IP automaticamente. Tente configurar uma nova câmera ou fazer uma nova varredura por câmeras clicando em "Procurar Câmeras". ')
@@ -1239,7 +1241,7 @@ class FormProc(QWidget):
                                     self.camRunTime.ipCam.set(3, self.camRunTime.RES_X)
                                     self.camRunTime.ipCam.set(4, self.camRunTime.RES_Y)
                                     
-                                    log.debug('Conexao com camera restabelecida.')
+                                    log.info('Conexao com camera restabelecida.')
                                     self.uiConfig.lblStatus.setText('Conexão com a camera estabelecida! Feche a janela para inciar o Portão Virtual')
                                     self.uiConfig.lblStatusProcurarCam.setText('Conexão com a câmera estabelecida! Feche a janela para inciar o Portão Virtual')
                                     break
@@ -1250,9 +1252,9 @@ class FormProc(QWidget):
                             if cam.get('mac') == camEmUso.get('mac'):
                                 if cam.get('ip') != camEmUso.get('ip'):
                                     
-                                    log.debug('Camera em uso mudou de IP')
-                                    log.debug('Camera em uso IP: {}'.format(camEmUso.get('ip')))
-                                    log.debug('Novo IP: {}'.format(cam.get('ip')))
+                                    log.info('Camera em uso mudou de IP')
+                                    log.info('Camera em uso IP: {}'.format(camEmUso.get('ip')))
+                                    log.info('Novo IP: {}'.format(cam.get('ip')))
                                     
                                     #ipCam, error = utils.camSource(source)
 
@@ -1266,7 +1268,7 @@ class FormProc(QWidget):
 
         global emailSentFullVideosAllTime, emailSentFullVideosOnAlarmes, emailSentDiskFull
         
-        log.debug('\n btnSaveStorage::')
+        log.info('\n btnSaveStorage::')
 
         statusFields = True 
         msg = QMessageBox()
@@ -1359,7 +1361,7 @@ class FormProc(QWidget):
             
     def checkBoxDesativarAlarmes(self, state):
         
-        log.debug('::checkBoxPararAlarmes')
+        log.info('::checkBoxPararAlarmes')
         
         if state == 0:            
             log.info('checkBoxPararAlarmes desligado')
@@ -1414,7 +1416,7 @@ class FormProc(QWidget):
     
     def checkBoxWebcamStateChanged(self, state):
     
-        log.debug('checkBoxWebcamStateChanged::')
+        log.info('checkBoxWebcamStateChanged::')
         
         if state == 0:
            self.uiConfig.txtUrlRstp.setEnabled(True)
@@ -1727,7 +1729,7 @@ class FormProc(QWidget):
 
         #global init_video, statusLicence, uiLogin, conexao, login 
 
-        log.debug('Checando conexão com a Internet')
+        log.info('Checando conexão com a Internet')
         #uiLogin.lblStatus.setText("Checando conexão com a Internet")
 
         self.camRunTime.conexao = utils.checkInternetAccess()
@@ -1735,20 +1737,20 @@ class FormProc(QWidget):
 
         if self.camRunTime.conexao:    
         
-            log.debug('Checando licença no servidor - Por favor aguarde')
+            log.info('Checando licença no servidor - Por favor aguarde')
             
             email = self.statusConfig.dataLogin['user']
             passwd = utils.decrypt(self.statusConfig.dataLogin['passwd'])
             
             self.camRunTime.login = {'user':utils.encrypt(email), 'passwd':utils.encrypt(passwd), 'token':utils.encrypt(self.camRunTime.token)}
-            #log.debug('loginAutomatico::TOKEN: {}'.format(self.camRunTime.token))
+            #log.info('loginAutomatico::TOKEN: {}'.format(self.camRunTime.token))
             
             self.camRunTime.statusLicence, self.camRunTime.error  = checkLoginPv(self.camRunTime.login) 
             #statusLicence = True ## testando apenas IJF
             
             if self.camRunTime.statusLicence:
                 
-                log.debug("Usuario logado")
+                log.info("Usuario logado")
                 self.camRunTime.init_video = True 
                 loginStatus = True
                 #windowLogin.close()
@@ -1784,7 +1786,7 @@ class FormProc(QWidget):
 
     # @pyqtSlot()
     # def storageFull(self):
-        # log.debug('storageFull')
+        # log.info('storageFull')
         # if not self.camRunTime.emailSentDiskFull:  
             # if self.camRunTime.eraseOldestFiles:
                 # textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a deletar \
@@ -1838,14 +1840,14 @@ class FormProc(QWidget):
     
     @pyqtSlot()
     def warningSessionLossFirst(self):
-        log.debug('warningSessionLoss')
+        log.info('warningSessionLoss')
         self.uiConfig.lblInitStatus.setText('Login efetuado em outra máquina. Esta sessão será fechada em breve')
     
     
     @pyqtSlot()
     def warningSessionLoss(self):
     
-        log.debug('warningSessionLoss')
+        log.info('warningSessionLoss')
         utils.stopWatchDog()
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
@@ -1857,7 +1859,7 @@ class FormProc(QWidget):
     @pyqtSlot()
     def checkStorage(self):    
         
-        log.debug('initFormConfig::checkStorage')
+        log.info('initFormConfig::checkStorage')
         self.camRunTime.dirVideosOnAlarmesUsedSpace = utils.getDirUsedSpace(self.statusConfig.data["dirVideosOnAlarmes"])
         self.camRunTime.dirVideosAllTimeUsedSpace = utils.getDirUsedSpace(self.statusConfig.data['dirVideosAllTime'])
         self.camRunTime.isDiskFull = utils.isDiskFull(self.camRunTime.diskMinUsage) 

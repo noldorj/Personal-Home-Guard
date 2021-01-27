@@ -19,7 +19,7 @@ class FormTermo(QDialog):
     updateStatusLogin = pyqtSignal(bool)
 
     def __init__(self, parent=None ):
-        log.debug('initFormTermo:: __init__')
+        log.info('initFormTermo:: __init__')
 
         super(FormTermo, self).__init__(parent)
         #Dialog = QtWidgets.QDialog()
@@ -59,7 +59,7 @@ class FormTermo(QDialog):
     
         
     def btnOk(self):        
-        log.debug('initFormTermo:: btnOk')                       
+        log.info('initFormTermo:: btnOk')                       
         self.close()
 
     def closeEvent(self, event):      

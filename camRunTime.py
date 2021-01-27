@@ -198,18 +198,18 @@ class CamRunTime():
     
             
     def setRtspError(self, status):
-        log.debug('camRunTime::setRtspError')
+        log.info('camRunTime::setRtspError')
         self.errorRtsp = status
 
     def updateIpCam(self):
-        log.debug('camRunTime::updateIpCam')
+        log.info('camRunTime::updateIpCam')
         #origem do stream do video
         self.statusConfig = utils.StatusConfig()
         self.source = self.statusConfig.data["camSource"]
         
         
         self.ipCam, self.error = utils.camSource(self.source)
-        log.debug('camRunTime::updateIpCam camSource error: {}'.format(self.error))
+        log.info('camRunTime::updateIpCam camSource error: {}'.format(self.error))
         
         if self.error == 'rtsp':           
             
@@ -228,7 +228,7 @@ class CamRunTime():
             self.errorRtsp = False
             self.ipCam.set(3, self.RES_X)
             self.ipCam.set(4, self.RES_Y)
-            log.debug('camRunTime::updateIpCam: Conexao com camera restabelecida.')            
+            log.info('camRunTime::updateIpCam: Conexao com camera restabelecida.')            
             
             self.conectado = True            
             self.init_video = True
@@ -240,9 +240,9 @@ class CamRunTime():
     def init(self):
 
         
-        log.debug(' ')
-        log.debug('camRunTime::initConfig')       
-        log.debug(' ')       
+        log.info(' ')
+        log.info('camRunTime::initConfig')       
+        log.info(' ')       
         
         self.camRunTimeId = secrets.token_urlsafe(5)
       
@@ -264,7 +264,7 @@ class CamRunTime():
         email = self.statusConfig.dataLogin['user']
         passwd = utils.decrypt(self.statusConfig.dataLogin['passwd'])        
         self.login = {'user':utils.encrypt(email), 'passwd':utils.encrypt(passwd), 'token':utils.encrypt(self.token)}
-        #log.debug('camRunTime::init TOKEN: {}'.format(utils.decrypt(self.login.get('token').decode())))
+        #log.info('camRunTime::init TOKEN: {}'.format(utils.decrypt(self.login.get('token').decode())))
         
         
         self.gravandoAllTime = True if self.statusConfig.data["isRecordingAllTime"] == 'True' else False
@@ -307,11 +307,11 @@ class CamRunTime():
                 self.emailConfig['to'] != '':
             
             self.configEmailStatus = True
-            log.debug('camRunTime::init configEmailStatus:'.format(self.configEmailStatus))
+            log.info('camRunTime::init configEmailStatus:'.format(self.configEmailStatus))
             
         else:            
             self.configEmailStatus = False
-            log.debug('camRunTime::init configEmailStatus:'.format(self.configEmailStatus))
+            log.info('camRunTime::init configEmailStatus:'.format(self.configEmailStatus))
         
         
         
@@ -339,7 +339,7 @@ class CamRunTime():
             self.ipCam, self.error = utils.camSource(self.source)
             self.camEmpty = False
             
-        log.debug('camRunTime::init:: camSource error: {}'.format(self.error))
+        log.info('camRunTime::init:: camSource error: {}'.format(self.error))
         
         if self.error == 'rtsp':
             self.errorRtsp = True
@@ -358,7 +358,7 @@ class CamRunTime():
             if self.ipCam is not None:
                 self.ipCam.set(3, self.RES_X)
                 self.ipCam.set(4, self.RES_Y)
-            log.debug('camRunTime::init:: Conexao com camera restabelecida.')     
+            log.info('camRunTime::init:: Conexao com camera restabelecida.')     
 
         #self.fourcc = cv.VideoWriter_fourcc(*'X''2''6''4') erro
         #for linux x264 need to recompile opencv mannually

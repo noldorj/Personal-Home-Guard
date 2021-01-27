@@ -26,6 +26,7 @@ from matplotlib.path import Path
 from PyQt5.QtCore import QThread
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
 from checkLicence.sendingData import checkSessionPv
+
 #import tensorflow as tf
 
 #cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
@@ -48,7 +49,9 @@ class InferenceCore(QThread):
     def __init__(self):
         super().__init__()
         self._run_flag = True
-        log.debug('InferenceCore:: __init__')
+        log.info('InferenceCore:: __init__')
+        
+
         
         
     def setCamRunTime(self, camRunTime):
@@ -82,7 +85,7 @@ class InferenceCore(QThread):
         
         if self.camRunTime.isOpenVino:
 
-            log.debug('initOpenVino')            
+            log.info('initOpenVino')            
         
             if self.camRunTime.ipCam is not None:
                 self.camRunTime.ret, self.camRunTime.frame = self.camRunTime.ipCam.read()
@@ -104,7 +107,7 @@ class InferenceCore(QThread):
                 self.camRunTime.initOpenVinoStatus = False
                 self.camRunTime.init_video = False
             else:
-                log.debug('inferenceCore:: Openvino carregado')
+                log.info('inferenceCore:: Openvino carregado')
                 self.camRunTime.initOpenVinoStatus = True
                 self.camRunTime.init_video = True
                 log.info(' ')
@@ -113,7 +116,7 @@ class InferenceCore(QThread):
                 self.camRunTime.render_time = 0
         
         else:
-            log.debug("inferenceCore:: TensorFlow on")
+            log.info("inferenceCore:: TensorFlow on")
             self.camRunTime.init_video = True
             self.camRunTime.initOpenVinoStatus = False
             
@@ -229,7 +232,7 @@ class InferenceCore(QThread):
 
                         else:
                             #chamada para a CNN do OpenCV - TensorFlow Object Detection API 
-                            #log.debug("inferenceCore:: TensorFlow openCV API")                            
+                            #log.info("inferenceCore:: TensorFlow openCV API")                            
                             self.camRunTime.listObjects, self.camRunTime.listObjectTradking  = objectDetection(self.camRunTime.frame, \
                                                                                                self.camRunTime.idObjeto, self.camRunTime.listRectanglesDetected, \
                                                                                                self.camRunTime.detection,  self.camRunTime.rows, \
@@ -332,7 +335,7 @@ class InferenceCore(QThread):
                                                                             
                                                                             #evitar campainhas seguidas para mesmo objeto
                                                                             if self.camRunTime.listObjectSoundAlerted.count(objectID) == 0:
-                                                                                log.debug('inferenceCore:: campainha tocada')
+                                                                                log.info('inferenceCore:: campainha tocada')
                                                                                 utils.playSound()
                                                                                 self.camRunTime.listObjectSoundAlerted.append(objectID)
 
@@ -341,7 +344,7 @@ class InferenceCore(QThread):
                                                                             #evitar emails seguidos para mesmo objeto
                                                                             if self.camRunTime.listObjectMailAlerted.count(objectID) == 0:
 
-                                                                                log.debug('inferenceCore:: Enviando alerta por email')
+                                                                                log.info('inferenceCore:: Enviando alerta por email')
                                                                                 #salvando foto para treinamento
                                                                                 #crop no box
                                                                                 #left, top, right, bottom
@@ -352,7 +355,7 @@ class InferenceCore(QThread):
 
                                                                                     
                                                                                     if self.camRunTime.configEmailStatus and not self.camRunTime.desativarAlarmes:
-                                                                                        log.debug('inferenceCore:: Alerta enviado ID[' + str(objectID) + ']' + 'Tipo: ' + str(typeObject))
+                                                                                        log.info('inferenceCore:: Alerta enviado ID[' + str(objectID) + ']' + 'Tipo: ' + str(typeObject))
                                                                                         threadEmail = Thread(target=sendMailAlert, args=(self.camRunTime.emailConfig['name'],
                                                                                                                                            self.camRunTime.emailConfig['to'],
                                                                                                                                            self.camRunTime.emailConfig['subject'],
@@ -406,7 +409,7 @@ class InferenceCore(QThread):
                                         #end loop in Regions
                                     #se nao houver regiao configurada, enviar um alarme generico
                                     else:
-                                        #log.debug('camRunTime:: Objeto detectado sem regiao configurada')
+                                        #log.info('camRunTime:: Objeto detectado sem regiao configurada')
 
                                         #evitar emails seguidos para mesmo objeto
                                         if self.camRunTime.listObjectMailAlerted.count(objectID) == 0:
@@ -426,13 +429,13 @@ class InferenceCore(QThread):
                                                     self.camRunTime.gravandoOnAlarmes = True
                                                                                                
                                                 
-                                                log.debug('camRunTime:: Enviando alerta por email - sem regiao configurada')
+                                                log.info('camRunTime:: Enviando alerta por email - sem regiao configurada')
 
                                                 if utils.checkInternetAccess():
 
                                                     
                                                     if self.camRunTime.configEmailStatus and not self.camRunTime.desativarAlarmes:
-                                                        log.debug('inferenceCore:: Alerta enviado ID[' + str(objectID) + ']')
+                                                        log.info('inferenceCore:: Alerta enviado ID[' + str(objectID) + ']')
                                                         threadEmail = Thread(target=sendMailAlert, args=(self.camRunTime.emailConfig['name'],
                                                                                                            self.camRunTime.emailConfig['to'],
                                                                                                            self.camRunTime.emailConfig['subject'],
@@ -582,14 +585,14 @@ class InferenceCore(QThread):
 
                         if conexao: 
 
-                            log.debug('Conexao com a Internet estabelecida')
+                            log.info('Conexao com a Internet estabelecida')
                             #print('Conexao com a Internet estabelecida')
                             self.camRunTime.STOP_ALL = False
 
                             if self.camRunTime.configEmailStatus and not self.camRunTime.desativarAlarmes:
                                 while (len(self.camRunTime.pilhaAlertasNaoEnviados) > 0) and (self.camRunTime.STOP_ALL == False):  
                                     #enviando alerta de emails anteriores
-                                    log.debug('inferenceCore:: Enviando alerta de emails anteriores')
+                                    log.info('inferenceCore:: Enviando alerta de emails anteriores')
 
                                     alertaEmail = self.camRunTime.pilhaAlertasNaoEnviados.popleft()
 
@@ -604,7 +607,7 @@ class InferenceCore(QThread):
                                     alertaEmail[8],
                                     alertaEmail[9]))                                    
                                     
-                                    log.debug('inferenceCore:: Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
+                                    log.info('inferenceCore:: Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
                                     threadEmail.start()
                                     #print('Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
                                     
@@ -616,7 +619,7 @@ class InferenceCore(QThread):
 
                             #ativar funcoes                        
                             #self.camRunTime.sessionStatus, self.camRunTime.error = checkSessionPv(self.camRunT im h0 ek0.login)
-                            #log.debug('inferenceCore::TOKEN: {}'.format(utils.decrypt(self.camRunTime.login.get('token').decode())))
+                            #log.info('inferenceCore::TOKEN: {}'.format(utils.decrypt(self.camRunTime.login.get('token').decode())))
                             self.camRunTime.sessionStatus, self.camRunTime.error = checkSessionPv(self.camRunTime.login)
                             self.camRunTime.timeInternetOffStart = time.time() 
                             #self.updateStorageInfo.emit()
@@ -642,7 +645,7 @@ class InferenceCore(QThread):
                                     
                             elif self.camRunTime.sessionStatus == True:
                                 self.camRunTime.errorSession = 0
-                                log.debug('inferenceCore:: Sessao de login ok')
+                                log.info('inferenceCore:: Sessao de login ok')
                             
 
 
@@ -709,7 +712,7 @@ class InferenceCore(QThread):
                         self.changeIpCam = False
                         
                     elif self.camRunTime.errorWebcam:
-                        log.debug('inferenceCore:: webCamWarning.init()')
+                        log.info('inferenceCore:: webCamWarning.init()')
                         self.webCamWarning.emit()
                     
                     else:
@@ -723,11 +726,11 @@ class InferenceCore(QThread):
             
             
             if self.camRunTime.errorWebcam:
-                #log.debug('inferenceCore:: webCamWarning.emit()')
+                #log.info('inferenceCore:: webCamWarning.emit()')
                 self.webCamWarning.emit()
             
             if self.camRunTime.camEmpty:
-                #log.debug('inferenceCore:: camEmptyWarning.emit()')
+                #log.info('inferenceCore:: camEmptyWarning.emit()')
                 self.camEmptyWarning.emit()
             
             #self.stop()

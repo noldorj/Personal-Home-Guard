@@ -42,18 +42,18 @@ locale.setlocale(locale.LC_ALL, 'en_US.utf-8')
 def getProcessId(name):
     for proc in psutil.process_iter():
         if proc.name() == name:            
-            log.debug('getProcessId Pid: {:d}'.format(proc.pid))
-            log.debug('getProcessId name: {}'.format(proc.name()))
+            log.info('getProcessId Pid: {:d}'.format(proc.pid))
+            log.info('getProcessId name: {}'.format(proc.name()))
             return proc.pid
     return 0
 
 
 def killProcessId(name):
-    log.debug('killProcessId chamado')
+    log.info('killProcessId chamado')
     for proc in psutil.process_iter():
         if proc.name() == name:            
-            log.debug('Pid: {:d}'.format(proc.pid))
-            log.debug('name: {}'.format(proc.name()))
+            log.info('Pid: {:d}'.format(proc.pid))
+            log.info('name: {}'.format(proc.name()))
             proc.kill()
             return True 
     return False 
@@ -62,7 +62,7 @@ def killProcessId(name):
 def initWatchDog():
 
     DETACHED_PROCESS = 0x00000008
-    log.debug('initWatchDog...')
+    log.info('initWatchDog...')
 
     
     if sys.platform == 'linux':    
@@ -88,13 +88,13 @@ def initWatchDog():
         except Exception as e: 
             log.critical('initWatchDog:: Erro initWatchDog: {}'.format(e))
         else:
-            log.debug('initWatchDog:: WatchDog carregado. PID: {:d}'.format(getProcessId('wd.exe')))
+            log.info('initWatchDog:: WatchDog carregado. PID: {:d}'.format(getProcessId('wd.exe')))
     else:
-        log.debug('initWatchDog:: WatchDog rodando. Pid: {:d}'.format(pid))
+        log.info('initWatchDog:: WatchDog rodando. Pid: {:d}'.format(pid))
 
 
 def stopWatchDog():
-    log.debug('stopWatchDog:: Encerrando Watchdog')
+    log.info('stopWatchDog:: Encerrando Watchdog')
 
     if sys.platform == 'linux':    
         namePid = 'wd' 
@@ -104,7 +104,7 @@ def stopWatchDog():
     pid = getProcessId(namePid) 
     while pid != 0:
         try:
-            log.debug('kill name: {}'.format(namePid))
+            log.info('kill name: {}'.format(namePid))
 
             if OS_PLATFORM == 'linux':
                 os.kill(pid, 9)
@@ -116,7 +116,7 @@ def stopWatchDog():
             log.error('stopWatchDog:: Error: {}'.format(e))
             killProcessId(namePid)
         else:
-            log.debug('stopWatchDog:: WatchDog encerrado. PId: {:d}'.format(pid))
+            log.info('stopWatchDog:: WatchDog encerrado. PId: {:d}'.format(pid))
 
         pid = getProcessId(namePid) 
 
@@ -125,7 +125,7 @@ def checkInternetAccess():
 
     conn = httplib.HTTPConnection("www.google.com", timeout=5)
     try:
-        log.debug('Checando conexao...')
+        log.info('Checando conexao...')
         conn.request("HEAD", "/")
         conn.close()
         return True
@@ -142,9 +142,9 @@ def camSource(source = 'webcam'):
 
     if source == 'webcam':        
         source = 0
-        log.debug('camSource:: WebCam')
+        log.info('camSource:: WebCam')
         #ipCam = cv.VideoCapture(0)        
-        #log.debug('capturando da webcam')    
+        #log.info('capturando da webcam')    
 
     try:
         ipCam = cv.VideoCapture(source)
@@ -155,14 +155,14 @@ def camSource(source = 'webcam'):
         error = e
     else:       
         if ipCam.isOpened():
-            log.debug('camSource:: Imagem de camera ok')            
+            log.info('camSource:: Imagem de camera ok')            
         else:
             if source == 0:
                 error = 'webcam'
-                log.debug('camSource:: error webcam')
+                log.info('camSource:: error webcam')
             else:
                 error = 'rtsp'
-                log.debug('camSource:: error rtsp')
+                log.info('camSource:: error rtsp')
         
                 
 
@@ -276,7 +276,7 @@ def getDiskUsageFree():
     else:
         particao = '/'
     
-    log.debug('getDiskUsageFree:: particao: {}'.format(particao))    
+    log.info('getDiskUsageFree:: particao: {}'.format(particao))    
     total, used, free = shutil.disk_usage(particao)
     #total, used, free = shutil.disk_usage("/")
     return int((free / total)*100)
@@ -305,7 +305,7 @@ def isDiskFull(diskMinUsage):
 
 def freeDiskSpace(dirVideo):
 
-     log.debug('freeDiskSpace::')
+     log.info('freeDiskSpace::')
      #locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
      #vai apagando um dia por vez até sobrar espaço
@@ -414,13 +414,13 @@ def freeDiskSpace(dirVideo):
 
                         
                     else:
-                        log.debug('Diretorio {} removido. Foi liberado {} de espaço'.format(oldestDir, dirSpace))             
+                        log.info('Diretorio {} removido. Foi liberado {} de espaço'.format(oldestDir, dirSpace))             
                         iDaysSorted = iDaysSorted + 1
                         #totalLiberado = totalLiberado + float(dirSpace)
                     
                 else:
                     
-                    log.debug('Removendo diretorio que ficou vazaio')
+                    log.info('Removendo diretorio que ficou vazaio')
                     #apagando o diretorio que ficou vazio
                     oldestDir = dirVideo + '/' + dirSorted[iDirSorted]
                     
@@ -516,14 +516,14 @@ def createDirectory(dirVideos):
     except OSError as ex:
 
         if ex.errno == 17:
-            log.debug('createDirectory:: Diretorio ' + current_dir + month_dir + today_dir + ' existente.')
+            log.info('createDirectory:: Diretorio ' + current_dir + month_dir + today_dir + ' existente.')
             status = True
         else:
             log.error('createDirectory:: Erro ao criar o diretorio: ' + current_dir + month_dir + today_dir)
             log.error(ex.__str__())
 
     else:
-        log.debug("createDirectory:: Diretorio " + current_dir + month_dir + today_dir + " criado com sucesso")
+        log.info("createDirectory:: Diretorio " + current_dir + month_dir + today_dir + " criado com sucesso")
         status = True
 
     dir_temp = current_dir + month_dir + today_dir
@@ -925,7 +925,7 @@ class StatusConfig:
         
     def addAlarm(self, idRegion, alarm):
 
-        log.debug('addAlarm::')
+        log.info('addAlarm::')
         edit = False
         i = 0
         #print('addAlarm:: idRegion: {:d}'.format(idRegion))
@@ -957,23 +957,23 @@ class StatusConfig:
         self.readConfigLogin(configLogin)
 
     def readConfigLogin(self, fileName = 'config/lconfig.json'):
-        #log.debug('Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
+        #log.info('Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
         self.dataLogin = json.load(open(fileName,'r'))
 
 
     def readConfigFile(self, fileName = 'config/config.json'):
-        #log.debug('Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
+        #log.info('Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
         self.data = json.load(open(fileName,'r'))
 
     def readRegionsFile(self, fileName = 'config/regions.json'):
-        log.debug('Lendo arquivo de regiões: ' + os.getcwd() + '/' + fileName)
+        log.info('Lendo arquivo de regiões: ' + os.getcwd() + '/' + fileName)
         try:
             self.regions = json.load(open(fileName,'r'))
         except OSError as ex:
 
             log.critical('Arquivo de Regioes inexistente - será criado um novo arquivo') 
         else:
-            log.debug('Arquivo de regiões lido com sucesso')
+            log.info('Arquivo de regiões lido com sucesso')
 
 
     def deleteAlarm(self, regionName, alarmName):
@@ -1147,7 +1147,7 @@ class StatusConfig:
 
 def playSound():
     pygame.init()
-    log.debug('utilsCore:: campainha tocada')
+    log.info('utilsCore:: campainha tocada')
     pygame.mixer.music.load('config/campainha.mp3')
     pygame.mixer.init()
     pygame.mixer.music.play(0)

@@ -29,7 +29,7 @@ class FormLogin(QDialog):
     updateStatusLogin = pyqtSignal(bool)
 
     def __init__(self, camRunTimeP, statusConfigP, parent=None ):
-        log.debug('initGuiLogin:: __init__')
+        log.info('initGuiLogin:: __init__')
 
         super(FormLogin, self).__init__(parent)
         #Dialog = QtWidgets.QDialog()
@@ -43,7 +43,7 @@ class FormLogin(QDialog):
         self.statusConfig = statusConfigP
         self.camRunTime = camRunTimeP
 
-        log.debug('initGuiLogin:: dataLogin: ' + self.statusConfig.dataLogin.get('user'))
+        log.info('initGuiLogin:: dataLogin: ' + self.statusConfig.dataLogin.get('user'))
 
         if self.statusConfig.dataLogin.get('autoStart') == 'True':
             self.uiLogin.checkBoxLoginAutoStart.setCheckState(True)
@@ -132,7 +132,7 @@ class FormLogin(QDialog):
 
     def checkBoxAtalhoDesktop(self, state):
     
-        log.debug('checkBoxAtalhoDesktop:: Removendo atalho desktop')
+        log.info('checkBoxAtalhoDesktop:: Removendo atalho desktop')
         desktop = winshell.desktop()
         path = os.path.join(desktop, "PortaoVirtual.lnk")
         
@@ -157,7 +157,7 @@ class FormLogin(QDialog):
             #shortcut.IconLocation = icon
             shortcut.save()                        
             self.statusConfig.setAtalhoDesktop('True')
-            log.debug('checkBoxAtalhoDesktop:: Atalho desktop criado')
+            log.info('checkBoxAtalhoDesktop:: Atalho desktop criado')
     
     def checkBoxLoginAutomatico(self, state):
         #global LOGIN_AUTOMATICO, self.statusConfig        
@@ -207,7 +207,7 @@ class FormLogin(QDialog):
 
     def btnExit(self):
         #global statusLicence, init_video
-        log.debug('Login Cancelado')
+        log.info('Login Cancelado')
         self.camRunTime.statusLicence = False
         self.camRunTime.init_video = False
         self.updateStatusLogin.emit(False)
@@ -289,7 +289,7 @@ class FormLogin(QDialog):
         #checando licenca de usuario no servidor
         #global init_video, statusLicence, self.uiLogin, conexao, login 
 
-        log.debug('btnLogin:: Checando conexão com a Internet')
+        log.info('btnLogin:: Checando conexão com a Internet')
         self.uiLogin.lblStatus.setText("Checando conexão com a Internet")
 
         self.camRunTime.conexao = utils.checkInternetAccess()
@@ -302,7 +302,7 @@ class FormLogin(QDialog):
             self.uiLogin.lblStatus.setText("Conectando com o servidor")
             
             self.camRunTime.login = {'user':utils.encrypt(self.uiLogin.txtEmail.text()), 'passwd':utils.encrypt(self.uiLogin.txtPasswd.text()), 'token':utils.encrypt(self.camRunTime.token)}
-            #log.debug('btnLogin::TOKEN: {}'.format(self.camRunTime.login.get('token').decode()))
+            #log.info('btnLogin::TOKEN: {}'.format(self.camRunTime.login.get('token').decode()))
             self.statusConfig.setUserNameLoginConfig(self.uiLogin.txtEmail.text())
             
             self.camRunTime.statusLicence, self.camRunTime.error  = checkLoginPv(self.camRunTime.login) 

@@ -130,12 +130,12 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
 
                 #3 plugin SSE4                
                 else:
-                    log.debug('CPU_Extension ok')
-                    log.debug('cpu_extension utilizado: {}'.format(cpu_extension))
+                    log.info('CPU_Extension ok')
+                    log.info('cpu_extension utilizado: {}'.format(cpu_extension))
             
             #2 plugin AVX2 
             else:
-                log.debug('CPU_Extension ok')
+                log.info('CPU_Extension ok')
                 #print('CPU_Extension ok')
 
              
@@ -146,7 +146,7 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
             log.info('cpu_extension utilizado: {}'.format(cpu_extension))
 
     # Read IR
-    log.debug("Reading IR...")
+    log.info("Reading IR...")
     try:
         log.info('Carregando IENetwork...') 
         net = IENetwork(model=model_xml, weights=model_bin)
@@ -156,7 +156,7 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
         log.error('IENetwork error: {}'.format(e))
 
     else:
-        log.debug('IENetwork carregada')
+        log.info('IENetwork carregada')
         #print('IENetwork carregada')
 
     #Loading Plugin 

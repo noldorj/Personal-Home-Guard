@@ -68,12 +68,12 @@ while True:
     
     if not r:
         
-        log.debug('Portão Virtual não está em execução')
+        log.info('Portão Virtual não está em execução')
         
         timeRunning = (time.time() - timeInit) / 60 #em minutos
         
-        log.debug('Portao Virtual inicializado pela {} vez '.format(timesRestarted))
-        log.debug('Tempo de execução até o momento: {:f} min' .format(timeRunning))
+        log.info('Portao Virtual inicializado pela {} vez '.format(timesRestarted))
+        log.info('Tempo de execução até o momento: {:f} min' .format(timeRunning))
 
         #subprocess.Popen([app], creationflags=DETACHED_PROCESS)
         subprocess.Popen(app.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, start_new_session=True, close_fds=True)

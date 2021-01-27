@@ -9,7 +9,7 @@ from smtplib import SMTPException
 import utilsCore as utils
 import logging as log
 import sys
-
+import urllib.request
 
 
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
@@ -26,7 +26,7 @@ def saveImageBox(frame, classe):
     except OSError as error:
         log.error("Erro em 'saveImageBox': " + str(error))
     else:
-        log.debug('saveImageBox - imagem salva')
+        log.info('saveImageBox - imagem salva')
 
 
 def sendMail(subject, text):
@@ -69,7 +69,7 @@ def sendMail(subject, text):
         log.error("sendMail: Error: unable to send email" + str(e))
 
     else:
-        log.debug('sendMail: {} enviado.'.format(subject))
+        log.info('sendMail: {} enviado.'.format(subject))
         status = True
 
     return status
@@ -80,6 +80,10 @@ def sendMail(subject, text):
 
 #envia alerta do portao virtual com imagem anexada ao email
 def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoObjetoDetectado, region, nameCam):
+    
+    external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
+
+    log.info('InferenceCore::__init__:: External IP: {}'.format(external_ip))
     
     statusConfig = utils.StatusConfig() 
     emailConfig = statusConfig.getEmailConfig()
@@ -95,7 +99,7 @@ def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoO
         log.critical('Erro ao salvar a foto: ' + str(error))
         return status
     else:
-        log.debug('Foto alarme salva')        
+        log.info('Foto alarme salva')        
 
 
     try:
@@ -105,12 +109,12 @@ def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoO
         log.critical('Erro ao anexar foto no email: ' + str(error))
         return status
     else:
-        log.debug('Foto anexada')
+        log.info('Foto anexada')
 
     data = utils.getDate()
     msg = MIMEMultipart()
     
-    log.debug('sendMailAlert:: tipoObjetoDetectado antes: {}'.format(tipoObjetoDetectado))
+    log.info('sendMailAlert:: tipoObjetoDetectado antes: {}'.format(tipoObjetoDetectado))
 
     if tipoObjetoDetectado == 'person':
         tipoObjetoDetectado = 'Pessoa'
@@ -124,7 +128,7 @@ def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoO
     elif tipoObjetoDetectado == 'car':
         tipoObjetoDetectado = 'Carro'
         
-    log.debug('sendMailAlert:: tipoObjetoDetectado depois: {}'.format(tipoObjetoDetectado))
+    log.info('sendMailAlert:: tipoObjetoDetectado depois: {}'.format(tipoObjetoDetectado))
     
        
     if tipoObjetoDetectado == 'teste':
@@ -135,7 +139,10 @@ def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoO
     msg['From'] = user
     msg['To'] = recipients
 
-    text = MIMEText('"' + tipoObjetoDetectado + '"' + ' na ' + region + '-  Detectado em ' + data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year'] )
+    text = MIMEText('"' + tipoObjetoDetectado + '"' + ' na ' + region +
+                    '-  Detectado em ' + data['hour'] +
+                    ' - ' + data['day'] + '/' + data['month'] + '/' + data['year'] + '\n \n' +
+                    'Link vido ao-vivo: ' + 'http://' + external_ip + ':560')
     msg.attach(text)
 
     img_file = MIMEImage(img_file)
@@ -145,17 +152,17 @@ def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoO
     password = utils.decrypt(emailConfig['password'])
     
     
-    log.debug('port: {:d}'.format(int(emailConfig['port'])))
-    log.debug('smtp: {:}'.format(emailConfig['smtp']))
-    log.debug('sender: {:}'.format(sender))
-    log.debug('user: {:}'.format(user))
-    log.debug('password: {:}'.format(password))
-    log.debug('password: {:}'.format(password))
-    log.debug(' ')     
+    log.info('port: {:d}'.format(int(emailConfig['port'])))
+    log.info('smtp: {:}'.format(emailConfig['smtp']))
+    log.info('sender: {:}'.format(sender))
+    log.info('user: {:}'.format(user))
+    log.info('password: {:}'.format(password))
+    log.info('password: {:}'.format(password))
+    log.info(' ')     
         
     #if servidorEmail == 'Gmail':
     
-    log.debug('sendMailAlert:: servidorEmail: {} '.format(emailConfig['servidorEmail']))
+    log.info('sendMailAlert:: servidorEmail: {} '.format(emailConfig['servidorEmail']))
         
         #smtpObj = smtplib.SMTP('smtp.gmail.com', 587)
     
@@ -177,12 +184,12 @@ def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoO
         return False
 
     else:
-        log.debug('sendMailAlert:: Email de alerta enviado')
+        log.info('sendMailAlert:: Email de alerta enviado')
         status = True
 
     # elif servidorEmail == 'Outlook':
     
-        # log.debug('sendMailAlert:: usando Outlook') 
+        # log.info('sendMailAlert:: usando Outlook') 
         # #smtpObj = smtplib.SMTP(smtp.office365.com, 587)
         # smtpObj = smtplib.SMTP(emailConfig['smtp'], int(emailConfig['port']))
         # try:
@@ -196,7 +203,7 @@ def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoO
         # except SMTPException as e:
             # log.critical("sendMailAlert:: Error Outlook: unable to send email" + str(e))
         # else:
-            # log.debug('sendMailAlert:: Email de alerta enviado')
+            # log.info('sendMailAlert:: Email de alerta enviado')
             # status = True
             
      

@@ -5,7 +5,13 @@ import utilsCore as utils
 
 #log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.DEBUG, stream=sys.stdout)
 
-#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
+#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.CRITICAL, filename='pv.log')
+
+log.getLogger('socketio').setLevel(log.ERROR)
+log.getLogger('engineio').setLevel(log.ERROR)
+
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.ERROR, handlers=[log.FileHandler('config/pv.log', 'w', 'utf-8')])
+
 
 sio = socketio.Client()
 #sio = socketio.AsyncClient()
@@ -23,7 +29,7 @@ statusForgotPasswd = False
 
 @sio.event
 def connect():
-    log.debug('connect: conexao efetuada')
+    log.info('connect: conexao efetuada')
 
 @sio.event
 def checkLogin(login):
@@ -87,7 +93,7 @@ def forgotPasswordPv(email):
     global statusForgotPasswd, error
 
     try: 
-        log.debug("forgotPasswordPv:: conectando...")
+        log.info("forgotPasswordPv:: conectando...")
         sio.connect(host)
 
     except socketio.exceptions.ConnectionError as  err:
@@ -97,7 +103,7 @@ def forgotPasswordPv(email):
         statusForgotPasswd = False
 
     else:
-        log.debug('forgotPasswordPv:: Conexao efetuada ')
+        log.info('forgotPasswordPv:: Conexao efetuada ')
         forgotPassword(email)
         sio.wait()
         error = ''
@@ -112,7 +118,7 @@ def checkSessionPv(session):
     #sessionStatus = True
 
     try: 
-        log.debug("checkSessionPv:: conectando...")
+        log.info("checkSessionPv:: conectando...")
         sio.connect(host)
 
     except socketio.exceptions.ConnectionError as  err:
@@ -126,7 +132,7 @@ def checkSessionPv(session):
         error = ''
         checkSession(session)
         sio.wait()
-        log.debug('checkSessionPv: ' + str(sessionStatus))
+        log.info('checkSessionPv: ' + str(sessionStatus))
 
         #sio.disconnect()
     
@@ -150,7 +156,7 @@ def checkLoginPv(login):
         loginStatus = False
 
     else:
-        log.debug('checkLoginPv:: Conexao efetuada')
+        log.info('checkLoginPv:: Conexao efetuada')
         checkLogin(login)
         sio.wait()
         #log.info('checkLoginPv:: loginStatus: ' + str(loginStatus))
@@ -214,5 +220,5 @@ def replyCheckSession(status):
 
 @sio.event 
 def disconnect(sid):
-    log.debug('disconnect:: sid: {}'.format(sid))
+    log.info('disconnect:: sid: {}'.format(sid))
 
