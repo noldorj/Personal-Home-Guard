@@ -21,7 +21,7 @@ from utilsServer import sendMailForgotPasswd
 #log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.DEBUG, stream=sys.stdout)
 
 #tempo de expiracao da sessao em minutos
-TIME_SESSION = 2
+TIME_SESSION = 5
 
 #host="dbpv.c3jzryxr6fxw.sa-east-1.rds.amazonaws.com"
 host = "dbpv.cswsskc4btjh.sa-east-1.rds.amazonaws.com"  
@@ -203,7 +203,7 @@ def checkFileSession(file):
     try:
         with open(file) as f:
 
-            log.info('Arquivo de sessao: {}  enconrado'.format(file))
+            log.info('Arquivo de sessao: {}  encontrado'.format(file))
             return True
 
     except IOError:
@@ -371,15 +371,15 @@ def forgotPassword(email):
             passwd = session['userPassword']
 
             threadEmail = Thread(target=sendMailForgotPasswd, 
-                    args=('portaovirtual@contato.com.br',
+                    args=('contato@portaovirtual.com.br',
                     email,
                     'Portao Virtual - Recuperação de senha',
                     '587',
-                    'smtp.gmail.com', 
-                    'portaovirtual@gmail.com',
-                    'budega11',
+                    'smtp.gmail.com',
+                    'contato@portaovirtual.com.br',
+                    'ujluwhekbucclvap',
                     passwd
-                                                                                                               ))                                                                        
+                                                                                                               ))
         threadEmail.start()  
         status = True
 
