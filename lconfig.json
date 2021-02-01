@@ -2,6 +2,7 @@
     "user": "",
     "passwd": "",
     "loginAutomatico": "False",
+    "autoStart": "False",
     "salvarLogin": "False",
-    "autoStart": "False"
+    "atalhoDesktop": "False"
 }
