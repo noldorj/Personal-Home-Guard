@@ -12,8 +12,8 @@ from smtplib import SMTP_SSL
 import secrets
 
 emailCliente = 'igorddf@gmail.com'
-numCameras = '1'
-diasLicenca = '7'
+numCameras = '4'
+diasLicenca = '0'
 
 
 def sendMailnewUser(to, port, smtp, userPassword):
@@ -22,14 +22,14 @@ def sendMailnewUser(to, port, smtp, userPassword):
     
     
     sent_from = 'contato@portaovirtual.com.br'    
-    gmail_password = 'guxryxnrljrhspyw'
+    gmail_password = 'flevkztxyqcaovue'
     
     #to = 'igorddf@gmail.com'
 
     subject = ('Portão Virtual - Compra de Licença')
 
     body = ('Obrigado pela sua compra do software Portao Virtual ! \n\n Dados do seu login: \
-        \n\n Usuário: {} \n Senha: {} . \n\n Recomendamos que você altere a senha o quanto antes. \
+        \n\n Usuário: {} \n Senha: {} \n\n Recomendamos que você altere a senha o quanto antes. \
     \n Link para download: https://drive.google.com/drive/folders/1KJqqV3464PX3yCBw_iS958xzD0Rq9mg0?usp=sharing \n \
     \n\n Atenciosamente, \n\n Equipe Portao Virtual \n\n www.portaovirtual.com.br ').format(to, userPassword)
 
