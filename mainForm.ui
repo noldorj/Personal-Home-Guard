@@ -53,7 +53,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>4</number>
+       <number>0</number>
       </property>
       <property name="tabsClosable">
        <bool>false</bool>
@@ -200,13 +200,44 @@
          <string>+ Região</string>
         </property>
        </widget>
-       <widget class="QLabel" name="lblCam1">
+       <widget class="QWidget" name="gridLayoutWidget">
         <property name="geometry">
          <rect>
-          <x>8</x>
-          <y>90</y>
+          <x>10</x>
+          <y>70</y>
           <width>911</width>
-          <height>491</height>
+          <height>511</height>
+         </rect>
+        </property>
+        <layout class="QGridLayout" name="gridCams">
+         <item row="1" column="0">
+          <widget class="QLabel" name="lblCam1">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="frameShape">
+            <enum>QFrame::NoFrame</enum>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QLabel" name="lblCam2">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="geometry">
+         <rect>
+          <x>110</x>
+          <y>0</y>
+          <width>91</width>
+          <height>181</height>
          </rect>
         </property>
         <property name="sizePolicy">
@@ -216,12 +247,16 @@
          </sizepolicy>
         </property>
         <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
+         <enum>QFrame::NoFrame</enum>
         </property>
         <property name="text">
          <string/>
         </property>
        </widget>
+       <zorder>lblCam2</zorder>
+       <zorder>horizontalLayoutWidget_18</zorder>
+       <zorder>btnInitAddRegiao</zorder>
+       <zorder>gridLayoutWidget</zorder>
       </widget>
       <widget class="QWidget" name="tabRegion">
        <attribute name="title">
@@ -231,7 +266,7 @@
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>60</y>
+          <y>130</y>
           <width>291</width>
           <height>111</height>
          </rect>
@@ -286,7 +321,7 @@
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>180</y>
+          <y>250</y>
           <width>160</width>
           <height>41</height>
          </rect>
@@ -315,7 +350,7 @@
         <property name="geometry">
          <rect>
           <x>460</x>
-          <y>60</y>
+          <y>130</y>
           <width>411</width>
           <height>370</height>
          </rect>
@@ -602,7 +637,7 @@
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>10</y>
+          <y>80</y>
           <width>441</width>
           <height>41</height>
          </rect>
@@ -638,7 +673,7 @@
         <property name="geometry">
          <rect>
           <x>460</x>
-          <y>10</y>
+          <y>80</y>
           <width>411</width>
           <height>41</height>
          </rect>
@@ -686,7 +721,7 @@
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>230</y>
+          <y>300</y>
           <width>391</width>
           <height>41</height>
          </rect>
@@ -714,6 +749,29 @@
           </widget>
          </item>
         </layout>
+       </widget>
+       <widget class="QComboBox" name="comboBoxCamerasEmUso">
+        <property name="geometry">
+         <rect>
+          <x>150</x>
+          <y>28</y>
+          <width>361</width>
+          <height>25</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_100">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>20</y>
+          <width>141</width>
+          <height>39</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Selecionar câmera:</string>
+        </property>
        </widget>
       </widget>
       <widget class="QWidget" name="tabConfigGeneral">
@@ -1150,6 +1208,19 @@
            </widget>
           </item>
          </layout>
+        </widget>
+        <widget class="QPushButton" name="btnProcurarCamCancel">
+         <property name="geometry">
+          <rect>
+           <x>160</x>
+           <y>40</y>
+           <width>141</width>
+           <height>25</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Cancelar</string>
+         </property>
         </widget>
        </widget>
        <widget class="QGroupBox" name="groupBox_8">

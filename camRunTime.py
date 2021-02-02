@@ -20,6 +20,7 @@ class CamRunTime():
     #camFinder = CamFinder(False)
 
     camRunTimeId = 0 
+    idCam = 1
     configEmailStatus = False
     desativarAlarmes = False
     changeIpCam = False
@@ -196,6 +197,9 @@ class CamRunTime():
     
     
     
+    def setIdCam(self, idCam):
+        self.idCam = idCam
+    
             
     def setRtspError(self, status):
         log.info('camRunTime::setRtspError')
@@ -242,6 +246,7 @@ class CamRunTime():
         
         log.info(' ')
         log.info('camRunTime::initConfig')       
+        log.info('camRunTime::idCam: [{}]'.format(self.idCam))       
         log.info(' ')       
         
         self.camRunTimeId = secrets.token_urlsafe(5)
@@ -287,16 +292,18 @@ class CamRunTime():
 
         #device = statusConfig.data["openVinoDevice"]
         self.device, self.openVinoModelXml, self.openVinoModelBin, self.openVinoCpuExtension, self.openVinoPluginDir, self.openVinoModelName  = self.statusConfig.getActiveDevice()
-        cam = self.statusConfig.getCamEmUsoConfig()
+        cam = self.statusConfig.getCamEmUsoConfig(self.idCam)
         if cam is not None:
             self.nameCam = cam.get('nome')
+            self.source = cam.get('source')
         
         # dnnMOdel for TensorFlow Object Detection API
         self.pb = self.statusConfig.data["dnnModelPb"] 
         self.pbtxt = self.statusConfig.data["dnnModelPbTxt"] 
         
         #Carregando regioes salvas
-        self.regions = self.statusConfig.getRegions()
+        self.regions = self.statusConfig.getRegions(self.idCam)
+        
         self.emailConfig = self.statusConfig.getEmailConfig()
         if self.emailConfig['name'] != '' and \
                 self.emailConfig['port'] != '' and \
@@ -327,7 +334,7 @@ class CamRunTime():
         
         
         #origem do stream do video
-        self.source = self.statusConfig.data["camSource"]
+        #self.source = self.statusConfig.data["camSource"]
         
         if self.source == '':
             self.error = 'camEmpty'
@@ -369,10 +376,12 @@ class CamRunTime():
         
         
         self.dirVideosOnAlarmesUsedSpace = utils.getDirUsedSpace(self.statusConfig.data["dirVideosOnAlarmes"])
+        self.dirVideosAllTimeUsedSpace = utils.getDirUsedSpace(self.statusConfig.data['dirVideosOnAlarmes'])
+        
         self.isDiskFull = utils.isDiskFull(self.diskMinUsage) 
         self.diskUsageFree = utils.getDiskUsageFree() 
         self.diskUsageFreeGb = utils.getDiskUsageFreeGb()
-        self.dirVideosAllTimeUsedSpace = utils.getDirUsedSpace(self.statusConfig.data['dirVideosOnAlarmes'])
+        
         self.numDaysRecording = utils.getNumDaysRecording()            
 
         self.prob_threshold = float(self.statusConfig.data["prob_threshold"])

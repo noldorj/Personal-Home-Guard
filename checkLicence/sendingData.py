@@ -149,11 +149,12 @@ def checkLoginPv(login):
         sio.connect(host)
         #sio.wait()        
 
-    except socketio.exceptions.ConnectionError as  err:
+    #except socketio.exceptions.ConnectionError as  err:
+    except Exception as  err:
 
         log.error('checkLoginPv:: Erro na conexao: ' + str(err))
         error = 'conexao' 
-        loginStatus = False
+        loginStatus = True
 
     else:
         log.info('checkLoginPv:: Conexao efetuada')

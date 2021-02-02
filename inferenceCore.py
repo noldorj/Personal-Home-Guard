@@ -15,6 +15,7 @@ import subprocess
 import getpass
 import shutil
 from rtsp_discover.rtsp_discover import CamFinder
+from camRunTime import *
 #import ffmpeg
 from threading import Thread
 from objectDetectionTensorFlow import objectDetection 
@@ -31,28 +32,22 @@ from checkLicence.sendingData import checkSessionPv
 
 #cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
 
-
-
-
 class InferenceCore(QThread):
 
-    change_pixmap_signal = pyqtSignal(np.ndarray)
+    change_pixmap_signal = pyqtSignal(np.ndarray, int)
     #updateStorageInfo = pyqtSignal()
     #storageFull = pyqtSignal()
     warningSessionLoss = pyqtSignal()
     warningSessionLossFirst = pyqtSignal()
     webCamWarning = pyqtSignal()
     camEmptyWarning = pyqtSignal()
-    camRunTime = None
+    camRunTime = CamRunTime()
     #isDiskFull = False
 
     def __init__(self):
         super().__init__()
         self._run_flag = True
-        log.info('InferenceCore:: __init__')
-        
-
-        
+        log.info('InferenceCore:: __init__')        
         
     def setCamRunTime(self, camRunTime):
         self.camRunTime = camRunTime
@@ -144,6 +139,7 @@ class InferenceCore(QThread):
     def run(self):
     
         
+        log.info('InferenceCore::run idCam id: [{}]'.format(self.camRunTime.idCam))
         self.initOpenVino()       
 
         while True:
@@ -276,13 +272,14 @@ class InferenceCore(QThread):
                                     cv.putText(frame_screen, text, (centroid[0] - 10, centroid[1] - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                                     cv.circle(frame_screen, (centroid[0], centroid[1]), 3, (0, 255, 0), -1)
 
+                                    #checando tipo objeto
+                                    typeObject = str(box[6])
 
                                     #checando para varias regioes
                                     if len(self.camRunTime.regions) != 0:
                                         for r in self.camRunTime.regions:
 
-                                            #checando tipo objeto
-                                            typeObject = str(box[6])
+                                            
 
                                             if r.get('objectType').get(typeObject) == "True":
 
@@ -557,7 +554,7 @@ class InferenceCore(QThread):
                     
                     #end else disco cheio  
                                 
-                    self.change_pixmap_signal.emit(frame_screen)
+                    self.change_pixmap_signal.emit(frame_screen, self.camRunTime.idCam)
                     #print('emit')
 
                     self.camRunTime.end = time.time()

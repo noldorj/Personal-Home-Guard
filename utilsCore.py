@@ -632,8 +632,16 @@ class StatusConfig:
     def getLoginAutomatico(self):
         return self.dataLogin["loginAutomatico"]
 
-    def getRegions(self):
-        return self.regions
+    def getRegions(self, runTimeId):
+        
+        regions = ''
+        
+        for runTime in self.regions:
+            if runTime.get('camRunTime') == runTimeId:
+               regions = runTime.get('regions')
+
+        
+        return regions
 
     def getRegion(self, name):
         region = None
@@ -643,16 +651,36 @@ class StatusConfig:
 
         return region
 
-    def isRegionsEmpty(self):
+    def isAllRegionsEmpty(self):
+        status = True
+        for runTime in self.regions:
+            if len(runTime.get('regions')) > 0:
+                status = False
+        
+        return status
+    
+    def isRegionsEmpty(self, idCam):    
+        status = True
+        for runTime in self.regions:
+            if runTime.get('idCam') == idCam:
+                if len(runTime.get('regions')) > 0:
+                    status = False
+                    break
+        
+        return status
+    
         return True if (len(self.regions) == 0) else False
 
-    def isAlarmEmpty(self, regionName):
+    def isAlarmEmpty(self, regionName, runTimeId):
         status = False 
         #print('regionName : {}'.format(regionName))
-        for r in self.regions:
-            #print('nameRegion {}'.format(r.get("nameRegion")))
-            if r.get("nameRegion") == regionName:
-                status = (len(r.get('alarm')) == 0)
+        
+        for runTime in self.regions:
+            if runTime.get('camRunTime') == runTimeId:
+                for r in runTime.get('regions'):
+                    print('nameRegion {}'.format(r.get("nameRegion")))
+                    if r.get("nameRegion") == regionName:
+                        status = (len(r.get('alarm')) == 0)
 
         return status
 
@@ -802,6 +830,21 @@ class StatusConfig:
 
         self.saveConfigFile()
 
+    def setConfigCamSlot(self, camId, runTimeId):
+        i = 0
+        for cam in self.data['camListAtivas']:            
+            if cam["id"] == camId:
+                print('setConfigCamSlot:: camId: {}'.format(camId))
+                self.data['camListAtivas'][i]['camRunTime'] = str(runTimeId)
+                self.data['camListAtivas'][i]['emUso'] = "True"
+                break
+            i = i + 1
+        
+        
+        self.saveConfigFile()
+    
+        
+    
     def setConfig(self, isRecordingAllTime, isRecordingOnAlarmes, isOpenVino,
                       dnnModel, openVinoModel, emailConfig, dirVideos, camSource, openVinoDevice, prob_threshold):
         self.data["isRecordingAllTime"]       = isRecordingAllTime
@@ -848,11 +891,19 @@ class StatusConfig:
     def getListCamAtivas(self):
         return self.data["camListAtivas"]
 
+    def getCanRunTimeByIdCam(self, idCam):
+        canRunTime = 0
+        
+        for cam in self.data['camListAtivas']:
+            if cam.get('id') == idCam:
+                canRunTime = cam.get('camRunTime')
+        
+        return canRunTime
     
-    def getCamEmUsoConfig(self):
+    def getCamEmUsoConfig(self, runTimeId):
         camEmuso = None
         for cam in self.data['camListAtivas']:
-            if cam['emUso'] == 'True':
+            if cam.get('emUso') == 'True' and cam.get("camRunTime") == str(runTimeId):
                 camEmuso = cam
                 break
         
