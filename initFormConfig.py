@@ -291,7 +291,8 @@ class FormProc(QWidget):
                 self.infCam.setCamRunTime(self.camRunTime)
                 self.uiConfig.thread = self.infCam
                 # connect its signal to the update_image slot
-                self.uiConfig.thread.change_pixmap_signal.connect(self.update_image)
+                self.uiConfig.thread.change_pixmap_signal_1.connect(self.update_image)
+                
                 self.uiConfig.thread.warningSessionLoss.connect(self.warningSessionLoss)
                 self.uiConfig.thread.warningSessionLossFirst.connect(self.warningSessionLossFirst)
                 self.uiConfig.thread.webCamWarning.connect(self.webCamWarning)
@@ -380,14 +381,17 @@ class FormProc(QWidget):
         self.camRunTime = camRunTime
         
 
-
-    @pyqtSlot(np.ndarray, int)
-    def update_image(self, cv_img, idCam):        
-        qt_img = self.convert_cv_qt(cv_img)        
-        if idCam == 1:
-            self.uiConfig.lblCam1.setPixmap(qt_img)
-        elif idCam == 2:
-            self.uiConfig.lblCam2.setPixmap(qt_img)
+    @pyqtSlot(np.ndarray)
+    def update_image_cam2(self, cv_img):        
+        qt_img = self.convert_cv_qt(cv_img)                
+        self.uiConfig.lblCam2.setPixmap(qt_img)
+        
+    
+    @pyqtSlot(np.ndarray)
+    def update_image(self, cv_img):        
+        qt_img = self.convert_cv_qt(cv_img)                
+        self.uiConfig.lblCam1.setPixmap(qt_img)
+        
     
     #def mouseMoveEvent(self, event):
     #    print('Mouse coords: ( %d : %d )' % (event.x(), event.y()))
@@ -416,8 +420,8 @@ class FormProc(QWidget):
         # print('\n lblCam1.height: {}'.format(self.uiConfig.lblCam1.frameGeometry().height()))
         
         convert_to_Qt_format = QtGui.QImage(rgb_image.data, w, h, bytes_per_line, QtGui.QImage.Format_RGB888)
-        #p = convert_to_Qt_format.scaled(self.camRunTime.RES_X, self.camRunTime.RES_Y, Qt.IgnoreAspectRatio)
-        p = convert_to_Qt_format.scaled(self.uiConfig.lblCam1.frameGeometry().width(), self.uiConfig.lblCam1.frameGeometry().height(), Qt.IgnoreAspectRatio)
+        p = convert_to_Qt_format.scaled(self.camRunTime.RES_X/2, self.camRunTime.RES_Y/2, Qt.IgnoreAspectRatio)
+        #p = convert_to_Qt_format.scaled(self.uiConfig.lblCam1.frameGeometry().width(), self.uiConfig.lblCam1.frameGeometry().height(), Qt.IgnoreAspectRatio)
         #p = convert_to_Qt_format.scaledToHeight(self.uiConfig.lblCam2.frameGeometry().height())
         #p = convert_to_Qt_format.scaledToWidth(self.uiConfig.lblCam2.frameGeometry().width())
         
@@ -1581,10 +1585,10 @@ class FormProc(QWidget):
     def refreshStatusConfig(self):        
         self.statusConfig = utils.StatusConfig()
         if self.camerasEmUso == 1:
-            self.infCam.camRunTime.regions = self.statusConfig.getRegions(self.infCam.camRunTime.camRunTimeId)
+            self.infCam.camRunTime.regions = self.statusConfig.getRegions(self.infCam.camRunTime.idCam)
         
         elif self.camerasEmUso == 2:
-            self.infCam2.camRunTime.regions = self.statusConfig.getRegions(self.infCam2.camRunTime.camRunTimeId)
+            self.infCam2.camRunTime.regions = self.statusConfig.getRegions(self.infCam2.camRunTime.idCam)
         
         self.camRunTime.emailConfig = self.statusConfig.getEmailConfig()
 
@@ -1623,7 +1627,7 @@ class FormProc(QWidget):
             self.uiConfig.checkSun.setCheckState(a.get('days').get('sun') == 'True')
             self.uiConfig.checkEmailAlert.setCheckState(a.get('isEmailAlert') == 'True')
             self.uiConfig.checkAlertSound.setCheckState(a.get('isSoundAlert') == 'True')
-            self.uiConfig.txtNameAlarm.insert(a.get('name'))
+            self.uiConfig.txtNameAlarm.insert(a.get('nome'))
             self.uiConfig.comboAlarms.setCurrentIndex(i)
 
             tStart = QTime(int(a.get('time').get('start').get('hour')), int(a.get('time').get('start').get('min')))
@@ -1689,8 +1693,9 @@ class FormProc(QWidget):
                 
                 #preenchendo lista de alarmes                    
                 if not self.statusConfig.isAlarmEmpty(r.get('nameRegion'), runTimeId):                    
-                    for a in regions[i].get('alarm'):
-                        self.uiConfig.comboAlarms.addItem(a.get('name'))                
+                    if i < len(regions):
+                        for a in regions[i].get('alarm'):
+                            self.uiConfig.comboAlarms.addItem(a.get('nome'))                
                     
                     self.comboAlarmsUpdate(0)
                     
@@ -1761,7 +1766,7 @@ class FormProc(QWidget):
         
         self.uiConfig.thread2 = self.infCam2
         # connect its signal to the update_image slot
-        self.uiConfig.thread2.change_pixmap_signal.connect(self.update_image)
+        self.uiConfig.thread2.change_pixmap_signal_2.connect(self.update_image_cam2)
         self.uiConfig.thread2.warningSessionLoss.connect(self.warningSessionLoss)
         self.uiConfig.thread2.warningSessionLossFirst.connect(self.warningSessionLossFirst)
         self.uiConfig.thread2.webCamWarning.connect(self.webCamWarning)
@@ -1817,7 +1822,7 @@ class FormProc(QWidget):
         self.uiConfig.txtDirRecordingAllTime.setText(self.statusConfig.data.get("dirVideosAllTime"))
         self.uiConfig.txtDirRecordingOnAlarmes.setText(self.statusConfig.data.get("dirVideosOnAlarmes"))
         self.uiConfig.txtAvisoUtilizacaoHD.setText(self.statusConfig.data["storageConfig"].get("diskMinUsage"))
-        self.uiConfig.txtEmailName.setText(self.statusConfig.data["emailConfig"].get('name'))
+        self.uiConfig.txtEmailName.setText(self.statusConfig.data["emailConfig"].get('nome'))
         #self.uiConfig.txtEmailPort.setText(self.statusConfig.data["emailConfig"].get('port'))
         #self.uiConfig.txtEmailSmtp.setText(self.statusConfig.data["emailConfig"].get('smtp'))
         self.uiConfig.txtEmailUser.setText(self.statusConfig.data["emailConfig"].get('user'))

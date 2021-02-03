@@ -21,12 +21,14 @@ from threading import Thread
 from objectDetectionTensorFlow import objectDetection 
 import secrets
 import psutil
-import pluginOpenVino as pOpenVino
+from pluginOpenVino import *
 from utilsCore import checkInternetAccess
 from matplotlib.path import Path
 from PyQt5.QtCore import QThread
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
 from checkLicence.sendingData import checkSessionPv
+import imutils
+import datetime
 
 #import tensorflow as tf
 
@@ -34,7 +36,8 @@ from checkLicence.sendingData import checkSessionPv
 
 class InferenceCore(QThread):
 
-    change_pixmap_signal = pyqtSignal(np.ndarray, int)
+    change_pixmap_signal_1 = pyqtSignal(np.ndarray)
+    change_pixmap_signal_2 = pyqtSignal(np.ndarray)
     #updateStorageInfo = pyqtSignal()
     #storageFull = pyqtSignal()
     warningSessionLoss = pyqtSignal()
@@ -43,6 +46,15 @@ class InferenceCore(QThread):
     camEmptyWarning = pyqtSignal()
     camRunTime = CamRunTime()
     #isDiskFull = False
+    frame_screen = None
+    frame_no_label_email = None
+    frame_no_label = None
+    listReturn = None
+    pOpenVino = OpenVinoPlugin()
+    firstFrame = None
+    avg = None
+    motionCounter = 0
+    lastDetection = datetime.datetime.now()
 
     def __init__(self):
         super().__init__()
@@ -73,6 +85,105 @@ class InferenceCore(QThread):
 
             self.camRunTime.portaoVirtualSelecionado = True
 
+    def getMotionDetection(self, frame):
+    
+        #print('getMotionDetection')
+        timestamp = datetime.datetime.now()
+        
+        min_area = 500
+        delta_thresh = 5
+    
+        status = False
+        
+        if frame is None:
+            print('frame null')
+            return False
+        
+        frame = imutils.resize(frame, width=500)
+        
+        gray = cv.GaussianBlur(frame, (21, 21), 0)
+        gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)        
+       
+        
+        if self.firstFrame is None:
+            print('firstFrame = gray')
+            self.firstFrame = gray
+            
+                
+        # if the average frame is None, initialize it
+        if self.avg is None:
+            #print("[INFO] starting background model...")
+            self.avg = gray.copy().astype("float")
+            #rawCapture.truncate(0)
+            #continue
+
+        # accumulate the weighted average between the current frame and
+        # previous frames, then compute the difference between the current
+        # frame and running average
+        cv.accumulateWeighted(gray, self.avg, 0.5)
+        frameDelta = cv.absdiff(gray, cv2.convertScaleAbs(self.avg))
+        
+        
+        # threshold the delta image, dilate the thresholded image to fill
+        # in holes, then find contours on thresholded image
+        thresh = cv.threshold(frameDelta, delta_thresh, 255, cv.THRESH_BINARY)[1]
+        thresh = cv.dilate(thresh, None, iterations=2)
+        cnts = cv.findContours(thresh.copy(), cv2.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE)
+        cnts = imutils.grab_contours(cnts)
+        
+        
+        # compute the absolute difference between the current frame and
+        # first frame
+        #frameDelta = cv.absdiff(self.firstFrame, gray)
+        #thresh = cv.threshold(frameDelta, 70, 255, cv.THRESH_BINARY)[1]
+        #thresh = thresh.astype(np.uint8)
+        
+        # dilate the thresholded image to fill in holes, then find contours
+        # on thresholded image
+        
+        thresh = cv.dilate(thresh, None, iterations=2)
+        cnts = cv.findContours(thresh.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        
+        cnts = imutils.grab_contours(cnts)
+        # loop over the contours
+        for c in cnts:
+            # if the contour is too small, ignore it
+            if cv.contourArea(c) < min_area:                
+                status = False                
+                #print('false camId: {}'.format(self.camRunTime.idCam))
+            else:
+                status = True
+                self.lastDetection = datetime.datetime.now()
+                #print('lastDetection {}'.format(self.lastDetection))
+                
+                # compute the bounding box for the contour, draw it on the frame,
+                # and update the text
+                #status = True
+                #(x, y, w, h) = cv.boundingRect(c)
+                #cv.rectangle(self.camRunTime.frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                #text = "Occupied"
+        
+        if status:
+            # check to see if enough time has passed between uploads
+            if (timestamp - self.lastDetection).seconds >= 2:
+                # increment the motion counter
+                self.motionCounter += 1
+                # check to see if the number of frames with consistent motion is
+                # high enough
+                if self.motionCounter >= 8:
+                    # update the last uploaded timestamp and reset the motion
+                    # counter
+                    self.lastDetection = timestamp
+                    self.motionCounter = 0
+        # otherwise, the room is not occupied
+        else:
+            self.motionCounter = 0
+        
+        
+        
+        return status
+    
+    
     def initOpenVino(self):
         
         
@@ -94,7 +205,7 @@ class InferenceCore(QThread):
             #print('try initOpenVino')
             try:
                 self.camRunTime.nchw, self.camRunTime.exec_net, self.camRunTime.input_blob, self.camRunTime.out_blob = \
-                    pOpenVino.initOpenVino(self.camRunTime.device, self.camRunTime.openVinoModelXml, \
+                    self.pOpenVino.init(self.camRunTime.device, self.camRunTime.openVinoModelXml, \
                     self.camRunTime.openVinoModelBin, self.camRunTime.openVinoCpuExtension, self.camRunTime.openVinoPluginDir)
         
             except:
@@ -131,7 +242,7 @@ class InferenceCore(QThread):
         self.camRunTime.timeInternetOffStart = time.time()
         
         self.camRunTime.hora = utils.getDate()['hour'].replace(':','-')
-        self.camRunTime.nameVideoAllTime = self.camRunTime.dir_video_trigger_all_time + '/' + self.camRunTime.hora + '.avi'
+        self.camRunTime.nameVideoAllTime = self.camRunTime.nameCam + '_' + self.camRunTime.dir_video_trigger_all_time + '/' + self.camRunTime.hora + '.avi'
         
         
         self.camRunTime.out_video_all_time = cv.VideoWriter(self.camRunTime.nameVideoAllTime, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h))
@@ -174,9 +285,9 @@ class InferenceCore(QThread):
                 #if (self.camRunTime.conectado) and (self.camRunTime.frame is not None) and (self.camRunTime.next_frame is not None):
                 if (self.camRunTime.conectado) and (self.camRunTime.frame is not None):
                     
-                    frame_no_label = self.camRunTime.frame.copy()                
-                    frame_screen = self.camRunTime.frame.copy()                
-                    frame_no_label_email = self.camRunTime.frame.copy()
+                    self.frame_no_label = self.camRunTime.frame.copy()                
+                    self.frame_screen = self.camRunTime.frame.copy()                
+                    self.frame_no_label_email = self.camRunTime.frame.copy()
 
                     #objects = ct.update(rects = listObjectsTracking)
 
@@ -184,8 +295,16 @@ class InferenceCore(QThread):
                     self.camRunTime.currentData = [self.camRunTime.currentData.get('day'), self.camRunTime.currentData.get('month')]
 
                     if self.camRunTime.current_data_dir != self.camRunTime.currentData:
-                        self.camRunTime.status_dir_criado_on_alarmes, self.camRunTime.dir_video_trigger_on_alarmes = utils.createDirectory(self.camRunTime.statusConfig.data["dirVideosOnAlarmes"])
-                        self.camRunTime.status_dir_criado_all_time, self.camRunTime.dir_video_trigger_all_time = utils.createDirectory(self.camRunTime.statusConfig.data["dirVideosAllTime"])
+                        #self.camRunTime.status_dir_criado_on_alarmes, self.camRunTime.dir_video_trigger_on_alarmes = utils.createDirectory(self.camRunTime.statusConfig.data["dirVideosOnAlarmes"])
+                        print('criando diretorios \n')
+                        
+                        v1 = self.camRunTime.nameCam + '_' + self.camRunTime.nameVideoOnAlarmes
+                        print('nameVideoOnAlarmes: {}'.format(v1))
+                        v2 = self.camRunTime.nameCam + '_' + self.camRunTime.nameVideoAllTime
+                        print('nameVideoAllTime: {}'.format(v2))
+                        self.camRunTime.status_dir_criado_on_alarmes, self.camRunTime.dir_video_trigger_on_alarmes = utils.createDirectory(v1)
+                        #self.camRunTime.status_dir_criado_all_time, self.camRunTime.dir_video_trigger_all_time = utils.createDirectory(self.camRunTime.statusConfig.data["dirVideosAllTime"])
+                        self.camRunTime.status_dir_criado_all_time, self.camRunTime.dir_video_trigger_all_time = utils.createDirectory(v2)
                         self.camRunTime.current_data_dir = utils.getDate()
                         self.camRunTime.current_data_dir = [self.camRunTime.current_data_dir.get('day'), self.camRunTime.current_data_dir.get('month')]
 
@@ -193,46 +312,51 @@ class InferenceCore(QThread):
                     for r in self.camRunTime.regions:
                          pts = np.array(r.get("pointsPolygon"), np.int32)
                          pts = pts.reshape((-1,1,2))
-                         cv.polylines(frame_screen,[pts],True,(0,0,255), 2)
+                         cv.polylines(self.frame_screen,[pts],True,(0,0,255), 2)
 
                     if self.camRunTime.cropPolygon:
                         #log.info('if cropPolygon')
                         pts = np.array(self.camRunTime.ref_point_polygon, np.int32)
                         pts = pts.reshape((-1,1,2))
-                        cv.polylines(frame_screen,[pts],True,(0,0,255), 2)
+                        cv.polylines(self.frame_screen,[pts],True,(0,0,255), 2)
 
 
                     #passando o Frame selecionado do portao para deteccao somente se o portao virtual estiver selecionado                
                     if self.camRunTime.portaoVirtualSelecionado and (self.camRunTime.STOP_ALL == False):
                         #print('iniciando detecção')
 
-                        #se eh openVino e este foi inicializado corretamente 
-                        ### ---------------  OpenVino Get Objects ----------------- ###
-                        if self.camRunTime.isOpenVino and self.camRunTime.initOpenVinoStatus:
                         
+                        if self.getMotionDetection(self.camRunTime.frame):                        
+                            
+                            #print('\n chamando openvino idCam: {}'.format(self.camRunTime.idCam))
+                            
+                            #se eh openVino e este foi inicializado corretamente 
+                            ### ---------------  OpenVino Get Objects ----------------- ###
+                            if self.camRunTime.isOpenVino and self.camRunTime.initOpenVinoStatus:
+                            
 
-                            #print('pOpenVino.getListBoxDetected')
-                            self.camRunTime.ret, listReturn  = pOpenVino.getListBoxDetected(self.camRunTime.ipCam, self.camRunTime.device, self.camRunTime.frame,
-                                               self.camRunTime.next_frame, self.camRunTime.nchw, self.camRunTime.exec_net, self.camRunTime.out_blob,
-                                               self.camRunTime.input_blob, self.camRunTime.cur_request_id, self.camRunTime.next_request_id, 
-                                               self.camRunTime.prob_threshold, self.camRunTime.RES_X, self.camRunTime.RES_Y)
+                                #print('pOpenVino.getListBoxDetected')                            
+                                self.camRunTime.ret, self.listReturn  = self.pOpenVino.getListBoxDetected(self.camRunTime.ipCam, self.camRunTime.device, self.camRunTime.frame,
+                                                   self.camRunTime.next_frame, self.camRunTime.nchw, self.camRunTime.exec_net, self.camRunTime.out_blob,
+                                                   self.camRunTime.input_blob, self.camRunTime.cur_request_id, self.camRunTime.next_request_id, 
+                                                   self.camRunTime.prob_threshold, self.camRunTime.RES_X, self.camRunTime.RES_Y)
 
-                            if self.camRunTime.ret:
-                                #print('self.camRunTime.ret')
-                                self.camRunTime.frame = self.camRunTime.next_frame
-                                self.camRunTime.frame, self.camRunTime.next_frame, self.camRunTime.cur_request_id, \
-                                self.camRunTime.next_request_id, self.camRunTime.listObjects, self.camRunTime.listObjectsTracking, \
-                                self.camRunTime.prob_threshold_returned  = listReturn[0], listReturn[1], listReturn[2], listReturn[3], listReturn[4], listReturn[5], listReturn[6]
+                                if self.camRunTime.ret:
+                                    #print('self.camRunTime.ret')
+                                    self.camRunTime.frame = self.camRunTime.next_frame
+                                    self.camRunTime.frame, self.camRunTime.next_frame, self.camRunTime.cur_request_id, \
+                                    self.camRunTime.next_request_id, self.camRunTime.listObjects, self.camRunTime.listObjectsTracking, \
+                                    self.camRunTime.prob_threshold_returned  = self.listReturn[0], self.listReturn[1], self.listReturn[2], self.listReturn[3], self.listReturn[4], self.listReturn[5], self.listReturn[6]
 
-                                self.camRunTime.cur_request_id, self.camRunTime.next_request_id = self.camRunTime.next_request_id, self.camRunTime.cur_request_id
+                                    self.camRunTime.cur_request_id, self.camRunTime.next_request_id = self.camRunTime.next_request_id, self.camRunTime.cur_request_id
 
-                        else:
-                            #chamada para a CNN do OpenCV - TensorFlow Object Detection API 
-                            #log.info("inferenceCore:: TensorFlow openCV API")                            
-                            self.camRunTime.listObjects, self.camRunTime.listObjectTradking  = objectDetection(self.camRunTime.frame, \
-                                                                                               self.camRunTime.idObjeto, self.camRunTime.listRectanglesDetected, \
-                                                                                               self.camRunTime.detection,  self.camRunTime.rows, \
-                                                                                               self.camRunTime.cols, self.camRunTime.cvNetTensorFlow)
+                            else:
+                                #chamada para a CNN do OpenCV - TensorFlow Object Detection API 
+                                #log.info("inferenceCore:: TensorFlow openCV API")                            
+                                self.camRunTime.listObjects, self.camRunTime.listObjectTracking  = objectDetection(self.camRunTime.frame, \
+                                                                                                   self.camRunTime.idObjeto, self.camRunTime.listRectanglesDetected, \
+                                                                                                   self.camRunTime.detection,  self.camRunTime.rows, \
+                                                                                                   self.camRunTime.cols, self.camRunTime.cvNetTensorFlow)
 
                     #sem detecção de objetos
                     if len(self.camRunTime.listObjects) == 0 and self.camRunTime.portaoVirtualSelecionado:
@@ -264,13 +388,13 @@ class InferenceCore(QThread):
                                     # ajustando posicao do centroid 
 
                                     #desenhando o box e label
-                                    cv.rectangle(frame_screen, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
+                                    cv.rectangle(self.frame_screen, (int(box[0]), int(box[1]) ), (int(box[2]), int(box[3])), (23, 230, 210), thickness=2)
                                     top = int (box[1])
                                     y = top - 15 if top - 15 > 15 else top + 15
-                                    cv.putText(frame_screen, str(box[4]), (int(box[0]), int(y)),cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
+                                    cv.putText(self.frame_screen, str(box[4]), (int(box[0]), int(y)),cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1)
                                     text = "ID {}".format(objectID)
-                                    cv.putText(frame_screen, text, (centroid[0] - 10, centroid[1] - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                                    cv.circle(frame_screen, (centroid[0], centroid[1]), 3, (0, 255, 0), -1)
+                                    cv.putText(self.frame_screen, text, (centroid[0] - 10, centroid[1] - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                                    cv.circle(self.frame_screen, (centroid[0], centroid[1]), 3, (0, 255, 0), -1)
 
                                     #checando tipo objeto
                                     typeObject = str(box[6])
@@ -345,8 +469,8 @@ class InferenceCore(QThread):
                                                                                 #salvando foto para treinamento
                                                                                 #crop no box
                                                                                 #left, top, right, bottom
-                                                                                #frame_no_label = frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
-                                                                                #saveImageBox(frame_no_label, str(box[6]))
+                                                                                #self.frame_no_label = self.frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
+                                                                                #saveImageBox(self.frame_no_label, str(box[6]))
 
                                                                                 if utils.checkInternetAccess():
 
@@ -358,7 +482,7 @@ class InferenceCore(QThread):
                                                                                                                                            self.camRunTime.emailConfig['subject'],
                                                                                                                                            self.camRunTime.emailConfig['servidorEmail'],
                                                                                                                                            self.camRunTime.emailConfig['user'],
-                                                                                                                                           frame_screen,
+                                                                                                                                           self.frame_screen,
                                                                                                                                            str(typeObject), #tipo de objeto detectado
                                                                                                                                            r.get('nameRegion'),
                                                                                                                                            self.camRunTime.nameCam))
@@ -374,7 +498,7 @@ class InferenceCore(QThread):
                                                                                                           self.camRunTime.emailConfig['subject'],
                                                                                                           self.camRunTime.emailConfig['servidorEmail'],
                                                                                                           self.camRunTime.emailConfig['user'],
-                                                                                                          frame_screen,
+                                                                                                          self.frame_screen,
                                                                                                           str(typeObject),
                                                                                                           r.get('nameRegion'),
                                                                                                           self.camRunTime.nameCam]
@@ -438,7 +562,7 @@ class InferenceCore(QThread):
                                                                                                            self.camRunTime.emailConfig['subject'],
                                                                                                            self.camRunTime.emailConfig['servidorEmail'],
                                                                                                            self.camRunTime.emailConfig['user'],
-                                                                                                           frame_screen,
+                                                                                                           self.frame_screen,
                                                                                                            str(typeObject),
                                                                                                            '(sem região definida)',
                                                                                                            self.camRunTime.nameCam))
@@ -453,7 +577,7 @@ class InferenceCore(QThread):
                                                                           self.camRunTime.emailConfig['subject'],
                                                                           self.camRunTime.emailConfig['servidorEmail'],
                                                                           self.camRunTime.emailConfig['user'],
-                                                                          frame_screen,
+                                                                          self.frame_screen,
                                                                           str(typeObject),
                                                                           "(sem região definida)",                                                                       
                                                                           self.camRunTime.nameCam]
@@ -492,13 +616,13 @@ class InferenceCore(QThread):
 
                                 #grava video novo se tiver um objeto novo na cena
                                 hora = utils.getDate()['hour'].replace(':','-')
-                                self.camRunTime.nameVideo = self.camRunTime.dir_video_trigger_on_alarmes + '/' + hora + '.avi'
+                                self.camRunTime.nameVideoOnAlarmes = self.camRunTime.nameCam + '_' + self.camRunTime.dir_video_trigger_on_alarmes + '/' + hora + '.avi'
                                 
                                 #if out_video is not None:
                                 #h = nchw[2]
                                 #w = nchw[3]
-                                self.camRunTime.out_video = cv.VideoWriter(self.camRunTime.nameVideo, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h))
-                                self.camRunTime.out_video.write(frame_no_label)
+                                self.camRunTime.out_video = cv.VideoWriter(self.camRunTime.nameVideoOnAlarmes, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h))
+                                self.camRunTime.out_video.write(self.frame_no_label)
                                 self.camRunTime.newVideo = False
 
                             
@@ -506,7 +630,7 @@ class InferenceCore(QThread):
                             if self.camRunTime.gravandoOnAlarmes and (self.camRunTime.STOP_ALL == False):
                                 if self.camRunTime.out_video is not None:
                                     #print('gravandoOnAlarmes')
-                                    self.camRunTime.out_video.write(frame_no_label)
+                                    self.camRunTime.out_video.write(self.frame_no_label)
 
                        
 
@@ -530,7 +654,7 @@ class InferenceCore(QThread):
                                 
                                 
                                 self.camRunTime.out_video_all_time = cv.VideoWriter(self.camRunTime.nameVideoAllTime, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h))
-                                self.camRunTime.out_video_all_time.write(frame_no_label)
+                                self.camRunTime.out_video_all_time.write(self.frame_no_label)
 
                                 self.camRunTime.timeGravandoAllInit = time.time()
                                     
@@ -538,7 +662,7 @@ class InferenceCore(QThread):
                             if self.camRunTime.out_video_all_time is not None:
                                 #print('gravandoAllTime')
                                 #print('out_video_all_time type: {}'.format(self.camRunTime.out_video_all_time))                            
-                                self.camRunTime.out_video_all_time.write(frame_no_label)
+                                self.camRunTime.out_video_all_time.write(self.frame_no_label)
                    
 
                     #disco cheio 
@@ -554,7 +678,12 @@ class InferenceCore(QThread):
                     
                     #end else disco cheio  
                                 
-                    self.change_pixmap_signal.emit(frame_screen, self.camRunTime.idCam)
+                    if self.camRunTime.idCam == 1:
+                        self.change_pixmap_signal_1.emit(self.frame_screen)
+                    
+                    elif self.camRunTime.idCam == 2:
+                        self.change_pixmap_signal_2.emit(self.frame_screen)
+                    
                     #print('emit')
 
                     self.camRunTime.end = time.time()

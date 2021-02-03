@@ -600,7 +600,7 @@ class StatusConfig:
 
         for m in self.data.get('openVinoModels'):
             if m.get('isActive') == "True":
-                return m.get('openVinoDevice'), m.get('openVinoModelXml'), m.get('openVinoModelBin'), self.data["openVinoCpuExtension"], self.data["openVinoPluginDir"], m.get('name')
+                return m.get('openVinoDevice'), m.get('openVinoModelXml'), m.get('openVinoModelBin'), self.data["openVinoCpuExtension"], self.data["openVinoPluginDir"], m.get('nome')
 
     def getDiskMinUsage(self):
         return self.data["storageConfig"]["diskMinUsage"]
@@ -634,13 +634,16 @@ class StatusConfig:
 
     def getRegions(self, runTimeId):
         
-        regions = ''
+        print('getRegions:: runTimeId: {}'.format(str(runTimeId)))
+        
+        regions = []       
         
         for runTime in self.regions:
-            if runTime.get('camRunTime') == runTimeId:
+            
+            if runTime.get('camRunTime') == str(runTimeId):
                regions = runTime.get('regions')
 
-        
+        print('getRegions:: regions size: {:d}'.format(len(regions)))
         return regions
 
     def getRegion(self, name):
@@ -707,7 +710,7 @@ class StatusConfig:
         edit = False
         i = 0
         for m in self.data.get('openVinoModels'):
-            if m.get('name') == name:
+            if m.get('nome') == name:
                 self.data.get('openVinoModels')[i] = model
                 edit = True
                 break
@@ -985,7 +988,7 @@ class StatusConfig:
         if len(self.regions) > 0:
             if idRegion <= (len(self.regions) - 1):            
                 for a in self.regions[idRegion].get('alarm'):                            
-                    if a.get('name') == alarm['name']:                
+                    if a.get('nome') == alarm['name']:                
                         #print('edit true')
                         self.regions[idRegion].get('alarm')[i] = alarm
                         edit = True
@@ -1035,7 +1038,7 @@ class StatusConfig:
         for r in self.regions:
             if r.get("nameRegion") == regionName:
                 for a in r.get('alarm'):
-                    if a.get('name') == alarmName:
+                    if a.get('nome') == alarmName:
                         del self.regions[indexRegion].get('alarm')[indexAlarm]
                     indexAlarm = indexAlarm+1
                # return True
@@ -1079,8 +1082,8 @@ class StatusConfig:
                 status = False
         else:
             for m in self.data.get('openVinoModels'):
-                if m.get('name') == modelName:
-                    log.info('deletando {}'.format(self.data.get('openVinoModels')[i].get('name')))
+                if m.get('nome') == modelName:
+                    log.info('deletando {}'.format(self.data.get('openVinoModels')[i].get('nome')))
                     del self.data.get('openVinoModels')[i]
                     status = True
                 else:
@@ -1137,7 +1140,7 @@ class StatusConfig:
                 print('Prob_threshold:        {}'.format(r.get('prob_threshold')))
                 print('PointsPolygon:         {}'.format(r.get('pointsPolygon')))
                 for a in r["alarm"]:
-                    print('Alarm Name:            {}'.format(a.get('name')))
+                    print('Alarm Name:            {}'.format(a.get('nome')))
                     print('Alarm Time start:      {}:{}'.format(a.get('time').get('start').get('hour'),a.get('time').get('start').get('min') ) )
 
                     print('Alarm Time end:      {}:{}'.format(a.get('time').get('end').get('hour'), a.get('time').get('end').get('min')))

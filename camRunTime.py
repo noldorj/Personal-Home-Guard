@@ -85,8 +85,8 @@ class CamRunTime():
     stopSound = False
     initOpenVinoStatus = True
 
-    nameVideo  = 'firstVideo'
-    nameVideoAllTime  = 'firstVideo'
+    nameVideoOnAlarmes  = 'videos_alarmes'
+    nameVideoAllTime  = 'videos_24h'
     newVideo = True
     releaseVideoOnAlarmes = False 
     releaseVideoAllTime = False 
@@ -123,7 +123,7 @@ class CamRunTime():
     dir_video_trigger_all_time = None
     source = None
     ipCam = None
-    nameCam = 'Camera'
+    nameCam = 'cam'
     error = ' '
     errorWebcam = False
     prob_threshold = 60.0 
@@ -272,6 +272,8 @@ class CamRunTime():
         #log.info('camRunTime::init TOKEN: {}'.format(utils.decrypt(self.login.get('token').decode())))
         
         
+        self.nameVideoAllTime = self.statusConfig.data["dirVideosAllTime"] + '_' + self.nameCam
+        self.nameVideoOnAlarmes = self.statusConfig.data["dirVideosOnAlarmes"] + '_' + self.nameCam
         self.gravandoAllTime = True if self.statusConfig.data["isRecordingAllTime"] == 'True' else False
         self.gravandoOnAlarmes = True if self.statusConfig.data["isRecordingOnAlarmes"] == 'True' else False
         self.diskMinUsage = int(self.statusConfig.data["storageConfig"]["diskMinUsage"])
@@ -303,6 +305,8 @@ class CamRunTime():
         
         #Carregando regioes salvas
         self.regions = self.statusConfig.getRegions(self.idCam)
+        print('camRunTime:: self.idCam {:d}'.format(self.idCam))
+        print('camRunTime:: regions size: {:d}'.format(len(self.regions)))
         
         self.emailConfig = self.statusConfig.getEmailConfig()
         if self.emailConfig['name'] != '' and \
@@ -327,10 +331,10 @@ class CamRunTime():
         #    portaoVirtualSelecionado = True
         self.portaoVirtualSelecionado = True
         
-        #Criando diretorio para salvar videos de alarmes
-        self.status_dir_criado_on_alarmes, self.dir_video_trigger_on_alarmes = utils.createDirectory(self.statusConfig.data["dirVideosOnAlarmes"])
-
-        self.status_dir_criado_all_time, self.dir_video_trigger_all_time = utils.createDirectory(self.statusConfig.data["dirVideosAllTime"])
+        #Criando diretorio para salvar videos de alarmes        
+        
+        self.status_dir_criado_on_alarmes, self.dir_video_trigger_on_alarmes = utils.createDirectory(self.nameVideoOnAlarmes)
+        self.status_dir_criado_all_time, self.dir_video_trigger_all_time = utils.createDirectory(self.nameVideoAllTime)
         
         
         #origem do stream do video
