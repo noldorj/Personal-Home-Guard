@@ -121,11 +121,11 @@ def checkSessionPv(session):
         log.info("checkSessionPv:: conectando...")
         sio.connect(host)
 
-    except socketio.exceptions.ConnectionError as  err:
+    except Exception as  err:
 
         log.error('checkSessionPv:: Erro na conexao: ' + str(err))
         error = 'servidorOut' 
-        sessionStatus = False
+        sessionStatus = True
 
     else:
         #log.info('checkSessionPv:: Conexao efetuada checkSessionPv')

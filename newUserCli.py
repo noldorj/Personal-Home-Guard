@@ -11,8 +11,8 @@ from smtplib import SMTP_SSL
 
 import secrets
 
-emailCliente = 'igorddf@gmail.com'
-numCameras = '4'
+emailCliente = 'igorddf2@gmail.com'
+numCameras = '2'
 diasLicenca = '0'
 
 

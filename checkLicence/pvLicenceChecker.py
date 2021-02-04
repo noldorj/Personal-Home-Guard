@@ -78,6 +78,7 @@ def changePasswd(userName, userPassword, userToken):
                 with conn.cursor() as cursor:
                     
                     cursor.execute("UPDATE users set userPassword = '" + userPassword + "' where userName = '" + userName + "'")
+                    conn.commit()
                     
             except OSError as error:
                 status = False
@@ -162,11 +163,21 @@ def newUser(userName, userPassword, userEmail, numCameras, diasLicenca):
                     #diasLicenca valor 0 significa vitalicia
                     log.debug('currentDate: {}'.format(currentDate.__str__()))
 
+                    token = [] 
+                    for i in range(0, int(numCameras)):
+                        token.append('0')
+                    
+                    log.info('Usuario com [{}] tokens/licencas'.format(numCameras))
+
+                    lastToken = int(numCameras)-1
+                    log.info('newUsers:: lastToken: {:d} '.format(lastToken))
+
                     session = {
                         'userId':userId,
                         'userName':userName,
                         'userPassword':userPassword,
-                        'userToken':'0',
+                        'userToken':token,
+                        'lastToken':str(lastToken),
                         'lastLogin':'0',
                         'lastSession':'0',
                         'loginStatus':'off',
@@ -266,7 +277,7 @@ def checkLogin(userName, userPassword, userToken):
                 delta = deltaLicenca.__str__().split(',')[0]
                 delta = int(delta.split(' ')[0])
             
-            log.debug('delta: {:d}'.format(delta))
+            log.debug('checkLogin:: delta: {:d}'.format(delta))
 
             if delta <= int(session['diasLicenca']) or session['diasLicenca'] == '0': 
              
@@ -275,23 +286,66 @@ def checkLogin(userName, userPassword, userToken):
 
                     #checando userToken para garantir logins apenas em uma maquina por vez
                     #se userToken = '0' entao este é o primeiro login com este token gerado pelo PV-Client
-                    log.debug('Username: : ' + userName)
-                    log.debug('Token cliente: ' + userToken)
-                    log.debug('Token servidor: ' + session['userToken'])
+                    log.debug('checkLogin:: Username: : ' + userName)
+                    log.debug('checkLogin:: Token cliente: ' + userToken)
+                    log.debug('checkLogin:: Token servidor: {}'.format(session['userToken']))
                     
-                    if session['userToken'] != userToken:
+                    tokenStatus = False
+
+                    for token in session['userToken']:
+                        if token == userToken:
+                            log.debug('checkLogin:: Token True: {}'.format(session['userToken']))
+                            tokenStatus = True
+                            break
+                    
+                    log.debug('checkLogin:: Token status: {}'.format(tokenStatus))
+                    
+                    #if session['userToken'] != userToken:
+                    if not tokenStatus:
                         #gravo o userToken na sessao
-                        log.debug('Primeiro login - sessao on')
+                        log.debug('checkLogin:: Sobrescrevendo sessoes')
                         
-                        session['userToken'] = userToken
+                        i = 0 
+                        for token in session['userToken']:
+                            if token == '0':
+                                log.info('checkLogin:: token == 0')
+                                session['userToken'][i] = userToken
+                                break
+                            i = i + 1
+
+                        log.info('i: {:d}'.format(i))
+                        log.info('len session[userToken]: {:d}'.format(len(session['userToken'])))
+                        
+                        if i == len(session['userToken']):
+                            #session['userToken'][0] = userToken
+                            log.info('i == len session[userToken] atualiando Token: {}'.format(userToken))
+                            log.info('i == len session[userToken] lastToken: {}'.format(session['lastToken']))
+                            session['userToken'][ int(session['lastToken'] )] = userToken
+
+                        lastToken = 0
+                        if int(session['numCameras']) > 1:  
+                            if int(session['lastToken']) > 0 and \
+                                    int(session['lastToken']) < int(session['numCameras']):
+
+                                lastToken = int(session['lastToken']) - 1
+
+                            else:
+
+                                lastToken = int(session['numCameras']) - 1
+
+
+                        log.info('lastToken: {}'.format(str(lastToken))) 
+                        session['lastToken'] = str(lastToken)
+                        #session['userToken'] = userToken
                         session['loginStatus'] = 'on'
                         session['sessionStatus'] = 'on'
                         session['lastLogin'] = lastLogin
                         session['lastSession'] = lastLogin
 
                     #se for um segundo login, valida o userToken e ativa a sessao - apenas para registro no log
-                    elif session['userToken'] == userToken:
-                        log.debug('Validando login - userToken existente')
+                    #elif session['userToken'] == userToken:
+                    elif tokenStatus:
+                        log.debug('checkLogin:: Validando login - userToken existente')
                         
                         session['loginStatus'] = 'on'
                         session['sessionStatus'] = 'on'
@@ -301,27 +355,54 @@ def checkLogin(userName, userPassword, userToken):
                     #se for um login devido a perda de sessao anterior ou login em outra maquina
                     elif session['sessionStatus'] == 'off' or session['loginStatus']=='off':
                         
-                        log.info('Validando perda de sessao')
-                        log.info('Atribuindo novo Token')
+                        log.info('checkLogin:: Validando perda de sessao')
+                        log.info('checkLogin:: Atribuindo novo Token')
 
-                        session['userToken'] = userToken
+                        i = 0 
+                        for token in session['userToken']:
+                            if token == '0':
+                                session['userToken'][i] = userToken
+                                break
+                            i = i + 1
+                        
+                        log.info('index i: {:d}'.format(i))
+
+                        if i == len(session['userToken']):
+                            log.info('atualiando Token: {}'.format(userToken))
+                            log.info('atualiando lastLogin: {}'.format(session['lastToken']))
+                            #session['userToken'][0] = userToken
+                            session['userToken'][ int(session['lastToken'] )] = userToken
+                            
+                        
+                        lastToken = 0
+                        if int(session['lastToken']) > 0 and \
+                                int(session['lastToken']) < int(session['numCameras']):
+
+                            lastToken = int(session['lastToken']) - 1
+
+                        else:
+
+                            lastToken = int(session['numCameras']) - 1
+                        
+                        session['lastToken'] = str(lastToken)
+                        #session['userToken'] = userToken
                         session['loginStatus'] = 'on'
                         session['sessionStatus'] = 'on'
                         session['lastLogin'] = lastLogin
                         session['lastSession'] = lastLogin
 
                     try:
-                        log.info('Atualizando arquivo de sessao: ' + file)
+                        log.info('checkLogin:: Atualizando arquivo de sessao: ' + file)
                         json.dump(session, open(file,'w'),indent=3)
 
                     except OSError as ex:
-                        log.critical('Erro ao gravar arquivo de sessao')
+                        log.critical('checkLogin:: Erro ao gravar arquivo de sessao')
 
                     else:
-                        log.info('Sessao: {} atualizada'.format(userName))
+                        log.info('checkLogin:: Sessao: {} atualizada'.format(userName))
 
                 else:
-                    log.debug('Login invalido')
+                    log.debug('checkLogin:: Login invalido')
                     status = False
 
             #checando diasLicenca 
@@ -377,7 +458,7 @@ def forgotPassword(email):
                     '587',
                     'smtp.gmail.com',
                     'contato@portaovirtual.com.br',
-                    'ujluwhekbucclvap',
+                    'flevkztxyqcaovue',
                     passwd
                                                                                                                ))
         threadEmail.start()  
@@ -427,9 +508,19 @@ def checkSession(userName, userToken):
             #usando strftime para corrigir inclusao de segundos, indevidamente, na data 
             currentDate = currentDate.strftime('%Y-%b-%d %H:%M')
 
+            tokenStatus = False
+
+            for token in session['userToken']:
+                if token == userToken:
+                    tokenStatus = True
+                    break
+            
+            log.debug('checkLogin:: Token status: {}'.format(tokenStatus))
+            
             if (len(minutes)>1):
                 #status = False
-                if userName == session['userName'] and userToken == session['userToken']:
+                #if userName == session['userName'] and userToken == session['userToken']:
+                if userName == session['userName'] and tokenStatus:
                     log.critical('checkSession:: Sessão expirou')
                     session['sessionStatus'] = 'off'
                     session['loginStatus'] = 'off'
@@ -455,7 +546,8 @@ def checkSession(userName, userToken):
                 log.debug('checkSession:: userToken         : {}'.format(userToken))
                 log.debug('checkSession:: session userToken : {}'.format(session['userToken']))
                 
-                if userName == session['userName'] and userToken == session['userToken']:
+                #if userName == session['userName'] and userToken == session['userToken']:
+                if userName == session['userName'] and tokenStatus:
                     
                     log.debug('checkSession:: minutes    : {}'.format(minutes))
                     log.debug('checkSession:: expireTime : {}'.format(expireTime))
