@@ -122,7 +122,8 @@ def stopWatchDog():
             if OS_PLATFORM == 'linux':
                 os.kill(pid, 9)
             else:
-                os.system("taskkill /f /fi " + str(pid))
+                #os.system("taskkill /f /pid " + str(pid))
+                killProcessId(pid)
                 #os.system("taskkill /f /im " + namePid)
 
         except Exception as e:
