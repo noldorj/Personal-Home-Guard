@@ -296,7 +296,7 @@ class CamRunTime():
         self.device, self.openVinoModelXml, self.openVinoModelBin, self.openVinoCpuExtension, self.openVinoPluginDir, self.openVinoModelName  = self.statusConfig.getActiveDevice()
         cam = self.statusConfig.getCamEmUsoConfig(self.idCam)
         if cam is not None:
-            self.nameCam = cam.get('nome')
+            self.nameCam = cam.get('name')
             self.source = cam.get('source')
         
         # dnnMOdel for TensorFlow Object Detection API

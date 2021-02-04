@@ -540,7 +540,7 @@ class StatusConfig:
     
     dataLogin = {
     
-        "user"             : "nome@email.com",
+        "user"             : "name@email.com",
         "passwd"           : "senha",
         "loginAutomatico"  : "False",
         "autoStart"        : "False"
@@ -600,7 +600,7 @@ class StatusConfig:
 
         for m in self.data.get('openVinoModels'):
             if m.get('isActive') == "True":
-                return m.get('openVinoDevice'), m.get('openVinoModelXml'), m.get('openVinoModelBin'), self.data["openVinoCpuExtension"], self.data["openVinoPluginDir"], m.get('nome')
+                return m.get('openVinoDevice'), m.get('openVinoModelXml'), m.get('openVinoModelBin'), self.data["openVinoCpuExtension"], self.data["openVinoPluginDir"], m.get('name')
 
     def getDiskMinUsage(self):
         return self.data["storageConfig"]["diskMinUsage"]
@@ -710,7 +710,7 @@ class StatusConfig:
         edit = False
         i = 0
         for m in self.data.get('openVinoModels'):
-            if m.get('nome') == name:
+            if m.get('name') == name:
                 self.data.get('openVinoModels')[i] = model
                 edit = True
                 break
@@ -931,10 +931,10 @@ class StatusConfig:
         self.data["camListAtivas"] = self.dataCam 
         self.saveConfigFile()
 
-    def addCamEncontradaConfig(self, nome, idCam, ip, mac, port, user, passwd, channel, source):
+    def addCamEncontradaConfig(self, name, idCam, ip, mac, port, user, passwd, channel, source):
 
         cam = {
-            "nome"           : nome,
+            "name"           : name,
             "idCam"          : idCam,
             "ip"             : ip,
             "mac"            : mac,
@@ -977,27 +977,33 @@ class StatusConfig:
         self.saveRegionFile()
 
         
-    def addAlarm(self, idRegion, alarm):
+    def addAlarm(self, idRegion, alarm, runTimeId):
 
         log.info('addAlarm::')
         edit = False
-        i = 0
+        i = 0 #regions
+        j = 0 #runtime
         #print('addAlarm:: idRegion: {:d}'.format(idRegion))
         #print('addAlarm:: regionsLen: {:d}'.format(len(self.regions)))
         
-        if len(self.regions) > 0:
-            if idRegion <= (len(self.regions) - 1):            
-                for a in self.regions[idRegion].get('alarm'):                            
-                    if a.get('nome') == alarm['name']:                
-                        #print('edit true')
-                        self.regions[idRegion].get('alarm')[i] = alarm
-                        edit = True
-                        break
-                    else:
-                        i = i+1
-            
-            if not edit:
-                self.regions[idRegion].get('alarm').append(alarm)
+        for runTime in self.regions:
+            if runTime.get('camRunTime') == runTimeId:
+                regions = runTime.get('regions')                
+        
+                if len(regions) > 0:
+                    if idRegion <= (len(regions) - 1):            
+                        for a in regions[idRegion].get('alarm'):                            
+                            if a.get('name') == alarm['name']:                
+                                print('edit true')
+                                self.regions[j].get('regions')[idRegion].get('alarm')[i] = alarm                                
+                                edit = True
+                                break
+                            else:
+                                i = i+1
+                    
+                    if not edit:
+                        self.regions[j].get('regions')[idRegion].get('alarm').append(alarm)
+            j = j + 1            
 
             self.saveRegionFile()
         #TO-DO try catch toleranca a falhas
@@ -1038,7 +1044,7 @@ class StatusConfig:
         for r in self.regions:
             if r.get("nameRegion") == regionName:
                 for a in r.get('alarm'):
-                    if a.get('nome') == alarmName:
+                    if a.get('name') == alarmName:
                         del self.regions[indexRegion].get('alarm')[indexAlarm]
                     indexAlarm = indexAlarm+1
                # return True
@@ -1082,8 +1088,8 @@ class StatusConfig:
                 status = False
         else:
             for m in self.data.get('openVinoModels'):
-                if m.get('nome') == modelName:
-                    log.info('deletando {}'.format(self.data.get('openVinoModels')[i].get('nome')))
+                if m.get('name') == modelName:
+                    log.info('deletando {}'.format(self.data.get('openVinoModels')[i].get('name')))
                     del self.data.get('openVinoModels')[i]
                     status = True
                 else:
@@ -1140,7 +1146,7 @@ class StatusConfig:
                 print('Prob_threshold:        {}'.format(r.get('prob_threshold')))
                 print('PointsPolygon:         {}'.format(r.get('pointsPolygon')))
                 for a in r["alarm"]:
-                    print('Alarm Name:            {}'.format(a.get('nome')))
+                    print('Alarm Name:            {}'.format(a.get('name')))
                     print('Alarm Time start:      {}:{}'.format(a.get('time').get('start').get('hour'),a.get('time').get('start').get('min') ) )
 
                     print('Alarm Time end:      {}:{}'.format(a.get('time').get('end').get('hour'), a.get('time').get('end').get('min')))

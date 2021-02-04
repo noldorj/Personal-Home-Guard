@@ -172,12 +172,12 @@ class FormProc(QWidget):
                 camEmUso_runTime2 = self.statusConfig.getCamEmUsoConfig(2)
                 
                 if camEmUso_runTime1 is not None:
-                    self.uiConfig.comboBoxCamerasEmUso.addItem('[' + camEmUso_runTime1.get('id') + ']: ' + '[' + camEmUso_runTime1.get('nome') + '] ' + camEmUso_runTime1.get('ip') + ' : ' + camEmUso_runTime1.get('port') + ' [em uso]')
+                    self.uiConfig.comboBoxCamerasEmUso.addItem('[' + camEmUso_runTime1.get('id') + ']: ' + '[' + camEmUso_runTime1.get('name') + '] ' + camEmUso_runTime1.get('ip') + ' : ' + camEmUso_runTime1.get('port') + ' [em uso]')
                     #self.uiConfig.comboBoxCamerasEmUso.addItem('[' + camEmUso_runTime1.get('id') + ']: ' + camEmUso_runTime1.get('ip') + ' : ' + camEmUso_runTime1.get('port'))                    
                     self.camerasEmUso = self.camerasEmUso + 1
                 
                 if camEmUso_runTime2 is not None:
-                    self.uiConfig.comboBoxCamerasEmUso.addItem('[' + camEmUso_runTime2.get('id') + ']: ' + '[' + camEmUso_runTime2.get('nome') + '] ' + camEmUso_runTime2.get('ip') + ' : ' + camEmUso_runTime2.get('port') + ' [em uso]')
+                    self.uiConfig.comboBoxCamerasEmUso.addItem('[' + camEmUso_runTime2.get('id') + ']: ' + '[' + camEmUso_runTime2.get('name') + '] ' + camEmUso_runTime2.get('ip') + ' : ' + camEmUso_runTime2.get('port') + ' [em uso]')
                     #self.uiConfig.comboBoxCamerasEmUso.addItem('[' + camEmUso_runTime2.get('id') + ']: ' + camEmUso_runTime2.get('ip') + ' : ' + camEmUso_runTime2.get('port'))
                     self.camerasEmUso = self.camerasEmUso + 1
 
@@ -240,7 +240,7 @@ class FormProc(QWidget):
             # # ----- Preenchendo ComboBox Cameras em Uso ----- #
             # for runTimeId in range(1, numCameras+1):
                 # cam = self.statusConfig.getCamEmUsoConfig(runTimeId)                                      
-                # self.uiConfig.comboBoxCamerasEmUso.addItem('[' + cam.get('id') + ']: ' + '[' + cam.get('nome') + '] ' + cam.get('ip') + ' : ' + cam.get('port') + ' [em uso]')
+                # self.uiConfig.comboBoxCamerasEmUso.addItem('[' + cam.get('id') + ']: ' + '[' + cam.get('name') + '] ' + cam.get('ip') + ' : ' + cam.get('port') + ' [em uso]')
            
             
             # ----------- init tab configuração geral --------------- 
@@ -811,6 +811,17 @@ class FormProc(QWidget):
             
             #self.comboAlarmsUpdate(0)
 
+    def getRunTimeId(self):
+        runTimeId = 0
+        
+        idCombo = self.uiConfig.comboBoxCamAtivas.currentText().split(':')[0]
+        idCombo = idCombo.replace('[','')
+        idCombo = idCombo.replace(']','')  
+
+        runTimeId = self.statusConfig.getCanRunTimeByIdCam(idCombo)
+        
+        return runTimeId
+    
     def btnSaveAlarm(self):
         log.info('btnSaveAlarm::')
         #print('btnSaveAlarm::')
@@ -819,6 +830,8 @@ class FormProc(QWidget):
         msg.setIcon(QMessageBox.Information)
         msg.setWindowTitle("Campo em branco")
         msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        
+        runTimeId = self.getRunTimeId()
 
         #checando campos em branco
 
@@ -844,7 +857,7 @@ class FormProc(QWidget):
                          'isEmailAlert':'True' if self.uiConfig.checkEmailAlert.isChecked() else 'False',
                          'isSoundAlert':'True' if self.uiConfig.checkAlertSound.isChecked() else 'False'
                         }
-            self.statusConfig.addAlarm(self.uiConfig.comboRegions.currentIndex(), a)                        
+            self.statusConfig.addAlarm(self.uiConfig.comboRegions.currentIndex(), a, runTimeId)                        
             self.refreshStatusConfig()
 
             if len(self.camRunTime.regions) > 0:
@@ -979,7 +992,7 @@ class FormProc(QWidget):
                 idCombo = idCombo.replace('[','')
                 idCombo = idCombo.replace(']','')  
 
-                runTimeId = statusConfig.getCanRunTimeByIdCam(idCombo)
+                runTimeId = self.statusConfig.getCanRunTimeByIdCam(idCombo)
 
                 i = 0                 
                 
@@ -997,7 +1010,7 @@ class FormProc(QWidget):
                                 self.uiConfig.txtUrlRstp.setText(cam.get('source'))
                                 self.statusConfig.setRtspConfig(cam.get('source'))
                                 
-                                self.infCam.camRunTime.nameCam = cam.get('nome')
+                                self.infCam.camRunTime.nameCam = cam.get('name')
                             
                             i = i + 1
                             
@@ -1013,7 +1026,7 @@ class FormProc(QWidget):
                                 self.uiConfig.txtUrlRstp.setText(cam.get('source'))
                                 self.statusConfig.setRtspConfig(cam.get('source'))
                                 
-                                self.infCam2.camRunTime.nameCam = cam.get('nome')
+                                self.infCam2.camRunTime.nameCam = cam.get('name')
                             
                             i = i + 1
                         
@@ -1125,7 +1138,7 @@ class FormProc(QWidget):
             # for cam in self.camRunTime.listCamEncontradas:
                 # if cam.get('id') == idCombo:
                     
-                    # self.uiConfig.txtNomeCamDisponivel.setText(cam.get('nome'))
+                    # self.uiConfig.txtNomeCamDisponivel.setText(cam.get('name'))
                     # self.uiConfig.txtIpCamDisponivel.setText(cam.get('ip'))
                     # self.uiConfig.txtUserCamDisponivel.setText(cam.get('user'))
                     # self.uiConfig.txtPasswdCamDisponivel.setText(cam.get('passwd'))
@@ -1151,7 +1164,7 @@ class FormProc(QWidget):
             
             for cam in self.camRunTime.listCamEncontradas:
                 if cam.get('id') == idCombo:
-                    self.uiConfig.txtNomeCamDisponivel.setText(cam.get('nome'))
+                    self.uiConfig.txtNomeCamDisponivel.setText(cam.get('name'))
                     self.uiConfig.txtIpCamDisponivel.setText(cam.get('ip'))
                     self.uiConfig.txtUserCamDisponivel.setText(cam.get('user'))
                     self.uiConfig.txtPasswdCamDisponivel.setText(cam.get('passwd'))
@@ -1177,7 +1190,7 @@ class FormProc(QWidget):
             
             for cam in self.camRunTime.listCamAtivas:
                 if cam.get('id') == idCombo:
-                    nome = cam.get('nome')
+                    nome = cam.get('name')
                     break
             
             self.uiConfig.txtNomeCamAtiva.setText(nome)
@@ -1627,7 +1640,7 @@ class FormProc(QWidget):
             self.uiConfig.checkSun.setCheckState(a.get('days').get('sun') == 'True')
             self.uiConfig.checkEmailAlert.setCheckState(a.get('isEmailAlert') == 'True')
             self.uiConfig.checkAlertSound.setCheckState(a.get('isSoundAlert') == 'True')
-            self.uiConfig.txtNameAlarm.insert(a.get('nome'))
+            self.uiConfig.txtNameAlarm.setText(a.get('name'))
             self.uiConfig.comboAlarms.setCurrentIndex(i)
 
             tStart = QTime(int(a.get('time').get('start').get('hour')), int(a.get('time').get('start').get('min')))
@@ -1695,7 +1708,7 @@ class FormProc(QWidget):
                 if not self.statusConfig.isAlarmEmpty(r.get('nameRegion'), runTimeId):                    
                     if i < len(regions):
                         for a in regions[i].get('alarm'):
-                            self.uiConfig.comboAlarms.addItem(a.get('nome'))                
+                            self.uiConfig.comboAlarms.addItem(a.get('name'))                
                     
                     self.comboAlarmsUpdate(0)
                     
@@ -1822,7 +1835,7 @@ class FormProc(QWidget):
         self.uiConfig.txtDirRecordingAllTime.setText(self.statusConfig.data.get("dirVideosAllTime"))
         self.uiConfig.txtDirRecordingOnAlarmes.setText(self.statusConfig.data.get("dirVideosOnAlarmes"))
         self.uiConfig.txtAvisoUtilizacaoHD.setText(self.statusConfig.data["storageConfig"].get("diskMinUsage"))
-        self.uiConfig.txtEmailName.setText(self.statusConfig.data["emailConfig"].get('nome'))
+        self.uiConfig.txtEmailName.setText(self.statusConfig.data["emailConfig"].get('name'))
         #self.uiConfig.txtEmailPort.setText(self.statusConfig.data["emailConfig"].get('port'))
         #self.uiConfig.txtEmailSmtp.setText(self.statusConfig.data["emailConfig"].get('smtp'))
         self.uiConfig.txtEmailUser.setText(self.statusConfig.data["emailConfig"].get('user'))
@@ -1854,9 +1867,9 @@ class FormProc(QWidget):
         #carregar cams previamente escaneadas na rede
         for cam in self.camRunTime.listCamAtivas:
             if cam.get('emUso') == 'True':
-                self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']: ' + '[' + cam.get('nome') + '] ' + cam.get('ip') + ' : ' + cam.get('port') + ' [em uso]')
+                self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']: ' + '[' + cam.get('name') + '] ' + cam.get('ip') + ' : ' + cam.get('port') + ' [em uso]')
             else:
-                self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']: ' + '[' + cam.get('nome') + '] ' + cam.get('ip') + ' : ' + cam.get('port'))
+                self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']: ' + '[' + cam.get('name') + '] ' + cam.get('ip') + ' : ' + cam.get('port'))
 
         for cam in self.camRunTime.listCamEncontradas:
             self.uiConfig.comboBoxCamEncontradas.addItem('[' + cam.get('id') + ']: ' + cam.get('ip') + ' : ' + cam.get('port'))
@@ -1870,7 +1883,7 @@ class FormProc(QWidget):
             
             for cam in self.camRunTime.listCamAtivas:
                 if cam.get('id') == idCombo:
-                    nome = cam.get('nome')
+                    nome = cam.get('name')
                     break
             
             self.uiConfig.txtNomeCamAtiva.setText(nome)

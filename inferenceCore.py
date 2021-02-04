@@ -105,8 +105,7 @@ class InferenceCore(QThread):
         gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)        
        
         
-        if self.firstFrame is None:
-            print('firstFrame = gray')
+        if self.firstFrame is None:            
             self.firstFrame = gray
             
                 
