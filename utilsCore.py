@@ -39,21 +39,23 @@ locale.setlocale(locale.LC_ALL, 'en_US.utf-8')
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
 #log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)
 
-def getProcessId(name):
+def getProcessId(name, path):
+    listP = []
     for proc in psutil.process_iter():
-        if proc.name() == name:            
-            log.info('getProcessId Pid: {:d}'.format(proc.pid))
-            log.info('getProcessId name: {}'.format(proc.name()))
-            return proc.pid
-    return 0
+        if proc.name() == name and proc.cwd() == path:            
+            log.info('getProcessId:: Pid: {:d}'.format(proc.pid))
+            log.info('getProcessId:: name: {}'.format(proc.name()))
+            log.info('getProcessId:: Path: {}'.format(proc.cwd()))
+            listP.append([proc.pid, proc.cwd()])
+    return listP
 
 
-def killProcessId(name):
-    log.info('killProcessId chamado')
+def killProcessId(pid):
+    log.info('killProcessId::')
     for proc in psutil.process_iter():
-        if proc.name() == name:            
-            log.info('Pid: {:d}'.format(proc.pid))
-            log.info('name: {}'.format(proc.name()))
+        if proc.pid == pid :            
+            log.info('killProcessId:: Pid: {:d}'.format(proc.pid))
+            log.info('killProcessId:: name: {}'.format(proc.name()))
             proc.kill()
             return True 
     return False 
@@ -71,8 +73,9 @@ def initWatchDog():
         log.info('Windows WatchDog')
         app = 'config/wd.exe'
 
-    pid = getProcessId('wd.exe')
-    if  pid == 0:
+    listP = getProcessId('wd.exe', os.getcwd())
+    
+    if  len(listP) == 0:
         try: 
             #subprocess.Popen(app, creationflags=DETACHED_PROCESS)
             #cmd = "<full filepath plus arguments of child process>"
@@ -88,9 +91,16 @@ def initWatchDog():
         except Exception as e: 
             log.critical('initWatchDog:: Erro initWatchDog: {}'.format(e))
         else:
-            log.info('initWatchDog:: WatchDog carregado. PID: {:d}'.format(getProcessId('wd.exe')))
+            listProc = getProcessId('wd.exe', os.getcwd())
+            for proc in listP:
+                pi = proc[0]
+                pa = proc[1]
+                log.info('initWatchDog:: WatchDog carregado. PID: {:d} ; Path: {}'.format(pi, pa))
     else:
-        log.info('initWatchDog:: WatchDog rodando. Pid: {:d}'.format(pid))
+        for proc in listP:
+            pid = proc[0]
+            path = proc[1]
+            log.info('initWatchDog:: WatchDog rodando. Pid: {:d} ; Path: {}'.format(pid, path))
 
 
 def stopWatchDog():
@@ -101,24 +111,28 @@ def stopWatchDog():
     else:
         namePid = 'wd.exe' 
 
-    pid = getProcessId(namePid) 
-    while pid != 0:
+    listP = getProcessId(namePid, os.getcwd()) 
+    
+    for proc in listP:
         try:
-            log.info('kill name: {}'.format(namePid))
+            pid = proc[0]
+            path = proc[1]
+            log.info('\nstopWatchDog:: encerrando Pid: {:d} ; Path: {}'.format(pid, path))
 
             if OS_PLATFORM == 'linux':
                 os.kill(pid, 9)
             else:
-                os.system("taskkill /f /im " + namePid)
+                os.system("taskkill /f /fi " + str(pid))
+                #os.system("taskkill /f /im " + namePid)
 
         except Exception as e:
             log.error('stopWatchDog:: Erro matando processo: {:d}'.format(pid))
             log.error('stopWatchDog:: Error: {}'.format(e))
-            killProcessId(namePid)
+            killProcessId(pid)
         else:
             log.info('stopWatchDog:: WatchDog encerrado. PId: {:d}'.format(pid))
 
-        pid = getProcessId(namePid) 
+        #pid = getProcessId(namePid) 
 
 
 def checkInternetAccess():
