@@ -276,13 +276,14 @@ class InferenceCore(QThread):
                                     cv.putText(frame_screen, text, (centroid[0] - 10, centroid[1] - 10), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                                     cv.circle(frame_screen, (centroid[0], centroid[1]), 3, (0, 255, 0), -1)
 
+                                    #checando tipo objeto
+                                    typeObject = str(box[6])
 
                                     #checando para varias regioes
                                     if len(self.camRunTime.regions) != 0:
                                         for r in self.camRunTime.regions:
 
-                                            #checando tipo objeto
-                                            typeObject = str(box[6])
+                                           
 
                                             if r.get('objectType').get(typeObject) == "True":
 
@@ -361,7 +362,7 @@ class InferenceCore(QThread):
                                                                                                                                            self.camRunTime.emailConfig['subject'],
                                                                                                                                            self.camRunTime.emailConfig['servidorEmail'],
                                                                                                                                            self.camRunTime.emailConfig['user'],
-                                                                                                                                           frame_screen,
+                                                                                                                                           frame_no_label_email,
                                                                                                                                            str(typeObject), #tipo de objeto detectado
                                                                                                                                            r.get('nameRegion'),
                                                                                                                                            self.camRunTime.nameCam))
@@ -377,7 +378,7 @@ class InferenceCore(QThread):
                                                                                                           self.camRunTime.emailConfig['subject'],
                                                                                                           self.camRunTime.emailConfig['servidorEmail'],
                                                                                                           self.camRunTime.emailConfig['user'],
-                                                                                                          frame_screen,
+                                                                                                          frame_no_label_email,
                                                                                                           str(typeObject),
                                                                                                           r.get('nameRegion'),
                                                                                                           self.camRunTime.nameCam]
@@ -441,7 +442,7 @@ class InferenceCore(QThread):
                                                                                                            self.camRunTime.emailConfig['subject'],
                                                                                                            self.camRunTime.emailConfig['servidorEmail'],
                                                                                                            self.camRunTime.emailConfig['user'],
-                                                                                                           frame_screen,
+                                                                                                           frame_no_label_email,
                                                                                                            str(typeObject),
                                                                                                            '(sem região definida)',
                                                                                                            self.camRunTime.nameCam))
@@ -456,7 +457,7 @@ class InferenceCore(QThread):
                                                                           self.camRunTime.emailConfig['subject'],
                                                                           self.camRunTime.emailConfig['servidorEmail'],
                                                                           self.camRunTime.emailConfig['user'],
-                                                                          frame_screen,
+                                                                          frame_no_label_email,
                                                                           str(typeObject),
                                                                           "(sem região definida)",                                                                       
                                                                           self.camRunTime.nameCam]

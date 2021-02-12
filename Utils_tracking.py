@@ -81,9 +81,9 @@ def sendMail(subject, text):
 #envia alerta do portao virtual com imagem anexada ao email
 def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoObjetoDetectado, region, nameCam):
     
-    external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
+    #external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
 
-    log.info('InferenceCore::__init__:: External IP: {}'.format(external_ip))
+    #log.info('InferenceCore::__init__:: External IP: {}'.format(external_ip))
     
     statusConfig = utils.StatusConfig() 
     emailConfig = statusConfig.getEmailConfig()
@@ -141,8 +141,7 @@ def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoO
 
     text = MIMEText('"' + tipoObjetoDetectado + '"' + ' na ' + region +
                     '-  Detectado em ' + data['hour'] +
-                    ' - ' + data['day'] + '/' + data['month'] + '/' + data['year'] + '\n \n' +
-                    'Link vido ao-vivo: ' + 'http://' + external_ip + ':560')
+                    ' - ' + data['day'] + '/' + data['month'] + '/' + data['year'] + '\n \n')
     msg.attach(text)
 
     img_file = MIMEImage(img_file)
