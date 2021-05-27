@@ -903,6 +903,7 @@ class FormProc(QWidget):
                     self.uiConfig.txtUrlRstp.setText(cam.get('source'))
                     self.statusConfig.setRtspConfig(cam.get('source'))
                     self.camRunTime.nameCam = cam.get('nome')
+                    print('btnAtivarCam:: novo nome cam: {}'.format(self.camRunTime.nameCam))
                     
                 i = i + 1
 

@@ -738,6 +738,12 @@ class StatusConfig:
 
         self.saveConfigLogin()
         
+    def getUserLogin(self):
+        if len(self.dataLogin['user']) != 0:
+            return self.dataLogin['user']
+        else:
+            return None
+    
     def setPrimeiroUso(self, status):
         self.data['primeiroUso'] = status 
         self.saveConfigFile()
@@ -869,6 +875,7 @@ class StatusConfig:
         for cam in self.data['camListAtivas']:
             if cam['emUso'] == 'True':
                 camEmuso = cam
+                print('getCamEmUsoConfig:: cam: {}'.format(camEmuso))
                 break
         
         return camEmuso 

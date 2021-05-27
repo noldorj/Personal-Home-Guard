@@ -4,7 +4,8 @@ import numpy as np
 import time
 from objectTracking.pyimagesearch.centroidtracker import CentroidTracker
 from Utils_tracking import sendMailAlert
-#from Utils_tracking import sendMail
+from Utils_tracking import sendAlertApp
+
 from Utils_tracking import saveImageBox
 import utilsCore as utils
 import logging as log
@@ -367,6 +368,17 @@ class InferenceCore(QThread):
                                                                                                                                            r.get('nameRegion'),
                                                                                                                                            self.camRunTime.nameCam))
                                                                                         threadEmail.start()
+                                                                                        
+                                                                                        
+                                                                                        threadAlertApp = Thread(target=sendAlertApp, args=(self.camRunTime.statusConfig.getUserLogin(),
+                                                                                                                                           frame_no_label_email,
+                                                                                                                                           str(typeObject), #tipo de objeto detectado
+                                                                                                                                           r.get('nameRegion'),
+                                                                                                                                           self.camRunTime.nameCam))
+                                                                                        threadAlertApp.start()
+                                                                                        
+                                                                                        
+                                                                                        
                                                                                     else:
                                                                                         log.critical('inferenceCore:: configEmailStatus: '.format(self.camRunTime.configEmailStatus))
                                                                                     
@@ -447,6 +459,16 @@ class InferenceCore(QThread):
                                                                                                            '(sem região definida)',
                                                                                                            self.camRunTime.nameCam))
                                                         threadEmail.start()
+                                                        
+                                                        
+                                                        threadAlertApp = Thread(target=sendAlertApp, args=(self.camRunTime.statusConfig.getUserLogin(),
+                                                           frame_no_label_email,
+                                                           str(typeObject), #tipo de objeto detectado
+                                                           r.get('nameRegion'),
+                                                           self.camRunTime.nameCam))
+                                                        threadAlertApp.start()
+                                                        
+                                                        
                                                     else:
                                                         log.critical('inferenceCore:: configEmailStatus: '.format(self.camRunTime.configEmailStatus))
                                                     
@@ -610,6 +632,15 @@ class InferenceCore(QThread):
                                     
                                     log.info('inferenceCore:: Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
                                     threadEmail.start()
+                                    
+                                    threadAlertApp = Thread(target=sendAlertApp, args=(self.camRunTime.statusConfig.getUserLogin(),
+                                                           frame_no_label_email,
+                                                           str(typeObject), #tipo de objeto detectado
+                                                           r.get('nameRegion'),
+                                                           self.camRunTime.nameCam))
+                                    threadAlertApp.start()
+                                    
+                                    
                                     #print('Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
                                     
 
