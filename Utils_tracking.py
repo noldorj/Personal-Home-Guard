@@ -20,7 +20,7 @@ import datetime
 
 
 
-cred = credentials.Certificate("config/pv-fb-cert.json")
+cred = credentials.Certificate("pv-fb-cert.json")
 firebase_admin.initialize_app(cred, {'storageBucket': 'pvalarmes-3f7ee.appspot.com'})
 
 
