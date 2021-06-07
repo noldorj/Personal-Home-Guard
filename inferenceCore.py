@@ -50,13 +50,12 @@ class InferenceCore(QThread):
     def __init__(self):
         super().__init__()
         self._run_flag = True
-        log.info('InferenceCore:: __init__')
-        
-
-        
+        log.info('InferenceCore:: __init__')       
         
     def setCamRunTime(self, camRunTime):
+        log.info('::setCamRunTime')
         self.camRunTime = camRunTime
+        print('setCamRunTime:: nameCam: {}'.format(self.camRunTime.nameCam))
 
     def isIdInsideRegion(self, centroid, ref_point_polygon):
         path = Path(ref_point_polygon)
@@ -367,6 +366,7 @@ class InferenceCore(QThread):
                                                                                                                                            str(typeObject), #tipo de objeto detectado
                                                                                                                                            r.get('nameRegion'),
                                                                                                                                            self.camRunTime.nameCam))
+                                                                                        print('inferenceCore:: threadEmail nameCam: {}'.format(self.camRunTime.nameCam))
                                                                                         threadEmail.start()
                                                                                         
                                                                                         

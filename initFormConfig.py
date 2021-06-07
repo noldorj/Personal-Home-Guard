@@ -147,6 +147,7 @@ class FormProc(QWidget):
         else: 
             
             self.camRunTime.init()
+            self.infCam.setCamRunTime(self.camRunTime)
             self.checkStorage()
             
             #slots            
@@ -1435,6 +1436,7 @@ class FormProc(QWidget):
             if cam is not None:
                 self.statusConfig.setRtspConfig('webcam')
                 self.camRunTime.nameCam = cam.get('Webcam')
+                
 
     def checkBoxNoLimitsVideosAllTime(self, state):
         if state == 0:
@@ -1666,19 +1668,22 @@ class FormProc(QWidget):
             self.uiConfig.comboBoxCamEncontradas.addItem('[' + cam.get('id') + ']: ' + cam.get('ip') + ' : ' + cam.get('port'))
                          
 
-        if self.uiConfig.comboBoxCamAtivas.currentIndex() != -1: 
-            idCombo = self.uiConfig.comboBoxCamAtivas.currentText().split(':')[0]
-            idCombo = idCombo.replace('[','')
-            idCombo = idCombo.replace(']','')
-            #print('idCombo ativas: {}'.format(idCombo))            
+        # if self.uiConfig.comboBoxCamAtivas.currentIndex() != -1: 
+            # idCombo = self.uiConfig.comboBoxCamAtivas.currentText().split(':')[0]
+            # idCombo = idCombo.replace('[','')
+            # idCombo = idCombo.replace(']','')
+            # #print('idCombo ativas: {}'.format(idCombo))            
             
-            for cam in self.camRunTime.listCamAtivas:
-                if cam.get('id') == idCombo:
-                    nome = cam.get('nome')
-                    break
+            # for cam in self.camRunTime.listCamAtivas:
+                # if cam.get('id') == idCombo:
+                    # nome = cam.get('nome')
+                    # break
             
-            self.uiConfig.txtNomeCamAtiva.setText(nome)
-            self.camRunTime.nameCam = nome
+            # print('fillTabGeral:: nome: {}'.format(nome))
+            # print('fillTabGeral:: camRunTime.nameCam: {}'.format(self.camRunTime.nameCam))
+            # self.uiConfig.txtNomeCamAtiva.setText(nome)
+            # self.camRunTime.nameCam = nome
+            #print('fillTabGeral:: camRunTime.nameCam: {}'.format(nome))
             
         if self.uiConfig.comboBoxCamEncontradas.currentIndex() != -1: 
             self.comboBoxCamEncontradasStateChanged(self.uiConfig.comboBoxCamEncontradas.currentIndex())

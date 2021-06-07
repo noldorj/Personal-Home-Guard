@@ -11,10 +11,33 @@ from smtplib import SMTP_SSL
 
 import secrets
 
+import firebase_admin
+from firebase_admin import credentials
+
+from firebase_admin import auth
+
+import datetime
+
 emailCliente = 'paulinhoks@gmail.com'
 numCameras = '1'
 diasLicenca = '30'
 
+cred = credentials.Certificate("config/pvalarmes-3f7ee-firebase-adminsdk-slpxb-4563d30a50.json")
+firebase_admin.initialize_app(cred, {'storageBucket': 'pvalarmes-3f7ee.appspot.com'})
+
+
+def newUserFirebase(email, passwd):
+
+    name = email.split('@')[0]
+    
+    user = auth.create_user(
+    email=email, 
+    email_verified=False,    
+    password=passwd,
+    display_name=name,    
+    disabled=False)
+    print('Sucessfully created new user: {0}'.format(user.uid))
+    
 
 
 def sendMailnewUser(to, port, smtp, userPassword):
@@ -89,6 +112,8 @@ def main():
     print('numCameras  : ' + numCameras)
     print('diasLicenca : ' + diasLicenca)
     
+    newUserFirebase(emailCliente, passwd)
+    
     login = {'user':emailCliente, 'passwd':passwd, 'userEmail':emailCliente, 'numCameras':numCameras, 'diasLicenca':diasLicenca} 
     
     try: 
@@ -118,5 +143,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    #main()
+    newUserFirebase('igorddf@gmail.com','senha22')
+    
 

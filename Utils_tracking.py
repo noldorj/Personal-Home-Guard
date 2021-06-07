@@ -20,7 +20,7 @@ import datetime
 
 
 
-cred = credentials.Certificate("config/pvalarmes-3f7ee-firebase-adminsdk-slpxb-4563d30a50.json")
+cred = credentials.Certificate("config/pv-fb-cert.json")
 firebase_admin.initialize_app(cred, {'storageBucket': 'pvalarmes-3f7ee.appspot.com'})
 
 
@@ -190,12 +190,16 @@ def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
         
             android = messaging.AndroidConfig(
                     ttl=datetime.timedelta(seconds=3600),
-                    priority='normal',
+                    priority='high',
                     notification=messaging.AndroidNotification(
                         icon='stock_ticker_update',
                         color='#f45342',
                         title=title,
                         body=body,
+                        sound='default',
+                        tag='PV-Alertas',
+                        default_vibrate_timings='true',
+                        default_light_settings='true',
                     ),
                     
             ),
