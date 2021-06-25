@@ -22,42 +22,44 @@ def objectDetection(img, idObjeto, listRectanglesDetected, detection, rows, cols
         rows = img.shape[0]
         cols = img.shape[1]
         resized = cv.resize(img, (300,300)) 
-        cvNet.setInput(cv.dnn.blobFromImage(resized, 1.0/127.5, (300, 300), (127.5, 127.5, 127.5), swapRB=True, crop=False))
-        cvOut = cvNet.forward()
+        
+        if cvNet is not None:
+            cvNet.setInput(cv.dnn.blobFromImage(resized, 1.0/127.5, (300, 300), (127.5, 127.5, 127.5), swapRB=True, crop=False))
+            cvOut = cvNet.forward()
 
-        for detection in cvOut[0,0,:,:]:
+            for detection in cvOut[0,0,:,:]:
 
-            score = float(detection[2])
+                score = float(detection[2])
 
-            if score > 0.35:
+                if score > 0.35:
 
-                left = int(detection[3] * cols)
-                top = int(detection[4] * rows)
-                right = int(detection[5] * cols)
-                bottom = int(detection[6] * rows)
+                    left = int(detection[3] * cols)
+                    top = int(detection[4] * rows)
+                    right = int(detection[5] * cols)
+                    bottom = int(detection[6] * rows)
 
-                idx = int(detection[1]) #indice da classe identificada
-                label = "{}: {:.2f}%".format(classes[idx],score*100)
-                classe = classes[idx]
+                    idx = int(detection[1]) #indice da classe identificada
+                    label = "{}: {:.2f}%".format(classes[idx],score*100)
+                    classe = classes[idx]
 
-                box = (left, top, right, bottom, label, idx, classe)
-                
-                #print('detected score: {:f}'.format(score))
-
-
-                if  classes[idx] is 'pessoa'   or \
-                    classes[idx] is 'gato'     or \
-                    classes[idx] is 'cachorro' or \
-                    classes[idx] is 'carro'    or \
-                    classes[idx] is 'moto': 
+                    box = (left, top, right, bottom, label, idx, classe)
+                    
+                    #print('detected score: {:f}'.format(score))
 
 
-                    #print('classe detectada: {}'.format(classes[idx]))
-                    boxTracking = (left, top, right, bottom)
+                    if  classes[idx] is 'pessoa'   or \
+                        classes[idx] is 'gato'     or \
+                        classes[idx] is 'cachorro' or \
+                        classes[idx] is 'carro'    or \
+                        classes[idx] is 'moto': 
 
-                    listObjectsTracking.append(boxTracking)
 
-                    listRectanglesDetected.append(box)
+                        #print('classe detectada: {}'.format(classes[idx]))
+                        boxTracking = (left, top, right, bottom)
+
+                        listObjectsTracking.append(boxTracking)
+
+                        listRectanglesDetected.append(box)
 
 
     return listRectanglesDetected, listObjectsTracking

@@ -342,7 +342,7 @@ def freeDiskSpace(dirVideo):
      if len(particao) == 1:        
         dirVideo = os.getcwd() + '/' + dirVideo       
      
-     print('dirVideo: {}'.format(dirVideo))
+     
      
      dirListFull = glob(dirVideo + '/*')
      #print('dirListFull : {}'.format(dirListFull))    
@@ -359,12 +359,6 @@ def freeDiskSpace(dirVideo):
         m = m.replace("\\","/")
         monthList.append(m.rsplit('-')[0])
 
-     
-     
-     
-     print('dirList: {}'.format(dirList))
-     print('yearList: {}'.format(yearList))
-     print('monthList: {}'.format(monthList))
      
      if (len(dirList) != 0):
 
@@ -874,8 +868,7 @@ class StatusConfig:
         camEmuso = None
         for cam in self.data['camListAtivas']:
             if cam['emUso'] == 'True':
-                camEmuso = cam
-                print('getCamEmUsoConfig:: cam: {}'.format(camEmuso))
+                camEmuso = cam                
                 break
         
         return camEmuso 

@@ -41,7 +41,9 @@ listObjectsTracking = []
 
 def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
 
+    log.info('initOpenVino::')
     # Plugin initialization for specified device and load extensions library if specified
+    plugin_dir = os.getcwd() + '/' + plugin_dir    
     log.info(' ')
     log.info("Initializing plugin for {} device...".format(device))
     log.info('Model XML: {}'.format(model_xml))
@@ -84,7 +86,9 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
             if plugin_dir == "":
                 plugin.add_cpu_extension(cpu_extension)
             else:
-                plugin.add_cpu_extension(plugin_dir + '/' + cpu_extension)
+                pluginPath = plugin_dir + '/' + cpu_extension                
+                log.info('pluginOpenVino:: cpu_extension path: {}'.format(pluginPath))
+                plugin.add_cpu_extension(pluginPath)
 
         except Exception as e:
 

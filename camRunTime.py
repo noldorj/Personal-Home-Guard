@@ -291,7 +291,7 @@ class CamRunTime():
         if cam is not None:
             self.nameCam = cam.get('nome')
         
-        print('camRunTime:: self.nameCam: {}'.format(self.nameCam))
+        #print('camRunTime:: self.nameCam: {}'.format(self.nameCam))
         
         # dnnMOdel for TensorFlow Object Detection API
         self.pb = self.statusConfig.data["dnnModelPb"] 

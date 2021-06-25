@@ -19,53 +19,58 @@ from firebase_admin import storage
 import datetime
 
 
-
-cred = credentials.Certificate("pv-fb-cert.json")
-firebase_admin.initialize_app(cred, {'storageBucket': 'pvalarmes-3f7ee.appspot.com'})
-
-
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
+
+#cred = credentials.Certificate("pv-fb-cert.json")
+#firebase_admin.initialize_app(cred, {'storageBucket': 'pvalarmes-3f7ee.appspot.com'})
+
+# log.info('Utils_tracking:: carregando Certificado Firebase')
+# try:
+    # cred = credentials.Certificate("pv-fb-cert.json")
+# except Exception as err:
+    # log.critical('InferenceCore:: Certificado não encontrado - Erro: {} '.format(err))
+# else:        
+    # log.info('InferenceCore:: Certificado ok. Inicializando Firebase')
+    # try:
+        # firebase_admin.initialize_app(cred, {'storageBucket': 'pvalarmes-3f7ee.appspot.com'})
+    # except Exception as err:
+        # log.critical('Erro ao inicializar o Firebase: {}'.format(err))            
+    # else:
+        # log.info('Firebase inicializado com sucesso')
 
 
 def saveImageFirebase(frame, idImage, user):
 
-    bucket = storage.bucket()    
-    
+    bucket = storage.bucket()        
     img_file = os.getcwd() + '/config/alertas_app/' + idImage + '.jpg'
     
+    log.info('saveImageFirebase:: Salvando foto local')
     try:
         cv.imwrite(img_file, frame)
 
     except OSError as error:
-        log.critical('Erro ao salvar a foto: ' + str(error))
+        log.critical('saveImageFirebase:: Erro ao salvar a foto: ' + str(error))
         return status
     else:
-        log.info('Foto alarme app salva')        
+        log.info('saveImageFirebase:: Foto alarme app salva')        
+       
+   
+       
+    log.info('saveImageFirebase:: Salvando imagem no Firebase')
+    try:
+        blob = bucket.blob(user + '/' + idImage + '.jpg')
         
-     
-
-    
-    # try:
-        # img_file = open(img_file, 'rb').read()        
-
-    # except OSError as error:
-        # log.critical('Erro ao anexar foto no email: ' + str(error))
-        # return status
-    # else:
-        # log.info('Foto anexada')
-    
-    bucket = storage.bucket()
-    
-    blob = bucket.blob(user + '/' + idImage + '.jpg')
-    
-    blob.upload_from_filename(img_file)
-    
-    blob.make_public() 
-    
+        blob.upload_from_filename(img_file)
+        
+        blob.make_public() 
+    except firebase_admin.exceptions.FirebaseError as err:
+        
+        log.critical('saveImageFirebase:: Erro ao salvar imagem no Firebase')
+        log.critical('saveImageFirebase:: Erro: {}'.formar(err))        
+    else:
+        log.info('saveImageFirebase:: Imagem salva no Firebase')
     
     return blob.public_url, blob.name  
-
-
 
 def saveImageBox(frame, classe):
 
@@ -130,8 +135,7 @@ def sendMail(subject, text):
 
 def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
 
-    log.info('user: {}'.format(user))
-    
+    log.info('sendAlertApp::')
     
     date = utils.getDate()
     
@@ -159,13 +163,12 @@ def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
     
     urlImageDownload, urlImageFirebase = saveImageFirebase(frame, idImage, topic)    
     
-    print('urlImageDownload: {}'.format(urlImageDownload))
-    print('urlImageFirebase: {}'.format(urlImageFirebase))
+    #print('urlImageDownload: {}'.format(urlImageDownload))
+    #print('urlImageFirebase: {}'.format(urlImageFirebase))
     
     statusConfig = utils.StatusConfig()
     
-    if statusConfig.getUserLogin() != None:
-    
+    if statusConfig.getUserLogin() != None:    
     
         if tipoObjetoDetectado == 'person':
             tipoObjetoDetectado = 'Pessoa'
@@ -228,12 +231,13 @@ def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
         # Send a message to the device corresponding to the provided
 
         # registration token.
+        log.info('sendAlertApp:: Enviando mensagem para App via Cloud Message')
         try:
             response = messaging.send(message)
         except error as e:
-            print('Error: {}'.format(e))
+            log.critical('sendAlertApp:: Erro ao enviar alerta: {}'.format(e))            
         else:
-            print('Successfully sent message:', response)
+            log.info('sendAlertApp:: Alerta enviado com sucesso: {}'.format(response))            
         
     else:
         log.error('sendAlertApp:: error: usuario nao configurado ou logado')
@@ -314,13 +318,13 @@ def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoO
     password = utils.decrypt(emailConfig['password'])
     
     
-    log.info('port: {:d}'.format(int(emailConfig['port'])))
-    log.info('smtp: {:}'.format(emailConfig['smtp']))
-    log.info('sender: {:}'.format(sender))
-    log.info('user: {:}'.format(user))
-    log.info('password: {:}'.format(password))
-    log.info('password: {:}'.format(password))
-    log.info(' ')     
+    # log.info('port: {:d}'.format(int(emailConfig['port'])))
+    # log.info('smtp: {:}'.format(emailConfig['smtp']))
+    # log.info('sender: {:}'.format(sender))
+    # log.info('user: {:}'.format(user))
+    # log.info('password: {:}'.format(password))
+    # log.info('password: {:}'.format(password))
+    # log.info(' ')     
         
     #if servidorEmail == 'Gmail':
     
