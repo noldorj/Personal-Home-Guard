@@ -23,14 +23,7 @@ from utilsServer import sendMailForgotPasswd
 #tempo de expiracao da sessao em minutos
 TIME_SESSION = 5
 
-#host="dbpv.c3jzryxr6fxw.sa-east-1.rds.amazonaws.com"
-host = "dbpv.cswsskc4btjh.sa-east-1.rds.amazonaws.com"  
-port = 3306
-dbname = "pv_users"
-user = "igorddf"
-password = "cacete33"
 
-#conn = pymysql.connect(host, user=user,port=port, passwd=password, db=dbname)
 
 
 def getDate():
@@ -67,29 +60,7 @@ def changePasswd(userName, userPassword, userToken):
 
         else:
 
-            log.info('changePasswd:: Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))
-            
-            log.info("changePasswd:: Usuario ok - alterando a senha no banco de dados...")
-
-            conn = pymysql.connect(host, user=user,port=port, passwd=password, db=dbname)
-    
-
-            try:
-                with conn.cursor() as cursor:
-                    
-                    cursor.execute("UPDATE users set userPassword = '" + userPassword + "' where userName = '" + userName + "'")
-                    conn.commit()
-                    
-            except OSError as error:
-                status = False
-                log.critical('changePasswd:: error: {}'.format(error))
-
-            finally:
-                
-                log.info("changePasswd:: senha alterada com sucesso no banco de dados")
-                cursor.close()
-                conn.close()
-            
+            log.info('changePasswd:: Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))            
             #altera password da sessao 
 
             session['userPassword'] = userPassword
@@ -113,11 +84,10 @@ def changePasswd(userName, userPassword, userToken):
 
 def newUser(userName, userPassword, userEmail, numCameras, diasLicenca):
 
-    log.info("pvLicenceChecker-server:: Criando novo usuario")
-
-    conn = pymysql.connect(host, user=user,port=port, passwd=password, db=dbname)
+    log.info(' ')
+    log.info("newUser:: Criando novo usuario")    
     
-    status = True
+    status = False
     userId = None
 
     #cnxn = pyodbc.connect('DRIVER='+driver+';SERVER='+server+';PORT=1433;DATABASE='+database+';UID='+username+';PWD='+ password)
@@ -125,87 +95,64 @@ def newUser(userName, userPassword, userEmail, numCameras, diasLicenca):
 
     #checar se usuário já existe
     try:
-        with conn.cursor() as cursor:
+        
+        if checkFileSession(userName):
+            log.info('newUser::  Usuário existente')
 
-            cursor.execute("SELECT userName FROM users WHERE users.userName= '"+ userName + "'")
-            dbUserName = cursor.fetchone()
+        else:
+            log.info('newUser::  Criando usuario {}'.format(userName))
+                
+            #criando arquivo de sessao baseado no ID
+            
+            date = getDate()
+            currentDate = date.get('year') + '-' + date.get('month') + '-' + date.get('day')
+            currentDate = datetime.strptime(currentDate, '%Y-%b-%d')
+            currentDate = currentDate.strftime('%Y-%b-%d')
 
-            if (dbUserName is not None and dbUserName[0] == userName):
-                status = False
-                log.info('newUsers::  Usuário existente')
+            #diasLicenca valor 0 significa vitalicia
+            log.debug('newUser:: currentDate: {}'.format(currentDate.__str__()))
+
+            token = [] 
+            for i in range(0, int(numCameras)):
+                token.append('0')
+            
+            log.info('newUser:: Usuario com [{}] tokens/licencas'.format(numCameras))
+
+            lastToken = int(numCameras)-1
+            log.info('newUser:: lastToken: {:d} '.format(lastToken))
+
+            session = {
+                'userId':userId,
+                'userName':userName,
+                'userPassword':userPassword,
+                'userToken':token,
+                'lastToken':str(lastToken),
+                'lastLogin':'0',
+                'lastSession':'0',
+                'loginStatus':'off',
+                'sessionStatus':'off',
+                'numCameras':numCameras,
+                'diasLicenca':diasLicenca,
+                'inicioLicenca':currentDate.__str__()
+            }
+            file = 'sessions/' + str(userName) + '.json'
+            try:
+                log.debug('newUser:: Salvando arquivo de sessao: {}'.format(userName))
+                json.dump(session, open(file, 'w'),indent=3)
+
+            except OSError as ex:
+                
+                log.critical('newUser:: Erro ao salvar o arquivo de sessao do Usuario: {}'.format(userName))                
 
             else:
-
-                sql =  "INSERT INTO `users` (`userName`, `userPassword`, `userEmail`, `numCameras`, `diasLicenca`) VALUES (%s, %s, %s, %s, %s)"
-                values = (userName, userPassword, userEmail, numCameras, diasLicenca) 
-                cursor.execute(sql, values)
-                conn.commit()
-
-                cursor.execute("SELECT userId FROM users WHERE users.userName= '"+ userName + "'")
-                userId = cursor.fetchone()[0]
-
-                if userId == None:
-
-                    log.critical('newUser:: Erro ao cadastrar novo usuario')
-                    status = False
-
-                else:
-
-                    log.info('newUsers:: Usuário cadastrado no banco de dados - userID: {}'.format(userId))
-
-                    #criando arquivo de sessao baseado no ID
-
-                    date = getDate()
-                    currentDate = date.get('year') + '-' + date.get('month') + '-' + date.get('day')
-                    currentDate = datetime.strptime(currentDate, '%Y-%b-%d')
-                    currentDate = currentDate.strftime('%Y-%b-%d')
-
-                    #diasLicenca valor 0 significa vitalicia
-                    log.debug('currentDate: {}'.format(currentDate.__str__()))
-
-                    token = [] 
-                    for i in range(0, int(numCameras)):
-                        token.append('0')
-                    
-                    log.info('Usuario com [{}] tokens/licencas'.format(numCameras))
-
-                    lastToken = int(numCameras)-1
-                    log.info('newUsers:: lastToken: {:d} '.format(lastToken))
-
-                    session = {
-                        'userId':userId,
-                        'userName':userName,
-                        'userPassword':userPassword,
-                        'userToken':token,
-                        'lastToken':str(lastToken),
-                        'lastLogin':'0',
-                        'lastSession':'0',
-                        'loginStatus':'off',
-                        'sessionStatus':'off',
-                        'numCameras':numCameras,
-                        'diasLicenca':diasLicenca,
-                        'inicioLicenca':currentDate.__str__()
-                    }
-                    file = 'sessions/' + str(userName) + '.json'
-                    try:
-                        log.debug('Salvando arquivo de sessao: {}'.format(userName))
-                        json.dump(session, open(file, 'w'),indent=3)
-
-                    except OSError as ex:
-                        
-                        log.critical('newUsers:: Erro ao salvar o arquivo de sessao do Usuario: {}'.format(userName))
-                        status = False
-
-                    else:
-                        log.info('newUsers:: Arquivo de sessão salvo - Usuario: {}'.format(userName))
+                log.info('newUser:: Arquivo de sessão salvo - Usuario: {}'.format(userName))
+                status = True
 
     except Error as error:
-
+        log.critical(' ')
+        log.critical('newUser:: Erro pra criar novo usuario')
         log.critical(error)
-
-    finally:
-        cursor.close()
-        conn.close()
+        log.critical(' ')   
 
     return status
 
@@ -465,6 +412,7 @@ def forgotPassword(email):
         status = True
 
     return status
+
 
 
 def checkSession(userName, userToken):

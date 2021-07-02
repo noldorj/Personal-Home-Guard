@@ -199,10 +199,11 @@ def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
                         color='#f45342',
                         title=title,
                         body=body,
-                        sound='default',
+                        default_sound='True',
                         tag='PV-Alertas',
-                        default_vibrate_timings='true',
-                        default_light_settings='true',
+                        default_vibrate_timings='True',
+                        default_light_settings='True',
+                       
                     ),
                     
             ),

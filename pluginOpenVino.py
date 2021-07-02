@@ -41,15 +41,16 @@ listObjectsTracking = []
 
 def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
 
+    log.info(' ')
     log.info('initOpenVino::')
     # Plugin initialization for specified device and load extensions library if specified
-    plugin_dir = os.getcwd() + '/' + plugin_dir    
+    
     log.info(' ')
-    log.info("Initializing plugin for {} device...".format(device))
-    log.info('Model XML: {}'.format(model_xml))
-    log.info('Model Bin: {}'.format(model_bin))
-    log.info('CPU Extension    : {}'.format(cpu_extension))
-    log.info('Plugin Diretorio : {}'.format(plugin_dir))
+    log.info("initOpenVino:: Initializing plugin for {} device...".format(device))
+    log.info('initOpenVino:: Model XML: {}'.format(model_xml))
+    log.info('initOpenVino:: Model Bin: {}'.format(model_bin))
+    log.info('initOpenVino:: CPU Extension    : {}'.format(cpu_extension))
+    log.info('initOpenVino:: Plugin Diretorio : {}'.format(plugin_dir))
     log.info(' ')
     #print('initOpenVino at pluginOpenVino')
 
@@ -64,109 +65,133 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
 
     try: 
 
-        log.info('IEPlugin inicializando...')
+        log.info('initOpenVino:: IEPlugin inicializando...')
         plugin = IEPlugin(device=device)
         #plugin = IEPlugin(device=device, plugin_dirs=plugin_dir)
 
     except Exception as e:
         
-        log.error('IEPlugin error: {}'.format(e))
+        log.error('')
+        log.error('initOpenVino:: IEPlugin error: {}'.format(e))
 
     else:
 
-        log.info('IEPlugin {} carregado'.format(device))
+        log.info('initOpenVino:: IEPlugin {} carregado'.format(device))
 
     #if 'CPU' in device:
+    listPluginDir = [plugin_dir, os.getcwd() + '/' + plugin_dir]
+    
+    #plugin_dir = os.getcwd() + '/' + plugin_dir    
+    
     if cpu_extension and 'CPU' in device:
     
-        try: 
-            log.info('CPU_Extension: "{}" sendo carregado...'.format(cpu_extension))
-            #print('CPU_Extension: "{}" sendo carregado...'.format(cpu_extension))            
-            
-            if plugin_dir == "":
-                plugin.add_cpu_extension(cpu_extension)
-            else:
-                pluginPath = plugin_dir + '/' + cpu_extension                
-                log.info('pluginOpenVino:: cpu_extension path: {}'.format(pluginPath))
-                plugin.add_cpu_extension(pluginPath)
-
-        except Exception as e:
-
-            log.error('cpu_extension usado: {}'.format(cpu_extension))
-            log.error('Erro adicionando CPU_Extension: {}'.format(e))
-
-            try:
-                log.info('Tentando AVX2 plugin')
-                if plugin_SO == 'linux':
+        for plugin_dir in listPluginDir:            
+            log.info(' ')
+            log.info('initOpenVino:: Plugin_dir: {}'.format(plugin_dir))
+            try: 
+                log.info('initOpenVino:: CPU_Extension: "{}" sendo carregado...'.format(cpu_extension))
+                #print('CPU_Extension: "{}" sendo carregado...'.format(cpu_extension))            
                 
-                    if plugin_dir == "":
-                        plugin.add_cpu_extension('libcpu_extension_avx2.so')
-                    else:
-                        plugin.add_cpu_extension(plugin_dir + '/' + 'libcpu_extension_avx2.so')
-                else:                
-                    if plugin_dir == "":
-                        plugin.add_cpu_extension('cpu_extension_avx2.dll')
-                    else:
-                        plugin.add_cpu_extension(plugin_dir + '/' + 'cpu_extension_avx2.dll')
+                if plugin_dir == "":
+                    plugin.add_cpu_extension(cpu_extension)
+                else:
+                    pluginPath = plugin_dir + '/' + cpu_extension                
+                    log.info('initOpenVino:: cpu_extension path: {}'.format(pluginPath))
+                    plugin.add_cpu_extension(pluginPath)
+                
+                break
 
             except Exception as e:
-            
-                log.error('cpu_extension usado: "libcpu_extension_avx2" ')
-                log.error('Erro adicionando CPU_Extension {}'.format(e))
-                
+
+                log.error(' ')
+                log.error('initOpenVino:: cpu_extension usado: {}'.format(cpu_extension))
+                log.error('initOpenVino:: Erro adicionando CPU_Extension: {}'.format(e))
+
                 try:
+                    log.info('initOpenVino:: Tentando AVX2 plugin')
                     if plugin_SO == 'linux':
-                        log.info('Tentando AVX-SSE4 plugin')
+                    
                         if plugin_dir == "":
-                            plugin.add_cpu_extension('libcpu_extension_sse4.so')
+                            plugin.add_cpu_extension('libcpu_extension_avx2.so')
                         else:
-                            plugin.add_cpu_extension(plugin_dir + '/' + 'libcpu_extension_sse4.so')
-                    else:
+                            plugin.add_cpu_extension(plugin_dir + '/' + 'libcpu_extension_avx2.so')
+                    else:                
                         if plugin_dir == "":
-                            plugin.add_cpu_extension('cpu_extension_sse4.dll')
+                            plugin.add_cpu_extension('cpu_extension_avx2.dll')
                         else:
-                            plugin.add_cpu_extension(plugin_dir + '/' + 'cpu_extension_sse4.dll')
+                            plugin.add_cpu_extension(plugin_dir + '/' + 'cpu_extension_avx2.dll')
 
+                    break
+                    
                 except Exception as e:
-                    log.error('cpu_extension usado: "libcpu_extension_sse4" ')
-                    log.error('Erro adicionando CPU_Extension {}'.format(e))
-                    plugin = None
+                
+                    log.error(' ')
+                    log.error('initOpenVino:: cpu_extension usado: "libcpu_extension_avx2" ')
+                    log.error('initOpenVino:: Erro adicionando CPU_Extension {}'.format(e))
+                    
+                    try:
+                        if plugin_SO == 'linux':
+                            log.info('Tentando AVX-SSE4 plugin')
+                            if plugin_dir == "":
+                                plugin.add_cpu_extension('libcpu_extension_sse4.so')
+                            else:
+                                plugin.add_cpu_extension(plugin_dir + '/' + 'libcpu_extension_sse4.so')
+                        else:
+                            if plugin_dir == "":
+                                plugin.add_cpu_extension('cpu_extension_sse4.dll')
+                            else:
+                                plugin.add_cpu_extension(plugin_dir + '/' + 'cpu_extension_sse4.dll')
+                                
 
-                #3 plugin SSE4                
+                        break
+                        
+                    except Exception as e:
+                        log.error(' ')
+                        log.error('initOpenVino:: cpu_extension usado: "libcpu_extension_sse4" ')
+                        log.error('initOpenVino:: Erro adicionando CPU_Extension {}'.format(e))
+                        plugin = None
+
+                    #3 plugin SSE4                
+                    else:
+                        log.info(' ')
+                        log.info('initOpenVino:: CPU_Extension ok')
+                        log.info('initOpenVino:: cpu_extension utilizado: {}'.format(cpu_extension))
+                        break
+                
+                #2 plugin AVX2 
                 else:
-                    log.info('CPU_Extension ok')
-                    log.info('cpu_extension utilizado: {}'.format(cpu_extension))
-            
-            #2 plugin AVX2 
+                    log.info(' ')
+                    log.info('initOpenVino:: CPU_Extension ok')
+                    break
+                    #print('CPU_Extension ok')
+
+                 
+            #1o plugin - AVX-512 ou plugin informado
             else:
-                log.info('CPU_Extension ok')
-                #print('CPU_Extension ok')
-
-             
-        #1o plugin - AVX-512 ou plugin informado
-        else:
-
-            log.info('CPU_Extension ok')
-            log.info('cpu_extension utilizado: {}'.format(cpu_extension))
+                log.info(' ')
+                log.info('initOpenVino:: CPU_Extension ok')
+                log.info('initOpenVino:: cpu_extension utilizado: {}'.format(cpu_extension))
+                break
 
     # Read IR
-    log.info("Reading IR...")
+    log.info(' ')
+    log.info("initOpenVino:: Reading IR...")
     try:
-        log.info('Carregando IENetwork...') 
+        log.info('initOpenVino:: Carregando IENetwork...') 
         net = IENetwork(model=model_xml, weights=model_bin)
 
     except Exception as e:
 
-        log.error('IENetwork error: {}'.format(e))
+        log.error('initOpenVino:: IENetwork error: {}'.format(e))
 
     else:
-        log.info('IENetwork carregada')
+        log.info('initOpenVino:: IENetwork carregada')
         #print('IENetwork carregada')
 
     #Loading Plugin 
     if plugin.device == "CPU" and plugin is not None:
 
-        log.info('Layers suportadas...')
+        log.info('initOpenVino:: Layers suportadas...')
         
         
         supported_layers = plugin.get_supported_layers(net)
@@ -174,23 +199,20 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
         
         if len(not_supported_layers) != 0:
             #print('erro layers')
-            log.error("Following layers are not supported by the plugin for specified device {}:\n {}".
+            log.error("initOpenVino:: Following layers are not supported by the plugin for specified device {}:\n {}".
                       format(plugin.device, ', '.join(not_supported_layers)))
-            log.error("Please try to specify cpu extensions library path in demo's command line parameters using -l "
-                      "or --cpu_extension command line argument")
+            
             #sys.exit(1)
 
     #assert len(net.inputs.keys()) == 1, "Demo supports only single input topologies"
     #assert len(net.outputs) == 1, "Demo supports only single output topologies"
     
     input_blob = next(iter(net.inputs))
-    out_blob = next(iter(net.outputs))
+    out_blob = next(iter(net.outputs))   
     
-    log.info('net.inputs: {}'.format(net.inputs))
-    log.info('net.outputs: {}'.format(net.outputs))
     
     if plugin is not None:
-        log.info("Loading IR to the plugin...")
+        log.info("initOpenVino:: Loading IR to the plugin...")
         #print("Loading IR to the plugin...")
         try:
             #print('try...')
@@ -198,11 +220,12 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
             #print('try2...')
         except Exception as e:
             #print('Error plugin.load: {}'.format(str(e)))
-            log.error('Error plugin.load: {}'.format(str(e)))            
+            log.error('initOpenVino:: Error plugin.load: {}'.format(str(e)))            
         else:
             #print('plugin.load ok') 
-            log.info('plugin.load ok') 
-            
+            log.info(' ')
+            log.info('initOpenVino:: plugin.load ok') 
+            log.info(' ')
 
 
     #print('plugin done')
@@ -211,9 +234,10 @@ def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
     del net
 
     is_async_mode = True
-    log.info("Init Openvino done")
-    #log.DEBUG("Init Openvino done")
-    #print("Init Openvino done")
+    log.info(' ')
+    log.info("initOpenVino:: Init Openvino done")
+    log.info(' ')
+    
 
     return nchw, exec_net, input_blob, out_blob
 

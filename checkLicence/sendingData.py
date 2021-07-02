@@ -18,7 +18,8 @@ sio = socketio.Client()
 #ip fixo instancia AWS
 #host = "http://ec2-18-230-53-22.sa-east-1.compute.amazonaws.com:5000"
 #host = "http://ec2-18-230-50-38.sa-east-1.compute.amazonaws.com:5000"
-host = "http://pvSessionLB-1827991081.sa-east-1.elb.amazonaws.com:5000"
+#host = "http://pvSessionLB-1827991081.sa-east-1.elb.amazonaws.com:5000"
+host = "http://34.145.8.88:5000"
 
 loginStatus = False
 sessionStatus = False
@@ -26,10 +27,12 @@ error = ''
 changePasswdStatus = False
 statusForgotPasswd = False
 
+local_sid = None
+
 
 @sio.event
 def connect():
-    log.info('connect: conexao efetuada')
+    log.info('connect: conexao efetuada. sid: {}'.format(sio.get_sid()))
 
 @sio.event
 def checkLogin(login):
@@ -83,7 +86,7 @@ def changePasswdPv(login):
         sio.wait()
     
         #log.info('changePasswd:: changePasswdStatus: ' + str(changePasswdStatus))
-        #sio.disconnect()
+        sio.disconnect()
     
     return changePasswdStatus, error
 
@@ -107,7 +110,7 @@ def forgotPasswordPv(email):
         forgotPassword(email)
         sio.wait()
         error = ''
-        #sio.disconnect()
+        sio.disconnect()
     
     return statusForgotPasswd, error 
 
@@ -134,7 +137,7 @@ def checkSessionPv(session):
         sio.wait()
         log.info('checkSessionPv: ' + str(sessionStatus))
 
-        #sio.disconnect()
+        sio.disconnect()
     
     return sessionStatus, error
 
@@ -162,7 +165,7 @@ def checkLoginPv(login):
         checkLogin(login)
         sio.wait()
         #log.info('checkLoginPv:: loginStatus: ' + str(loginStatus))
-        #sio.disconnect()
+        sio.disconnect()
           
     return loginStatus, error
 
@@ -187,7 +190,6 @@ def replyForgotPassword(status):
     #log.info('replyForgotPassword:: statusForgotPasswd: ' + str(statusForgotPasswd))
 
     sio.disconnect() 
-
 
 
 @sio.event 
@@ -218,10 +220,10 @@ def replyCheckSession(status):
 
     #print ('replyCheckSession:: sessionStatus: ' + str(status))
     sessionStatus = status 
-    sio.disconnect()
+    sio.disconnect(sio.get_sid())
 
 @sio.event 
-def disconnect(sid):
-    log.info('disconnect:: sid: {}'.format(sid))
+def disconnect():        
+    log.info('disconnect:: sid: {}'.format(sio.get_sid()))
 
 

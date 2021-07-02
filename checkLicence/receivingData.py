@@ -69,6 +69,7 @@ log.basicConfig(format="[ %(levelname)s ] %(message)s", stream=sys.stdout)
 @sio.event
 def connect(sid, environ):
     log.info('connect: ' + sid)
+    
 
 @sio.event
 def checkLogin(sid, login):

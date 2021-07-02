@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python receivingData.py &
+python3 receivingData.py &
