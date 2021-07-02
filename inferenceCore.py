@@ -431,19 +431,21 @@ class InferenceCore(QThread):
                                                                                                                                            self.camRunTime.nameCam))
                                                                                         #print('inferenceCore:: threadEmail nameCam: {}'.format(self.camRunTime.nameCam))
                                                                                         threadEmail.start()
+                                                                                    else:
+                                                                                        log.critical('inferenceCore:: configEmailStatus: '.format(self.camRunTime.configEmailStatus))
                                                                                         
                                                                                         
-                                                                                        threadAlertApp = Thread(target=sendAlertApp, args=(self.camRunTime.statusConfig.getUserLogin(),
+                                                                                    #mensagem ao app é enviado de qualquer forma
+                                                                                    threadAlertApp = Thread(target=sendAlertApp, args=(self.camRunTime.statusConfig.getUserLogin(),
                                                                                                                                            frame_no_label_email,
                                                                                                                                            str(typeObject), #tipo de objeto detectado
                                                                                                                                            r.get('nameRegion'),
                                                                                                                                            self.camRunTime.nameCam))
-                                                                                        threadAlertApp.start()
+                                                                                    threadAlertApp.start()
                                                                                         
                                                                                         
                                                                                         
-                                                                                    else:
-                                                                                        log.critical('inferenceCore:: configEmailStatus: '.format(self.camRunTime.configEmailStatus))
+                                                                                    
                                                                                     
                                                                                     
                                                                                     self.camRunTime.listObjectMailAlerted.append(objectID)
@@ -505,10 +507,9 @@ class InferenceCore(QThread):
                                                     self.camRunTime.gravandoOnAlarmes = True
                                                                                                
                                                 
-                                                log.info('camRunTime:: Enviando alerta por email - sem regiao configurada')
+                                                log.info('inferenceCore:: Enviando alerta por email - sem regiao configurada')
 
                                                 if utils.checkInternetAccess():
-
                                                     
                                                     if self.camRunTime.configEmailStatus and not self.camRunTime.desativarAlarmes:
                                                         log.info('inferenceCore:: Alerta enviado ID[' + str(objectID) + ']')
@@ -522,18 +523,20 @@ class InferenceCore(QThread):
                                                                                                            '(sem região definida)',
                                                                                                            self.camRunTime.nameCam))
                                                         threadEmail.start()
+                                                    else:
+                                                        log.critical('inferenceCore:: configEmailStatus: '.format(self.camRunTime.configEmailStatus))
                                                         
                                                         
-                                                        threadAlertApp = Thread(target=sendAlertApp, args=(self.camRunTime.statusConfig.getUserLogin(),
+                                                    log.info('inferenceCore:: Enviando alerta para o App - sem regiao configurada')
+                                                    threadAlertApp = Thread(target=sendAlertApp, args=(self.camRunTime.statusConfig.getUserLogin(),
                                                            frame_no_label_email,
                                                            str(typeObject), #tipo de objeto detectado
                                                            r.get('nameRegion'),
                                                            self.camRunTime.nameCam))
-                                                        threadAlertApp.start()
+                                                    threadAlertApp.start()
                                                         
                                                         
-                                                    else:
-                                                        log.critical('inferenceCore:: configEmailStatus: '.format(self.camRunTime.configEmailStatus))
+                                                    
                                                     
                                                     self.camRunTime.listObjectMailAlerted.append(objectID)
                                                 else:
@@ -671,12 +674,14 @@ class InferenceCore(QThread):
 
                         if conexao: 
 
-                            log.info('Conexao com a Internet estabelecida')
+                            log.info(' ')
+                            log.info('inferenceCore:: Conexao com a Internet estabelecida')
                             #print('Conexao com a Internet estabelecida')
                             self.camRunTime.STOP_ALL = False
-
-                            if self.camRunTime.configEmailStatus and not self.camRunTime.desativarAlarmes:
-                                while (len(self.camRunTime.pilhaAlertasNaoEnviados) > 0) and (self.camRunTime.STOP_ALL == False):  
+                            
+                            while (len(self.camRunTime.pilhaAlertasNaoEnviados) > 0) and (self.camRunTime.STOP_ALL == False):  
+                            
+                                if self.camRunTime.configEmailStatus and not self.camRunTime.desativarAlarmes:                            
                                     #enviando alerta de emails anteriores
                                     log.info('inferenceCore:: Enviando alerta de emails anteriores')
 
@@ -695,20 +700,23 @@ class InferenceCore(QThread):
                                     
                                     log.info('inferenceCore:: Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
                                     threadEmail.start()
-                                    
-                                    threadAlertApp = Thread(target=sendAlertApp, args=(self.camRunTime.statusConfig.getUserLogin(),
+                                else:
+                                    log.critical('inferenceCore:: configEmailStatus: '.format(self.camRunTime.configEmailStatus))
+                                
+                                #Alertas pra o App sao enviados de qualquer forma
+                                log.info('inferenceCore:: Lista de alertas devido a perda de conexao enviados ao App pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
+                                threadAlertApp = Thread(target=sendAlertApp, args=(self.camRunTime.statusConfig.getUserLogin(),
                                                            frame_no_label_email,
                                                            str(typeObject), #tipo de objeto detectado
                                                            r.get('nameRegion'),
                                                            self.camRunTime.nameCam))
-                                    threadAlertApp.start()
+                                threadAlertApp.start()
                                     
                                     
-                                    #print('Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
+                                #print('Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
                                     
 
-                            else:
-                                log.critical('inferenceCore:: configEmailStatus: '.format(self.camRunTime.configEmailStatus))
+                            
                              
                             #listObjectMailAlerted.append(alertaEmail[9])
 
@@ -730,7 +738,7 @@ class InferenceCore(QThread):
                                 log.warning('inferenceCore:: sessionStatus: {}'.format(self.camRunTime.sessionStatus))
                                 if self.camRunTime.errorSession == self.camRunTime.sessionErrorCount:
                                     self.warningSessionLoss.emit()                                
-                                    log.warning('stopWatchDog chamado - erro de sessao pela 2a vez')
+                                    log.warning('inferenceCore:: stopWatchDog chamado - erro de sessao pela 2a vez')
                                     utils.stopWatchDog()
                                 else:
                                     self.camRunTime.errorSession = self.camRunTime.errorSession + 1
@@ -745,6 +753,7 @@ class InferenceCore(QThread):
 
 
                         else:
+                            log.critical(' ')
                             log.critical("inferenceCore:: Sem internet - sessao não checada")
                             log.critical("inferenceCore:: sessionStatus: {}".format(self.camRunTime.sessionStatus))
                            

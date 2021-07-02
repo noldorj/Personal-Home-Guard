@@ -217,10 +217,9 @@ def replyNewUser(status):
 @sio.event 
 def replyCheckSession(status):
     global sessionStatus
-
     #print ('replyCheckSession:: sessionStatus: ' + str(status))
     sessionStatus = status 
-    sio.disconnect(sio.get_sid())
+    sio.disconnect()
 
 @sio.event 
 def disconnect():        

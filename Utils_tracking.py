@@ -40,7 +40,7 @@ import datetime
 
 
 def saveImageFirebase(frame, idImage, user):
-
+    
     bucket = storage.bucket()        
     img_file = os.getcwd() + '/config/alertas_app/' + idImage + '.jpg'
     
@@ -50,27 +50,26 @@ def saveImageFirebase(frame, idImage, user):
 
     except OSError as error:
         log.critical('saveImageFirebase:: Erro ao salvar a foto: ' + str(error))
-        return status
+        return None, None, False
     else:
         log.info('saveImageFirebase:: Foto alarme app salva')        
-       
-   
+
        
     log.info('saveImageFirebase:: Salvando imagem no Firebase')
     try:
-        blob = bucket.blob(user + '/' + idImage + '.jpg')
-        
+        blob = bucket.blob(user + '/' + idImage + '.jpg')        
         blob.upload_from_filename(img_file)
-        
         blob.make_public() 
+        
     except firebase_admin.exceptions.FirebaseError as err:
         
         log.critical('saveImageFirebase:: Erro ao salvar imagem no Firebase')
         log.critical('saveImageFirebase:: Erro: {}'.formar(err))        
+        return None, None, False
     else:
         log.info('saveImageFirebase:: Imagem salva no Firebase')
     
-    return blob.public_url, blob.name  
+    return blob.public_url, blob.name, True  
 
 def saveImageBox(frame, classe):
 
@@ -161,7 +160,9 @@ def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
     idImage = date['day'] + '-' + date['month'] + '-' + date['year'] + '-' + date['hour']
     idImage = idImage.replace(':', '-')
     
-    urlImageDownload, urlImageFirebase = saveImageFirebase(frame, idImage, topic)    
+    
+    log.info('sendAlertApp:: Salvando imagem Firebase')
+    urlImageDownload, urlImageFirebase, status = saveImageFirebase(frame, idImage, topic)    
     
     #print('urlImageDownload: {}'.format(urlImageDownload))
     #print('urlImageFirebase: {}'.format(urlImageFirebase))
@@ -218,7 +219,7 @@ def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
             data = {
                 'cameraName': nameCam, 
                 'regionName': region, 
-                'urlImageFirebase': 'https://firebasestorage.googleapis.com/v0/b/pvalarmes-3f7ee.appspot.com/o/foto_alerta.jpg?alt=media&token=755e0108-33f2-4cf2-8646-26c4498a37dc',
+                'urlImageFirebase': urlImageFirebase,
                 'urlImageDownload': urlImageDownload,
                 'id': idImage,
                 'date': date['day'] + '/' + date['month'] + '/' + date['year'], 
@@ -233,12 +234,20 @@ def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
 
         # registration token.
         log.info('sendAlertApp:: Enviando mensagem para App via Cloud Message')
-        try:
-            response = messaging.send(message)
-        except error as e:
-            log.critical('sendAlertApp:: Erro ao enviar alerta: {}'.format(e))            
-        else:
-            log.info('sendAlertApp:: Alerta enviado com sucesso: {}'.format(response))            
+        statusMessage = False
+        i = 1
+        while statusMessage is False:
+            log.info('sendAlertApp:: Enviando alerta App [{}]'.format(i))
+            try:
+                response = messaging.send(message)
+            except error as e:
+                log.critical('sendAlertApp:: Erro ao enviar alerta: {}'.format(e))            
+                i = i+1
+                time.sleep(3)
+            else:
+                log.info('sendAlertApp:: Alerta enviado com sucesso: {}'.format(response))            
+                statusMessage = True
+                i = 0
         
     else:
         log.error('sendAlertApp:: error: usuario nao configurado ou logado')
