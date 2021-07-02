@@ -1,5 +1,5 @@
 import cv2 as cv
-import pygame
+#import pygame
 import json
 import os
 import time
@@ -15,6 +15,8 @@ import simplejson as json
 import secrets
 import psutil
 from pbkdf2 import PBKDF2
+
+import winsound
 
 
 from cryptography.fernet import Fernet
@@ -1161,9 +1163,14 @@ class StatusConfig:
 
 
 def playSound():
-    pygame.init()
+    
     log.info('utilsCore:: campainha tocada')
-    pygame.mixer.music.load('config/campainha.mp3')
-    pygame.mixer.init()
-    pygame.mixer.music.play(0)
+    # winsound.PlaySound('filename', flag)
+    winsound.PlaySound('config/campainha.wav', winsound.SND_FILENAME)	
+
+    #pygame.init()
+    
+    #pygame.mixer.music.load('config/campainha.mp3')
+    #pygame.mixer.init()
+    #pygame.mixer.music.play(0)
 
