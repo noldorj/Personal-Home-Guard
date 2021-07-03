@@ -86,7 +86,7 @@ def saveImageBox(frame, classe):
         log.info('saveImageBox - imagem salva')
 
 
-def sendMail(subject, text):
+def sendMail(subject, msg):
 
     statusConfig = utils.StatusConfig() 
 
@@ -131,6 +131,90 @@ def sendMail(subject, text):
 
     return status
 
+def sendStorageAlert(user, titleMsg, msg):
+    log.info('sendStorageAlert::')
+    
+    date = utils.getDate()
+    
+    if date['month'] == 'Jan': date['month'] = '01'
+    if date['month'] == 'Feb': date['month'] = '02'
+    if date['month'] == 'Mar': date['month'] = '03'
+    if date['month'] == 'Apr': date['month'] = '04'
+    if date['month'] == 'May': date['month'] = '05'
+    if date['month'] == 'Jun': date['month'] = '06'
+    if date['month'] == 'Jul': date['month'] = '07'
+    if date['month'] == 'Aug': date['month'] = '08'
+    if date['month'] == 'Sep': date['month'] = '09'
+    if date['month'] == 'Oct': date['month'] = '10'
+    if date['month'] == 'Nov': date['month'] = '11'
+    if date['month'] == 'Dec': date['month'] = '12'
+        
+    topic = user.replace('@','.')
+    
+    statusConfig = utils.StatusConfig()
+    
+    
+
+    title = titleMsg
+            
+    body = msg
+            
+    message = messaging.Message (    
+    
+        android = messaging.AndroidConfig(
+                ttl=datetime.timedelta(seconds=3600),
+                priority='high',
+                notification=messaging.AndroidNotification(
+                    icon='stock_ticker_update',
+                    color='#f45342',
+                    title=title,
+                    body=body,
+                    default_sound='True',
+                    tag='PV-Alertas',
+                    default_vibrate_timings='True',
+                    default_light_settings='True',
+                   
+                ),
+                
+        ),
+        
+        notification = messaging.Notification(
+            title= title, 
+            body= body,
+            #image= urlImageDownload,
+            
+        ), 
+        
+        data = {           
+            'date': date['day'] + '/' + date['month'] + '/' + date['year'], 
+            'hour': date['hour'], 
+            'click_action': 'FLUTTER_NOTIFICATION_CLICK',             
+        },
+            
+        topic=topic,
+    )
+    # Send a message to the device corresponding to the provided
+
+    # registration token.
+    log.info('sendStorageAlert:: Enviando mensagem para App via Cloud Message')
+    statusMessage = False
+    i = 1
+    while statusMessage is False:
+        log.info('sendStorageAlert:: Enviando alerta App [{}]'.format(i))
+        try:
+            response = messaging.send(message)
+        except error as e:
+            log.critical('sendStorageAlert:: Erro ao enviar alerta: {}'.format(e))            
+            i = i+1
+            time.sleep(3)
+        else:
+            log.info('sendStorageAlert:: Alerta enviado com sucesso: {}'.format(response))            
+            statusMessage = True
+            i = 0
+    
+
+    
+    
 
 def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
 

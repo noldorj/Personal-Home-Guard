@@ -2,6 +2,7 @@ from utilsCore import StatusConfig
 from inferenceCore import *
 from Utils_tracking import sendMailAlert
 from Utils_tracking import sendMail
+from Utils_tracking import sendStorageAlert
 from camRunTime import CamRunTime
 import utilsCore as utils
 import time
@@ -115,26 +116,38 @@ class CheckStorage(QThread):
                     self.warningHDCheio.emit() 
                 else:
                 
-                    if not self.camRunTime.emailSentDiskFull and self.camRunTime.configEmailStatus:  
+                    if not self.camRunTime.emailSentDiskFull 
                     
                         if self.camRunTime.eraseOldestFiles:
+                        
                             textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a deletar \
-                                    os videos mais antigos, recomendamos que aumente seu espaço em disco \
-                                    para não perder as gravações realizadas.'
-
-                            threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
-                            threadEmailDiskFull.start()
+                                        os videos mais antigos, recomendamos que aumente seu espaço em disco \
+                                        para não perder as gravações realizadas.'
+                                        
+                            if self.camRunTime.configEmailStatus:  
+                                threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
+                                threadEmailDiskFull.start()
+                            
+                            threadAppAlertDiskFull = Thread(target=sendStorageAlert, args=(self.statusConfig.getUserLogin(), 'PV Alert - Seu HD está cheio !',textEmail))
+                            threadAppAlertDiskFull.start()
+                            
                             self.camRunTime.emailSentDiskFull = True
                             
                             log.info('Email de disco cheio enviado - apagando videos antigos ')
                             #avisar por email 1x a cada X tempo ? 
                         else:
+                            
                             textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a não \
-                                    gravar videos novos, recomendamos que aumente seu espaço em disco \
-                                    para poder novos videos quando ocorrer futuros alarmes.'
+                                        gravar videos novos, recomendamos que aumente seu espaço em disco \
+                                        para poder novos videos quando ocorrer futuros alarmes.'
 
-                            threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
-                            threadEmailDiskFull.start()
+                            if self.camRunTime.configEmailStatus:  
+                                threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
+                                threadEmailDiskFull.start()
+                            
+                            threadAppAlertDiskFull = Thread(target=sendStorageAlert, args=(self.statusConfig.getUserLogin(), 'PV Alert - Seu HD está cheio !',textEmail))
+                            threadAppAlertDiskFull.start()
+                            
                             self.camRunTime.emailSentDiskFull = True
                             log.info('Email de disco cheio enviado - interromper novos videos')
 
@@ -149,11 +162,16 @@ class CheckStorage(QThread):
                                 if utils.freeDiskSpace(self.camRunTime.statusConfig.getDirVideosAllTime()) == False:
                                 
                                     log.critical('checkStorage:: Diretorios de "Videos 24hs" já está vazio')
-                                    if not self.camRunTime.emailSentdirVideosAllTimeEmpty and self.camRunTime.configEmailStatus:
-                                        textEmail = 'Mesmo apagando a pasta "Videos 24hs", seu HD continua cheio ! \n\n \ Nossa sugestão é que você libere mais espaço para pode gravar os "Videos 24hs"' 
-
-                                        threadEmailAllEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos 24hs" apagada - seu HD está cheio !',textEmail))
-                                        threadEmailAllEmpty.start()
+                                    if not self.camRunTime.emailSentdirVideosAllTimeEmpty 
+                                        
+                                        textEmail = 'Mesmo apagando a pasta "Videos 24hs", seu HD continua cheio ! \n\n \ Nossa sugestão é que você libere mais espaço para pode gravar os "Videos 24hs"'                                         
+                                        
+                                        if self.camRunTime.configEmailStatus:  
+                                            threadEmailAllEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos 24hs" apagada - seu HD está cheio !',textEmail))
+                                            threadEmailAllEmpty.start()
+                                        
+                                        threadAppAlertAllEmpty = Thread(target=sendStorageAlert, args=(self.statusConfig.getUserLogin(), 'PV Alert - pasta "Videos 24hs" apagada - Disco cheio !',textEmail))
+                                        threadAppAlertAllEmpty.start()
                                         self.camRunTime.emailSentdirVideosAllTimeEmpty = True
                                     
 
@@ -169,12 +187,16 @@ class CheckStorage(QThread):
                                     if utils.freeDiskSpace(self.statusConfig.getDirVideosOnAlarmes()) == False:
                                         log.critical('Diretorios de "Vidos Alarme" já está vazio')                                    
 
-                                        if not self.camRunTime.emailSentdirVideosOnAlarmesEmpty and self.camRunTime.configEmailStatus:
+                                        if not self.camRunTime.emailSentdirVideosOnAlarmesEmpty 
                                             textEmail = 'Mesmo apagando a pasta "Videos Alarme", seu HD continua cheio ! \n\n  \
                                                      Nossa sugestão é que você libere mais espaço para pode gravar os "Videos Alarme"' 
                                                     
-                                            threadEmailAlarmesEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos Alarmes" apagada - seu HD está cheio !',textEmail))
-                                            threadEmailAlarmesEmpty.start()
+                                            if self.camRunTime.configEmailStatus:
+                                                threadEmailAlarmesEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos Alarmes" apagada - seu HD está cheio !',textEmail))
+                                                threadEmailAlarmesEmpty.start()
+                                            
+                                            threadAppAlertEmpty = Thread(target=sendStorageAlert, args=(self.statusConfig.getUserLogin(), 'PV Alert - pasta "Videos Alarmes" apagada - Disco cheio !',textEmail))
+                                            threadAppAlertEmpty.start()
                                             self.camRunTime.emailSentdirVideosOnAlarmesEmpty = True
                                     
                         
