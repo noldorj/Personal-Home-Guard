@@ -253,7 +253,7 @@ class FormProc(QWidget):
                 self.threadStorage.warningHDCheio.connect(self.warningHDCheio)
                 self.threadStorage.start()
                                                             
-                utils.initWatchDog()                
+                #utils.initWatchDog()                
 
             else: 
                 

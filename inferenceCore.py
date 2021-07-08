@@ -31,6 +31,8 @@ from checkLicence.sendingData import checkSessionPv
 import firebase_admin
 from firebase_admin import credentials
 
+from common.images_capture import open_images_capture
+
 #import tensorflow as tf
 
 #cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
@@ -122,8 +124,10 @@ class InferenceCore(QThread):
             log.info('initOpenVino')            
         
             if self.camRunTime.ipCam is not None:
-                self.camRunTime.ret, self.camRunTime.frame = self.camRunTime.ipCam.read()
-                self.camRunTime.ret, self.camRunTime.next_frame = self.camRunTime.ipCam.read()
+                #self.camRunTime.ret, self.camRunTime.frame = self.camRunTime.ipCam.read()
+                #self.camRunTime.ret, self.camRunTime.next_frame = self.camRunTime.ipCam.read()
+                self.camRunTime.frame = self.camRunTime.ipCam.read()
+                self.camRunTime.next_frame = self.camRunTime.ipCam.read()
             
             if self.camRunTime.frame is not None:
                 self.camRunTime.frame = cv.resize(self.camRunTime.frame, (self.camRunTime.RES_X, self.camRunTime.RES_Y))             
@@ -133,9 +137,8 @@ class InferenceCore(QThread):
             
             log.info('inferenceCore:: Tentando carregar Openvino')
             try:
-                self.camRunTime.nchw, self.camRunTime.exec_net, self.camRunTime.input_blob, self.camRunTime.out_blob = \
-                    pOpenVino.initOpenVino(self.camRunTime.device, self.camRunTime.openVinoModelXml, \
-                    self.camRunTime.openVinoModelBin, self.camRunTime.openVinoCpuExtension, self.camRunTime.openVinoPluginDir)
+                self.camRunTime.detector_pipeline, self.camRunTime.args = \
+                    pOpenVino.initOpenVino(self.camRunTime.device, self.camRunTime.openVinoModelXml, self.camRunTime.source)
         
             except:
                 
@@ -160,10 +163,13 @@ class InferenceCore(QThread):
                 self.camRunTime.initOpenVinoStatus = True
                 self.camRunTime.init_video = True
                 log.info(' ')
+                
                 self.camRunTime.cur_request_id = 0
-                self.camRunTime.next_request_id = 1
+                #self.camRunTime.next_request_id = 1
+                self.camRunTime.next_request_id = 0
                 self.camRunTime.render_time = 0
         
+        #Tentando TensorFlow
         else:
             log.info("inferenceCore:: TensorFlow on")
             self.camRunTime.init_video = True
@@ -183,7 +189,11 @@ class InferenceCore(QThread):
             
         
         if self.camRunTime.ipCam is not None:
-            self.camRunTime.conectado, self.camRunTime.frame = self.camRunTime.ipCam.read()
+            self.camRunTime.frame = self.camRunTime.ipCam.read()
+            self.camRunTime.conectado = True
+            #self.camRunTime.conectado, self.camRunTime.frame = self.camRunTime.ipCam.read()
+            
+            
         
         if self.camRunTime.frame is not None:
             self.camRunTime.frame = cv.resize(self.camRunTime.frame, (self.camRunTime.RES_X, self.camRunTime.RES_Y)) 
@@ -228,7 +238,9 @@ class InferenceCore(QThread):
                 
 
                 if self.camRunTime.ipCam is not None:
-                    self.camRunTime.conectado, self.camRunTime.frame = self.camRunTime.ipCam.read()
+                    self.camRunTime.frame = self.camRunTime.ipCam.read()
+                    self.camRunTime.conectado = True
+                    #self.camRunTime.conectado, self.camRunTime.frame = self.camRunTime.ipCam.read()
                 
                 if self.camRunTime.frame is not None:
                     self.camRunTime.frame = cv.resize(self.camRunTime.frame, (self.camRunTime.RES_X, self.camRunTime.RES_Y)) 
@@ -251,8 +263,11 @@ class InferenceCore(QThread):
                     self.camRunTime.currentData = [self.camRunTime.currentData.get('day'), self.camRunTime.currentData.get('month')]
 
                     if self.camRunTime.current_data_dir != self.camRunTime.currentData:
+                    
                         self.camRunTime.status_dir_criado_on_alarmes, self.camRunTime.dir_video_trigger_on_alarmes = utils.createDirectory(self.camRunTime.statusConfig.data["dirVideosOnAlarmes"])
+                        
                         self.camRunTime.status_dir_criado_all_time, self.camRunTime.dir_video_trigger_all_time = utils.createDirectory(self.camRunTime.statusConfig.data["dirVideosAllTime"])
+                        
                         self.camRunTime.current_data_dir = utils.getDate()
                         self.camRunTime.current_data_dir = [self.camRunTime.current_data_dir.get('day'), self.camRunTime.current_data_dir.get('month')]
 
@@ -275,23 +290,37 @@ class InferenceCore(QThread):
 
                         #se eh openVino e este foi inicializado corretamente 
                         ### ---------------  OpenVino Get Objects ----------------- ###
+                        
                         if self.camRunTime.isOpenVino and self.camRunTime.initOpenVinoStatus:
                         
 
                             #print('pOpenVino.getListBoxDetected')
-                            self.camRunTime.ret, listReturn  = pOpenVino.getListBoxDetected(self.camRunTime.ipCam, self.camRunTime.device, self.camRunTime.frame,
-                                               self.camRunTime.next_frame, self.camRunTime.nchw, self.camRunTime.exec_net, self.camRunTime.out_blob,
-                                               self.camRunTime.input_blob, self.camRunTime.cur_request_id, self.camRunTime.next_request_id, 
-                                               self.camRunTime.prob_threshold, self.camRunTime.RES_X, self.camRunTime.RES_Y)
+                            listReturn  = pOpenVino.getListBoxDetected(
+                                            self.camRunTime.detector_pipeline,
+                                            self.camRunTime.next_request_id, 
+                                            self.camRunTime.cur_request_id, 
+                                               self.camRunTime.prob_threshold, self.camRunTime.ipCam, self.camRunTime.source, self.camRunTime.args)
+                            
 
-                            if self.camRunTime.ret:
-                                #print('self.camRunTime.ret')
-                                self.camRunTime.frame = self.camRunTime.next_frame
-                                self.camRunTime.frame, self.camRunTime.next_frame, self.camRunTime.cur_request_id, \
-                                self.camRunTime.next_request_id, self.camRunTime.listObjects, self.camRunTime.listObjectsTracking, \
-                                self.camRunTime.prob_threshold_returned  = listReturn[0], listReturn[1], listReturn[2], listReturn[3], listReturn[4], listReturn[5], listReturn[6]
+                            
+                            #print('self.camRunTime.ret')
+                            self.camRunTime.frame = self.camRunTime.next_frame
+                            
+                            #self.camRunTime.ret, self.camRunTime.next_frame = self.camRunTime.ipCam.read()
+                            self.camRunTime.next_frame = self.camRunTime.ipCam.read()
+                            self.camRunTime.ret = True                            
 
-                                self.camRunTime.cur_request_id, self.camRunTime.next_request_id = self.camRunTime.next_request_id, self.camRunTime.cur_request_id
+                            
+                            self.camRunTime.next_request_id += 1
+                            self.camRunTime.cur_request_id += 1
+                            self.camRunTime.listObjects = listReturn[0]
+                            self.camRunTime.listObjectsTracking = listReturn[1]
+                            self.camRunTime.prob_threshold_returned = listReturn[2]
+                            
+                            print('size listObjects: {}'.format(len(self.camRunTime.listObjects)))
+
+                            #self.camRunTime.cur_request_id = self.camRunTime.next_request_id
+                            #self.camRunTime.next_request_id = self.camRunTime.cur_request_id
 
                         else:
                             #chamada para a CNN do OpenCV - TensorFlow Object Detection API 
@@ -315,7 +344,7 @@ class InferenceCore(QThread):
 
                     #se tem objetos detectados pela CNN                
                     else:
-                        #print('objetos detectados')
+                        print('objetos detectados')
 
                         #objectsTracking = ct.update(listObjectsTracking)
 
@@ -570,76 +599,76 @@ class InferenceCore(QThread):
                     self.camRunTime.timeGravandoAll = time.time() - self.camRunTime.timeGravandoAllInit
                     
                     
-                    if not self.camRunTime.isDiskFull:
+                    # if not self.camRunTime.isDiskFull:
                    
                         
-                        if self.camRunTime.spaceMaxDirVideosOnAlarme == 0 or ( self.camRunTime.spaceMaxDirVideosOnAlarme >= self.camRunTime.dirVideosOnAlarmesUsedSpace ):
+                        # if self.camRunTime.spaceMaxDirVideosOnAlarme == 0 or ( self.camRunTime.spaceMaxDirVideosOnAlarme >= self.camRunTime.dirVideosOnAlarmesUsedSpace ):
 
-                            if self.camRunTime.newVideo and self.camRunTime.gravandoOnAlarmes and (self.camRunTime.STOP_ALL == False):
+                            # if self.camRunTime.newVideo and self.camRunTime.gravandoOnAlarmes and (self.camRunTime.STOP_ALL == False):
                             
-                                if self.camRunTime.out_video is not None:
-                                   self.camRunTime.out_video.release()
-                                   self.camRunTime.out_video = None
-                                   self.camRunTime.releaseVideoOnAlarmes = False
+                                # if self.camRunTime.out_video is not None:
+                                   # self.camRunTime.out_video.release()
+                                   # self.camRunTime.out_video = None
+                                   # self.camRunTime.releaseVideoOnAlarmes = False
 
-                                #grava video novo se tiver um objeto novo na cena
-                                hora = utils.getDate()['hour'].replace(':','-')
-                                self.camRunTime.nameVideo = self.camRunTime.dir_video_trigger_on_alarmes + '/' + hora + '.avi'
+                                # #grava video novo se tiver um objeto novo na cena
+                                # hora = utils.getDate()['hour'].replace(':','-')
+                                # self.camRunTime.nameVideo = self.camRunTime.dir_video_trigger_on_alarmes + '/' + hora + '.avi'
                                 
-                                #if out_video is not None:
-                                #h = nchw[2]
-                                #w = nchw[3]
-                                self.camRunTime.out_video = cv.VideoWriter(self.camRunTime.nameVideo, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h))
-                                self.camRunTime.out_video.write(frame_no_label)
-                                self.camRunTime.newVideo = False
+                                # #if out_video is not None:
+                                # #h = nchw[2]
+                                # #w = nchw[3]
+                                # self.camRunTime.out_video = cv.VideoWriter(self.camRunTime.nameVideo, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h))
+                                # self.camRunTime.out_video.write(frame_no_label)
+                                # self.camRunTime.newVideo = False
 
                             
-                            #if gravando:
-                            if self.camRunTime.gravandoOnAlarmes and (self.camRunTime.STOP_ALL == False):
-                                if self.camRunTime.out_video is not None:
-                                    #print('gravandoOnAlarmes')
-                                    self.camRunTime.out_video.write(frame_no_label)
+                            # #if gravando:
+                            # if self.camRunTime.gravandoOnAlarmes and (self.camRunTime.STOP_ALL == False):
+                                # if self.camRunTime.out_video is not None:
+                                    # #print('gravandoOnAlarmes')
+                                    # self.camRunTime.out_video.write(frame_no_label)
 
                        
 
 
-                        if self.camRunTime.spaceMaxDirVideosAllTime == 0 or ( self.camRunTime.spaceMaxDirVideosAllTime >= self.camRunTime.dirVideosAllTimeUsedSpace ):                        
+                        # if self.camRunTime.spaceMaxDirVideosAllTime == 0 or ( self.camRunTime.spaceMaxDirVideosAllTime >= self.camRunTime.dirVideosAllTimeUsedSpace ):                        
                             
-                            if self.camRunTime.gravandoAllTime and (self.camRunTime.timeGravandoAll >= self.camRunTime.GRAVANDO_TIME) and (self.camRunTime.STOP_ALL == False):
+                            # if self.camRunTime.gravandoAllTime and (self.camRunTime.timeGravandoAll >= self.camRunTime.GRAVANDO_TIME) and (self.camRunTime.STOP_ALL == False):
 
-                                if self.camRunTime.out_video_all_time is not None:
-                                     self.camRunTime.out_video_all_time.release()
-                                     self.camRunTime.out_video_all_time = None
+                                # if self.camRunTime.out_video_all_time is not None:
+                                     # self.camRunTime.out_video_all_time.release()
+                                     # self.camRunTime.out_video_all_time = None
                                 
-                                #if out_video_all_time is not None:
+                                # #if out_video_all_time is not None:
                                 
-                                hora = utils.getDate()['hour'].replace(':','-')
-                                self.camRunTime.nameVideoAllTime = self.camRunTime.dir_video_trigger_all_time + '/' + hora + '.avi'
+                                # hora = utils.getDate()['hour'].replace(':','-')
+                                # self.camRunTime.nameVideoAllTime = self.camRunTime.dir_video_trigger_all_time + '/' + hora + '.avi'
                                 
-                                #if out_video_all_time is not None:
-                                #h = nchw[2]
-                                #w = nchw[3]
+                                # #if out_video_all_time is not None:
+                                # #h = nchw[2]
+                                # #w = nchw[3]
                                 
                                 
-                                self.camRunTime.out_video_all_time = cv.VideoWriter(self.camRunTime.nameVideoAllTime, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h))
-                                self.camRunTime.out_video_all_time.write(frame_no_label)
+                                # self.camRunTime.out_video_all_time = cv.VideoWriter(self.camRunTime.nameVideoAllTime, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h))
+                                # self.camRunTime.out_video_all_time.write(frame_no_label)
 
-                                self.camRunTime.timeGravandoAllInit = time.time()
+                                # self.camRunTime.timeGravandoAllInit = time.time()
                                     
-                        if self.camRunTime.gravandoAllTime and (self.camRunTime.STOP_ALL == False):
-                            if self.camRunTime.out_video_all_time is not None:
-                                #print('gravandoAllTime')
-                                #print('out_video_all_time type: {}'.format(self.camRunTime.out_video_all_time))                            
-                                self.camRunTime.out_video_all_time.write(frame_no_label)
+                        # if self.camRunTime.gravandoAllTime and (self.camRunTime.STOP_ALL == False):
+                            # if self.camRunTime.out_video_all_time is not None:
+                                # #print('gravandoAllTime')
+                                # #print('out_video_all_time type: {}'.format(self.camRunTime.out_video_all_time))                            
+                                # self.camRunTime.out_video_all_time.write(frame_no_label)
                    
 
-                    #disco cheio 
-                    else:
-                        #print('disco cheio')
-                        # ou então parar de gravar novos videos
-                        if self.camRunTime.stopSaveNewVideos:                        
-                            self.camRunTime.gravandoAllTime = False
-                            self.camRunTime.gravandoOnAlarmes = False
+                    # #disco cheio 
+                    # else:
+                        # print('disco cheio')
+                        # # ou então parar de gravar novos videos
+                        # if self.camRunTime.stopSaveNewVideos:                        
+                            # self.camRunTime.gravandoAllTime = False
+                            # self.camRunTime.gravandoOnAlarmes = False
                             
                        
                         
@@ -647,7 +676,7 @@ class InferenceCore(QThread):
                     #end else disco cheio  
                                 
                     self.change_pixmap_signal.emit(frame_screen)
-                    #print('emit')
+                    print('emit')
 
                     self.camRunTime.end = time.time()
 
@@ -665,121 +694,121 @@ class InferenceCore(QThread):
                     #log.info('timeSession: {}'.format(timeSession))
 
                     #print('ANTES testando sessao')
-                    if self.camRunTime.timeSession >= self.camRunTime.CHECK_SESSION:
-                        #print('timeSession > CHECK_SESSION')
+                    # if self.camRunTime.timeSession >= self.camRunTime.CHECK_SESSION:
+                        # #print('timeSession > CHECK_SESSION')
 
-                        #session = {self.camRunTime.login.get('user'), self.camRunTime.login.get('token')}
+                        # #session = {self.camRunTime.login.get('user'), self.camRunTime.login.get('token')}
 
-                        conexao = utils.checkInternetAccess()
+                        # conexao = utils.checkInternetAccess()
 
-                        if conexao: 
+                        # if conexao: 
 
-                            log.info(' ')
-                            log.info('inferenceCore:: Conexao com a Internet estabelecida')
-                            #print('Conexao com a Internet estabelecida')
-                            self.camRunTime.STOP_ALL = False
+                            # log.info(' ')
+                            # log.info('inferenceCore:: Conexao com a Internet estabelecida')
+                            # #print('Conexao com a Internet estabelecida')
+                            # self.camRunTime.STOP_ALL = False
                             
-                            while (len(self.camRunTime.pilhaAlertasNaoEnviados) > 0) and (self.camRunTime.STOP_ALL == False):  
+                            # while (len(self.camRunTime.pilhaAlertasNaoEnviados) > 0) and (self.camRunTime.STOP_ALL == False):  
                             
-                                if self.camRunTime.configEmailStatus and not self.camRunTime.desativarAlarmes:                            
-                                    #enviando alerta de emails anteriores
-                                    log.info('inferenceCore:: Enviando alerta de emails anteriores')
+                                # if self.camRunTime.configEmailStatus and not self.camRunTime.desativarAlarmes:                            
+                                    # #enviando alerta de emails anteriores
+                                    # log.info('inferenceCore:: Enviando alerta de emails anteriores')
 
-                                    alertaEmail = self.camRunTime.pilhaAlertasNaoEnviados.popleft()
+                                    # alertaEmail = self.camRunTime.pilhaAlertasNaoEnviados.popleft()
 
-                                    threadEmail = Thread(target=sendMailAlert, args=(alertaEmail[0],
-                                    alertaEmail[1],
-                                    alertaEmail[2],
-                                    alertaEmail[3],
-                                    alertaEmail[4],
-                                    alertaEmail[5],
-                                    alertaEmail[6],
-                                    alertaEmail[7],
-                                    alertaEmail[8],
-                                    alertaEmail[9]))                                    
+                                    # threadEmail = Thread(target=sendMailAlert, args=(alertaEmail[0],
+                                    # alertaEmail[1],
+                                    # alertaEmail[2],
+                                    # alertaEmail[3],
+                                    # alertaEmail[4],
+                                    # alertaEmail[5],
+                                    # alertaEmail[6],
+                                    # alertaEmail[7],
+                                    # alertaEmail[8],
+                                    # alertaEmail[9]))                                    
                                     
-                                    log.info('inferenceCore:: Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
-                                    threadEmail.start()
-                                else:
-                                    log.critical('inferenceCore:: configEmailStatus: '.format(self.camRunTime.configEmailStatus))
+                                    # log.info('inferenceCore:: Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
+                                    # threadEmail.start()
+                                # else:
+                                    # log.critical('inferenceCore:: configEmailStatus: '.format(self.camRunTime.configEmailStatus))
                                 
-                                #Alertas pra o App sao enviados de qualquer forma
-                                log.info('inferenceCore:: Lista de alertas devido a perda de conexao enviados ao App pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
-                                threadAlertApp = Thread(target=sendAlertApp, args=(self.camRunTime.statusConfig.getUserLogin(),
-                                                           frame_no_label_email,
-                                                           str(typeObject), #tipo de objeto detectado
-                                                           r.get('nameRegion'),
-                                                           self.camRunTime.nameCam))
-                                threadAlertApp.start()
+                                # #Alertas pra o App sao enviados de qualquer forma
+                                # log.info('inferenceCore:: Lista de alertas devido a perda de conexao enviados ao App pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
+                                # threadAlertApp = Thread(target=sendAlertApp, args=(self.camRunTime.statusConfig.getUserLogin(),
+                                                           # frame_no_label_email,
+                                                           # str(typeObject), #tipo de objeto detectado
+                                                           # r.get('nameRegion'),
+                                                           # self.camRunTime.nameCam))
+                                # threadAlertApp.start()
                                     
                                     
-                                #print('Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
+                                # #print('Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
                                     
 
                             
                              
-                            #listObjectMailAlerted.append(alertaEmail[9])
+                            # #listObjectMailAlerted.append(alertaEmail[9])
 
-                            #ativar funcoes                        
-                            #self.camRunTime.sessionStatus, self.camRunTime.error = checkSessionPv(self.camRunT im h0 ek0.login)
-                            #log.info('inferenceCore::TOKEN: {}'.format(utils.decrypt(self.camRunTime.login.get('token').decode())))
-                            self.camRunTime.sessionStatus, self.camRunTime.error = checkSessionPv(self.camRunTime.login)
-                            self.camRunTime.timeInternetOffStart = time.time() 
-                            #self.updateStorageInfo.emit()
-                            #print('sessionStatus: {}'.format(self.camRunTime.sessionStatus))
+                            # #ativar funcoes                        
+                            # #self.camRunTime.sessionStatus, self.camRunTime.error = checkSessionPv(self.camRunT im h0 ek0.login)
+                            # #log.info('inferenceCore::TOKEN: {}'.format(utils.decrypt(self.camRunTime.login.get('token').decode())))
+                            # self.camRunTime.sessionStatus, self.camRunTime.error = checkSessionPv(self.camRunTime.login)
+                            # self.camRunTime.timeInternetOffStart = time.time() 
+                            # #self.updateStorageInfo.emit()
+                            # #print('sessionStatus: {}'.format(self.camRunTime.sessionStatus))
 
-                            if self.camRunTime.error == 'servidorOut':
-                                #print('Servidor não respondendo. Ignorando checkSession')
-                                log.critical('inferenceCore:: Servidor não respondendo. Ignorando checkSession')
-                                self.camRunTime.sessionStatus = True
-                                self.camRunTime.errorSession = 0
+                            # if self.camRunTime.error == 'servidorOut':
+                                # #print('Servidor não respondendo. Ignorando checkSession')
+                                # log.critical('inferenceCore:: Servidor não respondendo. Ignorando checkSession')
+                                # self.camRunTime.sessionStatus = True
+                                # self.camRunTime.errorSession = 0
                            
-                            elif self.camRunTime.sessionStatus == False:
-                                log.warning('inferenceCore:: sessionStatus: {}'.format(self.camRunTime.sessionStatus))
-                                if self.camRunTime.errorSession == self.camRunTime.sessionErrorCount:
-                                    self.warningSessionLoss.emit()                                
-                                    log.warning('inferenceCore:: stopWatchDog chamado - erro de sessao pela 2a vez')
-                                    utils.stopWatchDog()
-                                else:
-                                    self.camRunTime.errorSession = self.camRunTime.errorSession + 1
-                                    log.warning('inferenceCore:: Erro de sessao pela {:d} vez'.format(self.camRunTime.errorSession))
-                                    self.warningSessionLossFirst.emit()                                
-                                    self.camRunTime.sessionStatus = True
+                            # elif self.camRunTime.sessionStatus == False:
+                                # log.warning('inferenceCore:: sessionStatus: {}'.format(self.camRunTime.sessionStatus))
+                                # if self.camRunTime.errorSession == self.camRunTime.sessionErrorCount:
+                                    # self.warningSessionLoss.emit()                                
+                                    # log.warning('inferenceCore:: stopWatchDog chamado - erro de sessao pela 2a vez')
+                                    # utils.stopWatchDog()
+                                # else:
+                                    # self.camRunTime.errorSession = self.camRunTime.errorSession + 1
+                                    # log.warning('inferenceCore:: Erro de sessao pela {:d} vez'.format(self.camRunTime.errorSession))
+                                    # self.warningSessionLossFirst.emit()                                
+                                    # self.camRunTime.sessionStatus = True
                                     
-                            elif self.camRunTime.sessionStatus == True:
-                                self.camRunTime.errorSession = 0
-                                log.info('inferenceCore:: Sessao de login ok')
+                            # elif self.camRunTime.sessionStatus == True:
+                                # self.camRunTime.errorSession = 0
+                                # log.info('inferenceCore:: Sessao de login ok')
                             
 
 
-                        else:
-                            log.critical(' ')
-                            log.critical("inferenceCore:: Sem internet - sessao não checada")
-                            log.critical("inferenceCore:: sessionStatus: {}".format(self.camRunTime.sessionStatus))
+                        # else:
+                            # log.critical(' ')
+                            # log.critical("inferenceCore:: Sem internet - sessao não checada")
+                            # log.critical("inferenceCore:: sessionStatus: {}".format(self.camRunTime.sessionStatus))
                            
-                            if (time.time() - self.camRunTime.timeInternetOffStart) >= self.camRunTime.INTERNET_OFF: 
+                            # if (time.time() - self.camRunTime.timeInternetOffStart) >= self.camRunTime.INTERNET_OFF: 
                                 
-                                self.camRunTime.STOP_ALL = True 
+                                # self.camRunTime.STOP_ALL = True 
                                 
-                                #release dos videos
-                                if self.camRunTime.out_video is not None:
-                                   self.camRunTime.out_video.release()
-                                   self.camRunTime.out_video = None
-                                   self.camRunTime.releaseVideoOnAlarmes = False
+                                # #release dos videos
+                                # if self.camRunTime.out_video is not None:
+                                   # self.camRunTime.out_video.release()
+                                   # self.camRunTime.out_video = None
+                                   # self.camRunTime.releaseVideoOnAlarmes = False
                                 
-                                if self.camRunTime.out_video_all_time is not None:
-                                     self.camRunTime.out_video_all_time.release()
-                                     self.camRunTime.out_video_all_time = None
-                                     self.camRunTime.releaseVideoAllTime = False
+                                # if self.camRunTime.out_video_all_time is not None:
+                                     # self.camRunTime.out_video_all_time.release()
+                                     # self.camRunTime.out_video_all_time = None
+                                     # self.camRunTime.releaseVideoAllTime = False
 
 
-                                log.critical('inferenceCore:: Tempo maximo sem Internet permitido esgotado - Portao Virtual ficará inativo')
+                                # log.critical('inferenceCore:: Tempo maximo sem Internet permitido esgotado - Portao Virtual ficará inativo')
                                 
 
-                            #emitir mensagem de aviso
-                            self.camRunTime.sessionStatus = True
+                            # #emitir mensagem de aviso
+                            # self.camRunTime.sessionStatus = True
 
-                        self.camRunTime.timeSessionInit = time.time()
+                        # self.camRunTime.timeSessionInit = time.time()
 
                     
                     self.camRunTime.listObjects.clear()                
@@ -795,11 +824,19 @@ class InferenceCore(QThread):
                         time.sleep(5)
                         if self.camRunTime.ipCam is not None:
                             self.camRunTime.ipCam, self.camRunTime.error = utils.camSource(self.camRunTime.source)
-                            self.camRunTime.ipCam.set(3, self.camRunTime.RES_X)
-                            self.camRunTime.ipCam.set(4, self.camRunTime.RES_Y)
                             
-                            self.camRunTime.conectado, self.camRunTime.frame = self.camRunTime.ipCam.read()
-                            self.camRunTime.ret, self.camRunTime.next_frame = self.camRunTime.ipCam.read()
+                            self.camRunTime.ipCam = open_images_capture(self.camRunTime.source, True)
+                            
+                            #self.camRunTime.ipCam.set(3, self.camRunTime.RES_X)
+                            #self.camRunTime.ipCam.set(4, self.camRunTime.RES_Y)
+                            
+                            #self.camRunTime.conectado, self.camRunTime.frame = self.camRunTime.ipCam.read()
+                            self.camRunTime.frame = self.camRunTime.ipCam.read()
+                            self.camRunTime.conectado = True
+                            
+                            #self.camRunTime.ret, self.camRunTime.next_frame = self.camRunTime.ipCam.read()
+                            self.camRunTime.next_frame = self.camRunTime.ipCam.read()
+                            self.camRunTime.ret = True
                         #ipCam = utils.camSource(source)
                         
                     elif self.camRunTime.changeIpCam:
@@ -809,10 +846,19 @@ class InferenceCore(QThread):
                         #print('self.camRunTime.source: {}'.format(self.camRunTime.source))
                         if self.camRunTime.ipCam is not None:
                             self.camRunTime.ipCam, self.camRunTime.error = utils.camSource(self.camRunTime.source)
-                            self.camRunTime.ipCam.set(3, self.camRunTime.RES_X)
-                            self.camRunTime.ipCam.set(4, self.camRunTime.RES_Y)
-                            self.camRunTime.conectado, self.camRunTime.frame = self.camRunTime.ipCam.read()
-                            self.camRunTime.ret, self.camRunTime.next_frame = self.camRunTime.ipCam.read()
+                            
+                            self.camRunTime.ipCam = open_images_capture(self.camRunTime.source, True)
+                            
+                            #self.camRunTime.ipCam.set(3, self.camRunTime.RES_X)
+                            #self.camRunTime.ipCam.set(4, self.camRunTime.RES_Y)
+                            #self.camRunTime.conectado, self.camRunTime.frame = self.camRunTime.ipCam.read()
+                            self.camRunTime.frame = self.camRunTime.ipCam.read()
+                            self.camRunTime.conectado = True
+                            
+                            
+                            #self.camRunTime.ret, self.camRunTime.next_frame = self.camRunTime.ipCam.read()
+                            self.camRunTime.next_frame = self.camRunTime.ipCam.read()
+                            self.camRunTime.ret = True
                         self.changeIpCam = False
                         
                     elif self.camRunTime.errorWebcam:

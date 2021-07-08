@@ -116,7 +116,7 @@ class CheckStorage(QThread):
                     self.warningHDCheio.emit() 
                 else:
                 
-                    if not self.camRunTime.emailSentDiskFull 
+                    if not self.camRunTime.emailSentDiskFull:
                     
                         if self.camRunTime.eraseOldestFiles:
                         
@@ -162,9 +162,9 @@ class CheckStorage(QThread):
                                 if utils.freeDiskSpace(self.camRunTime.statusConfig.getDirVideosAllTime()) == False:
                                 
                                     log.critical('checkStorage:: Diretorios de "Videos 24hs" já está vazio')
-                                    if not self.camRunTime.emailSentdirVideosAllTimeEmpty 
+                                    if not self.camRunTime.emailSentdirVideosAllTimeEmpty:
                                         
-                                        textEmail = 'Mesmo apagando a pasta "Videos 24hs", seu HD continua cheio ! \n\n \ Nossa sugestão é que você libere mais espaço para pode gravar os "Videos 24hs"'                                         
+                                        textEmail = 'Mesmo apagando a pasta "Videos 24hs", seu HD continua cheio ! \n\n \ Nossa sugestão é que você libere mais espaço para pode gravar os "Videos 24hs"'
                                         
                                         if self.camRunTime.configEmailStatus:  
                                             threadEmailAllEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos 24hs" apagada - seu HD está cheio !',textEmail))
@@ -187,7 +187,7 @@ class CheckStorage(QThread):
                                     if utils.freeDiskSpace(self.statusConfig.getDirVideosOnAlarmes()) == False:
                                         log.critical('Diretorios de "Vidos Alarme" já está vazio')                                    
 
-                                        if not self.camRunTime.emailSentdirVideosOnAlarmesEmpty 
+                                        if not self.camRunTime.emailSentdirVideosOnAlarmesEmpty:
                                             textEmail = 'Mesmo apagando a pasta "Videos Alarme", seu HD continua cheio ! \n\n  \
                                                      Nossa sugestão é que você libere mais espaço para pode gravar os "Videos Alarme"' 
                                                     

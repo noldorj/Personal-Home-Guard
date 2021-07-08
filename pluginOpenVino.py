@@ -22,7 +22,23 @@ from argparse import ArgumentParser
 import cv2
 import time
 import logging as log
-from  openvino.inference_engine import IENetwork, IEPlugin
+#from  openvino.inference_engine import IENetwork, IEPlugin
+import openvino.inference_engine.constants
+from  openvino.inference_engine import IENetwork, IECore
+
+from common import models
+from common import monitors
+from common.pipelines import get_user_config, AsyncPipeline
+from common.images_capture import open_images_capture
+from common.performance_metrics import PerformanceMetrics
+from common.helpers import resolution
+
+from argparse import ArgumentParser, SUPPRESS
+
+from pathlib import Path
+from time import perf_counter
+
+
 
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, stream=sys.stdout)
 #def main():
@@ -31,286 +47,352 @@ from  openvino.inference_engine import IENetwork, IEPlugin
 log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.DEBUG, stream=sys.stdout)
 
 
-labels_map = ["background", "car", "person", "bike"]
+#labels_map = ["background", "car", "person", "bike"]
+labels_map = ["person", "bike", "car"] #yolo
 #labels_map = ["background", "person", "car", "bike"]
 
 #lista de boxes detectados
 listRectanglesDetected = []
 listObjectsTracking = []
+devIces_disponiveis = []
 
 
-def initOpenVino(device, model_xml, model_bin, cpu_extension, plugin_dir):
+def initOpenVino(device, model_xml, source):
 
     log.info(' ')
     log.info('initOpenVino::')
     # Plugin initialization for specified device and load extensions library if specified
     
     log.info(' ')
-    log.info("initOpenVino:: Initializing plugin for {} device...".format(device))
+    log.info("initOpenVino:: Device   : {} ".format(device))
     log.info('initOpenVino:: Model XML: {}'.format(model_xml))
-    log.info('initOpenVino:: Model Bin: {}'.format(model_bin))
-    log.info('initOpenVino:: CPU Extension    : {}'.format(cpu_extension))
-    log.info('initOpenVino:: Plugin Diretorio : {}'.format(plugin_dir))
+    
     log.info(' ')
-    #print('initOpenVino at pluginOpenVino')
-
-    plugin_SO = 'linux' if sys.platform == 'linux' else 'windows'
-
-    #log.critical('pluginSO: {}'.format(plugin_SO))
-
-    plugin = None
     
+    args = None
+    detector_pipeline = None
     
-    
-
-    try: 
-
-        log.info('initOpenVino:: IEPlugin inicializando...')
-        plugin = IEPlugin(device=device)
-        #plugin = IEPlugin(device=device, plugin_dirs=plugin_dir)
-
-    except Exception as e:
-        
-        log.error('')
-        log.error('initOpenVino:: IEPlugin error: {}'.format(e))
-
-    else:
-
-        log.info('initOpenVino:: IEPlugin {} carregado'.format(device))
-
-    #if 'CPU' in device:
-    listPluginDir = [plugin_dir, os.getcwd() + '/' + plugin_dir]
-    
-    #plugin_dir = os.getcwd() + '/' + plugin_dir    
-    
-    if cpu_extension and 'CPU' in device:
-    
-        for plugin_dir in listPluginDir:            
-            log.info(' ')
-            log.info('initOpenVino:: Plugin_dir: {}'.format(plugin_dir))
-            try: 
-                log.info('initOpenVino:: CPU_Extension: "{}" sendo carregado...'.format(cpu_extension))
-                #print('CPU_Extension: "{}" sendo carregado...'.format(cpu_extension))            
-                
-                if plugin_dir == "":
-                    plugin.add_cpu_extension(cpu_extension)
-                else:
-                    pluginPath = plugin_dir + '/' + cpu_extension                
-                    log.info('initOpenVino:: cpu_extension path: {}'.format(pluginPath))
-                    plugin.add_cpu_extension(pluginPath)
-                
-                break
-
-            except Exception as e:
-
-                log.error(' ')
-                log.error('initOpenVino:: cpu_extension usado: {}'.format(cpu_extension))
-                log.error('initOpenVino:: Erro adicionando CPU_Extension: {}'.format(e))
-
-                try:
-                    log.info('initOpenVino:: Tentando AVX2 plugin')
-                    if plugin_SO == 'linux':
-                    
-                        if plugin_dir == "":
-                            plugin.add_cpu_extension('libcpu_extension_avx2.so')
-                        else:
-                            plugin.add_cpu_extension(plugin_dir + '/' + 'libcpu_extension_avx2.so')
-                    else:                
-                        if plugin_dir == "":
-                            plugin.add_cpu_extension('cpu_extension_avx2.dll')
-                        else:
-                            plugin.add_cpu_extension(plugin_dir + '/' + 'cpu_extension_avx2.dll')
-
-                    break
-                    
-                except Exception as e:
-                
-                    log.error(' ')
-                    log.error('initOpenVino:: cpu_extension usado: "libcpu_extension_avx2" ')
-                    log.error('initOpenVino:: Erro adicionando CPU_Extension {}'.format(e))
-                    
-                    try:
-                        if plugin_SO == 'linux':
-                            log.info('Tentando AVX-SSE4 plugin')
-                            if plugin_dir == "":
-                                plugin.add_cpu_extension('libcpu_extension_sse4.so')
-                            else:
-                                plugin.add_cpu_extension(plugin_dir + '/' + 'libcpu_extension_sse4.so')
-                        else:
-                            if plugin_dir == "":
-                                plugin.add_cpu_extension('cpu_extension_sse4.dll')
-                            else:
-                                plugin.add_cpu_extension(plugin_dir + '/' + 'cpu_extension_sse4.dll')
-                                
-
-                        break
-                        
-                    except Exception as e:
-                        log.error(' ')
-                        log.error('initOpenVino:: cpu_extension usado: "libcpu_extension_sse4" ')
-                        log.error('initOpenVino:: Erro adicionando CPU_Extension {}'.format(e))
-                        plugin = None
-
-                    #3 plugin SSE4                
-                    else:
-                        log.info(' ')
-                        log.info('initOpenVino:: CPU_Extension ok')
-                        log.info('initOpenVino:: cpu_extension utilizado: {}'.format(cpu_extension))
-                        break
-                
-                #2 plugin AVX2 
-                else:
-                    log.info(' ')
-                    log.info('initOpenVino:: CPU_Extension ok')
-                    break
-                    #print('CPU_Extension ok')
-
-                 
-            #1o plugin - AVX-512 ou plugin informado
-            else:
-                log.info(' ')
-                log.info('initOpenVino:: CPU_Extension ok')
-                log.info('initOpenVino:: cpu_extension utilizado: {}'.format(cpu_extension))
-                break
-
-    # Read IR
-    log.info(' ')
-    log.info("initOpenVino:: Reading IR...")
     try:
-        log.info('initOpenVino:: Carregando IENetwork...') 
-        net = IENetwork(model=model_xml, weights=model_bin)
-
-    except Exception as e:
-
-        log.error('initOpenVino:: IENetwork error: {}'.format(e))
-
+        args = build_argparser().parse_args('')
+    except Exception as err:
+        log.error('initOpenVino:: Erro ao carregar Args: {}'.format(err))
     else:
-        log.info('initOpenVino:: IENetwork carregada')
-        #print('IENetwork carregada')
+        log.info('initOpenVino:: Args carregado')
+    #args = build_argparser()
 
-    #Loading Plugin 
-    if plugin.device == "CPU" and plugin is not None:
+    log.info('initOpenVino:: Initializing Inference Engine...')
+    try:
+        ie = IECore()
+    except Exception as err:
+        log.error('initOpenVino:: Erro ao carregar IECore: {}'.format(err))
+    else:
+        log.info('initOpenVino:: IE Core carregado')
 
-        log.info('initOpenVino:: Layers suportadas...')
-        
-        
-        supported_layers = plugin.get_supported_layers(net)
-        not_supported_layers = [l for l in net.layers.keys() if l not in supported_layers]
-        
-        if len(not_supported_layers) != 0:
-            #print('erro layers')
-            log.error("initOpenVino:: Following layers are not supported by the plugin for specified device {}:\n {}".
-                      format(plugin.device, ', '.join(not_supported_layers)))
-            
-            #sys.exit(1)
-
-    #assert len(net.inputs.keys()) == 1, "Demo supports only single input topologies"
-    #assert len(net.outputs) == 1, "Demo supports only single output topologies"
     
-    input_blob = next(iter(net.inputs))
-    out_blob = next(iter(net.outputs))   
+    try:
+        args.device = device        
+        args.model = model_xml
+        args.architecture_type = 'yolo'
+        args.input = source
+        args.num_infer_requests = 2
+        args.loop = True
+        
+        log.info('args.device               : {}'.format(args.device))
+        log.info('args.model                : {}'.format(args.model))
+        log.info('args.architecture_type    : {}'.format(args.architecture_type))
+        log.info('args.input                : {}'.format(args.input))
+        log.info('args.num_infer_requests   : {}'.format(args.num_infer_requests))
+        log.info('args.loop                 : {}'.format(args.loop))
+        
+    except Exception as err:
+        log.error('initOpenVino:: Erro setando valores no args: {}'.format(err))
+    else:
+        log.info('initOpenVino:: Valores inseridos no Args ok')
     
+    try:
+        plugin_config = get_user_config(args.device, args.num_streams, args.num_threads)
+    except Exception as err:
+        log.error('initOpenVino:: Error get_user_config: {}'.format(err))
+    else:
+        log.info('initOpenVino:: get_user_config ok')
     
-    if plugin is not None:
-        log.info("initOpenVino:: Loading IR to the plugin...")
-        #print("Loading IR to the plugin...")
-        try:
-            #print('try...')
-            exec_net = plugin.load(network=net, num_requests=2)
-            #print('try2...')
-        except Exception as e:
-            #print('Error plugin.load: {}'.format(str(e)))
-            log.error('initOpenVino:: Error plugin.load: {}'.format(str(e)))            
-        else:
-            #print('plugin.load ok') 
-            log.info(' ')
-            log.info('initOpenVino:: plugin.load ok') 
-            log.info(' ')
 
+    log.info('Loading network...')
 
-    #print('plugin done')
-    n, c, h, w = net.inputs[input_blob].shape
-    nchw = [n,c,h,w]
-    del net
+    try:
+    
+        model = get_model(ie, args)
+        
+    except Exception as err:
+        log.error('initOpenVino:: Erro get_model: {}'.format(err))
+    else:
+        log.info('initOpenVino:: get_model ok')
 
-    is_async_mode = True
+    try:
+        detector_pipeline = AsyncPipeline(ie, model, plugin_config,
+                                      device=args.device, max_num_requests=args.num_infer_requests)
+    except Exception as err:    
+        log.error('initOpenVino Erro detector_pipeline: {}'.format(err))
+    else:
+        log.info('initOpenVino:: detector_pipeline ok')
+        
+                                      
     log.info(' ')
     log.info("initOpenVino:: Init Openvino done")
-    log.info(' ')
+    log.info(' ')    
+    print('initOpenVino:: detector_pipeline ID: {}'.format(detector_pipeline.id_AsyncPipeline))
+
+    return detector_pipeline, args
+
+
+# next_frame_id_to_show = next_request_id
+# next_frame_id = cur_request_id
+def getListBoxDetected(detector_pipeline, next_frame_id_to_show, next_frame_id, prob_threshold, cap, source, args):
     
-
-    return nchw, exec_net, input_blob, out_blob
-
-
-def getListBoxDetected(ipCam, device, frame, next_frame, nchw, exec_net, out_blob, input_blob, cur_request_id, next_request_id, prob_threshold, RES_X, RES_Y):
-
-
+    print('getListBoxDetected')
+    print('next_frame_id:           {}'.format(next_frame_id))
+    print('next_frame_id_to_show:   {}'.format(next_frame_id_to_show))
+    print('prob_threshold:          {}'.format(prob_threshold))
     
     prob_threshold_returned, xmin, xmax, ymin, ymax, det_label, class_id, label  = 0,0, 0, 0, 0, ' ', 0, ' '
 
+    metrics = PerformanceMetrics()
+    presenter = None
+    output_transform = None
+
     listObjectsTracking.clear()
     listRectanglesDetected.clear()
+    
+    #print('getListBoxDetected:: detector_pipeline ID: {}'.format(detector_pipeline.id_AsyncPipeline))
+    
+    if detector_pipeline.callback_exceptions:
+        print('detector_pipeline rase exceptions')
+        raise detector_pipeline.callback_exceptions[0]
+    
+    results = detector_pipeline.get_result(next_frame_id_to_show)
+    
+    print('results: {}'.format(results))
+    
+    cap = open_images_capture(source, True)
+    
+    if results:
+        print('results')
+    
+        objects, frame_meta = results
+        frame = frame_meta['frame']
+        start_time = frame_meta['start_time']
 
-    n, c, h, w = nchw[0], nchw[1], nchw[2], nchw[3]
-
-    cap = ipCam
-
-    ret, next_frame = cap.read()
-    if next_frame is None or ret is False:
-        log.error("Error capturing next_frame")
-        #print("Error capturing next_frame")
-
-    else:
-
-        next_frame = cv2.resize(next_frame, (RES_X, RES_Y)) 
-        #initial_w = cap.get(3)
-        #initial_h = cap.get(4)
+        #objects = detections
+        print('(len(objects): {}'.format(len(objects)))
         
-        initial_w = RES_X 
-        initial_h = RES_Y 
-
-        in_frame = cv2.resize(next_frame, (w, h))
-        #in_frame = cv2.resize(next_frame, (RES_X, RES_Y))
-        in_frame = in_frame.transpose((2, 0, 1))  # Change data layout from HWC to CHW
-        in_frame = in_frame.reshape((n, c, h, w))
-        exec_net.start_async(request_id=next_request_id, inputs={input_blob: in_frame})
-
-        if exec_net.requests[cur_request_id].wait(-1) == 0:
-
-            # Parse detection results of the current request
-            res = exec_net.requests[cur_request_id].outputs[out_blob]
-
-            for obj in res[0][0]:
+        if len(objects):
+            for detection in objects:
+            
+                print('detection: {}'.detection.id)
+                print('detection.score: {}'.detection.score)
+                
+            
                 # Draw only objects when probability more than specified threshold
                 #print('tamanho obj: {:d}'.format(len(obj)))
                 
-                if obj[2] > prob_threshold:
+                if detection.score > prob_threshold:
 
-                    xmin = int(obj[3] * initial_w)
-                    ymin = int(obj[4] * initial_h)
-                    xmax = int(obj[5] * initial_w)
-                    ymax = int(obj[6] * initial_h)
+                    xmin = int(detection.xmin * initial_w)
+                    ymin = int(detection.ymin * initial_h)
+                    xmax = int(detection.xmax * initial_w)
+                    ymax = int(detection.ymax * initial_h)
                     
-                    class_id = int(obj[1])
+                    class_id = int(detection.id)
                     
-                    det_label = labels_map[class_id] if labels_map else str(class_id)
+                    det_label = labels[class_id] if labels and len(labels) >= class_id else '#{}'.format(class_id)
                     
-                    prob_threshold_returned = round(obj[2] * 100, 1)
+                    #det_label = labels_map[class_id] if labels_map else str(class_id)
+                    
+                    prob_threshold_returned = detection.score
                     
                     label = det_label + ' ' + str(prob_threshold_returned) + ' %'
 
                     #teste para mais de um ID
                     box = (xmin, ymin, xmax, ymax, label, class_id, det_label)
-                    #print('det_label: {}'.format(det_label))
+                    print('det_label: {}'.format(det_label))
                     if det_label is 'person' or \
                                 det_label is 'cat' or \
+                                det_label is 'bike' or \
                                 det_label is 'car' or \
                                 det_label is 'dog':
                         boxTracking = (xmin, ymin, xmax, ymax)
                         listObjectsTracking.append(boxTracking)
                         listRectanglesDetected.append(box)
+            
+          
+       
+
+    if detector_pipeline.is_ready():
+        print('detector_pipeline.is_ready()')
+        # Get new image/frame
+        start_time = perf_counter()
+        frame = cap.read()
+        if frame is None:
+            print('frame is None')
+            if next_frame_id == 0:
+                raise ValueError("Can't read an image from the input")
+            #break
+        if next_frame_id == 0:
+            output_transform = models.OutputTransform(frame.shape[:2], args.output_resolution)
+            if args.output_resolution:
+                output_resolution = output_transform.new_resolution
+            else:
+                output_resolution = (frame.shape[1], frame.shape[0])
+            
+            presenter = monitors.Presenter(args.utilization_monitors, 55,
+                                           (round(output_resolution[0] / 4), round(output_resolution[1] / 8)))
+            #if args.output and not video_writer.open(args.output, cv2.VideoWriter_fourcc(*'MJPG'),cap.fps(), output_resolution):
+                #raise RuntimeError("Can't open video writer")
+        # Submit for inference
+        detector_pipeline.submit_data(frame, next_frame_id, {'frame': frame, 'start_time': start_time})
+        next_frame_id += 1
+
+    else:
+        # Wait for empty request
+        print('Wait for empty request')
+        detector_pipeline.await_any()
+    
+    # detector_pipeline.await_all()
+    # # Process completed requests
+    # for next_frame_id_to_show in range(next_frame_id_to_show, next_frame_id):
+        # results = detector_pipeline.get_result(next_frame_id_to_show)
+        # while results is None:
+            # results = detector_pipeline.get_result(next_frame_id_to_show)
+        # objects, frame_meta = results
+        # frame = frame_meta['frame']
+        # start_time = frame_meta['start_time']
+
+        
+        #presenter.drawGraphs(frame)
+        #frame = draw_detections(frame, objects, palette, model.labels, args.prob_threshold, output_transform)
+        #etrics.update(start_time, frame)
+
+        # if video_writer.isOpened() and (args.output_limit <= 0 or next_frame_id_to_show <= args.output_limit-1):
+            # video_writer.write(frame)
+
+        # if not args.no_show:
+            # cv2.imshow('Detection Results', frame)
+            # key = cv2.waitKey(1)
+
+            # ESC_KEY = 27
+            # # Quit.
+            # if key in {ord('q'), ord('Q'), ESC_KEY}:
+                # break
+            # presenter.handleKey(key)
+    
+    
+    listReturn = [listRectanglesDetected, listObjectsTracking, prob_threshold_returned]
+
+    return listReturn 
+
+def get_model(ie, args):
+    input_transform = models.InputTransform(args.reverse_input_channels, args.mean_values, args.scale_values)
+    common_args = (ie, args.model, input_transform)
+    if args.architecture_type in ('ctpn', 'yolo', 'yolov4', 'retinaface',
+                                  'retinaface-pytorch') and not input_transform.is_trivial:
+        raise ValueError("{} model doesn't support input transforms.".format(args.architecture_type))
+
+    if args.architecture_type == 'ssd':
+        return models.SSD(*common_args, labels=args.labels, keep_aspect_ratio_resize=args.keep_aspect_ratio)
+    elif args.architecture_type == 'ctpn':
+        return models.CTPN(ie, args.model, input_size=args.input_size, threshold=args.prob_threshold)
+    elif args.architecture_type == 'yolo':
+        return models.YOLO(ie, args.model, labels=args.labels,
+                           threshold=args.prob_threshold, keep_aspect_ratio=args.keep_aspect_ratio)
+    elif args.architecture_type == 'yolov4':
+        return models.YoloV4(ie, args.model, labels=args.labels,
+                             threshold=args.prob_threshold, keep_aspect_ratio=args.keep_aspect_ratio)
+    elif args.architecture_type == 'faceboxes':
+        return models.FaceBoxes(*common_args, threshold=args.prob_threshold)
+    elif args.architecture_type == 'centernet':
+        return models.CenterNet(*common_args, labels=args.labels, threshold=args.prob_threshold)
+    elif args.architecture_type == 'retinaface':
+        return models.RetinaFace(ie, args.model, threshold=args.prob_threshold)
+    elif args.architecture_type == 'ultra_lightweight_face_detection':
+        return models.UltraLightweightFaceDetection(*common_args, threshold=args.prob_threshold)
+    elif args.architecture_type == 'retinaface-pytorch':
+        return models.RetinaFacePyTorch(ie, args.model, threshold=args.prob_threshold)
+    else:
+        raise RuntimeError('No model type or invalid model type (-at) provided: {}'.format(args.architecture_type))
 
 
-    listReturn = [frame, next_frame, cur_request_id, next_request_id, listRectanglesDetected, listObjectsTracking, prob_threshold_returned]
+def build_argparser():
+    parser = ArgumentParser(add_help=False, argument_default=SUPPRESS)
+    args = parser.add_argument_group('Options')
+    args.add_argument('-h', '--help', action='help', default=SUPPRESS, help='Show this help message and exit.')
+    args.add_argument('-m', '--model', help='Required. Path to an .xml file with a trained model.',
+                      required=False, type=Path)
+    args.add_argument('-at', '--architecture_type', help='Required. Specify model\' architecture type.',
+                      type=str, required=False, choices=('ssd', 'yolo', 'yolov4', 'faceboxes', 'centernet', 'ctpn',
+                                                        'retinaface', 'ultra_lightweight_face_detection',
+                                                        'retinaface-pytorch'))
+    args.add_argument('-i', '--input', required=False,
+                      help='Required. An input to process. The input must be a single image, '
+                           'a folder of images, video file or camera id.')
+    args.add_argument('-d', '--device', default='CPU', type=str,
+                      help='Optional. Specify the target device to infer on; CPU, GPU, HDDL or MYRIAD is '
+                           'acceptable. The demo will look for a suitable plugin for device specified. '
+                           'Default value is CPU.')
 
-    return ret, listReturn 
+    common_model_args = parser.add_argument_group('Common model options')
+    common_model_args.add_argument('--labels', help='Optional. Labels mapping file.', default=None, type=str)
+    common_model_args.add_argument('-t', '--prob_threshold', default=0.5, type=float,
+                                   help='Optional. Probability threshold for detections filtering.')
+    common_model_args.add_argument('--keep_aspect_ratio', action='store_true', default=False,
+                                   help='Optional. Keeps aspect ratio on resize.')
+    common_model_args.add_argument('--input_size', default=(600, 600), type=int, nargs=2,
+                                   help='Optional. The first image size used for CTPN model reshaping. '
+                                        'Default: 600 600. Note that submitted images should have the same resolution, '
+                                        'otherwise predictions might be incorrect.')
+
+    infer_args = parser.add_argument_group('Inference options')
+    infer_args.add_argument('-nireq', '--num_infer_requests', help='Optional. Number of infer requests',
+                            default=0, type=int)
+    infer_args.add_argument('-nstreams', '--num_streams',
+                            help='Optional. Number of streams to use for inference on the CPU or/and GPU in throughput '
+                                 'mode (for HETERO and MULTI device cases use format '
+                                 '<device1>:<nstreams1>,<device2>:<nstreams2> or just <nstreams>).',
+                            default='', type=str)
+    infer_args.add_argument('-nthreads', '--num_threads', default=None, type=int,
+                            help='Optional. Number of threads to use for inference on CPU (including HETERO cases).')
+
+    io_args = parser.add_argument_group('Input/output options')
+    io_args.add_argument('--loop', default=False, action='store_true',
+                         help='Optional. Enable reading the input in a loop.')
+    io_args.add_argument('-o', '--output', required=False,
+                         help='Optional. Name of the output file(s) to save.')
+    io_args.add_argument('-limit', '--output_limit', required=False, default=1000, type=int,
+                         help='Optional. Number of frames to store in output. '
+                              'If 0 is set, all frames are stored.')
+    io_args.add_argument('--no_show', help="Optional. Don't show output.", action='store_true')
+    io_args.add_argument('--output_resolution', default=None, type=resolution,
+                          help='Optional. Specify the maximum output window resolution '
+                               'in (width x height) format. Example: 1280x720. '
+                               'Input frame size used by default.')
+    io_args.add_argument('-u', '--utilization_monitors', default='', type=str,
+                         help='Optional. List of monitors to show initially.')
+
+    input_transform_args = parser.add_argument_group('Input transform options')
+    input_transform_args.add_argument('--reverse_input_channels', default=False, action='store_true',
+                                      help='Optional. Switch the input channels order from '
+                                           'BGR to RGB.')
+    input_transform_args.add_argument('--mean_values', default=None, type=float, nargs=3,
+                                      help='Optional. Normalize input by subtracting the mean '
+                                           'values per channel. Example: 255 255 255')
+    input_transform_args.add_argument('--scale_values', default=None, type=float, nargs=3,
+                                      help='Optional. Divide input by scale values per channel. '
+                                           'Division is applied after mean values subtraction. '
+                                           'Example: 255 255 255')
+
+    debug_args = parser.add_argument_group('Debug options')
+    debug_args.add_argument('-r', '--raw_output_message', help='Optional. Output inference results raw values showing.',
+                            default=False, action='store_true')
+    log.info('return parser ')
+    log.info(' ')
+    return parser
+    

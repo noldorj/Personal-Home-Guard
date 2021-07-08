@@ -14,6 +14,7 @@ import secrets
 
 from collections import deque
 
+from common.images_capture import open_images_capture
 
 class CamRunTime():
 
@@ -93,7 +94,7 @@ class CamRunTime():
     w = RES_X
     #objects = None
     #FPS = ipCam.get(cv.CAP_PROP_FPS) #30.0 #frames per second
-    FPS = 4  #de acordo com o manual da mibo ic5 intelbras
+    FPS = 30  #de acordo com o manual da mibo ic5 intelbras
 
     #primeiro objeto é enviado
     listObjectMailAlerted = []
@@ -192,6 +193,8 @@ class CamRunTime():
     diskUsageFreeGb = None    
     numDaysRecording = None
     errorRtsp = False
+    detector_pipeline = None
+    args = None
     
     
     
@@ -339,6 +342,7 @@ class CamRunTime():
             self.errorWebcam = False
         else:            
             self.ipCam, self.error = utils.camSource(self.source)
+            self.ipCam = open_images_capture(self.source, True)
             self.camEmpty = False
             
         log.info('camRunTime::init:: camSource error: {}'.format(self.error))
@@ -357,9 +361,9 @@ class CamRunTime():
             self.rtspStatus = True
             self.errorWebcam = False
             self.errorRtsp = False
-            if self.ipCam is not None:
-                self.ipCam.set(3, self.RES_X)
-                self.ipCam.set(4, self.RES_Y)
+            # if self.ipCam is not None:
+                # self.ipCam.set(3, self.RES_X)
+                # self.ipCam.set(4, self.RES_Y)
             log.info('camRunTime::init:: Conexao com camera restabelecida.')     
 
         #self.fourcc = cv.VideoWriter_fourcc(*'X''2''6''4') erro
