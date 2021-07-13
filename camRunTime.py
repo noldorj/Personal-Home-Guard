@@ -59,8 +59,9 @@ class CamRunTime():
 
     #720p: 1280 x 720
     #480p: 854 x 480
-    RES_X = 854 
-    RES_Y = 480 
+    RES_X = 854
+    RES_Y = 480
+    
 
     posConfigPv = 255
 
@@ -226,8 +227,10 @@ class CamRunTime():
             self.rtspStatus = True 
             self.errorWebcam = False
             self.errorRtsp = False
-            self.ipCam.set(3, self.RES_X)
+            self.ipCam.set(3, self.RES_X)            
             self.ipCam.set(4, self.RES_Y)
+            #self.cap.set(cv.CAP_PROP_FRAME_WIDTH, self.RES_X)
+            #self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, self.RES_Y)
             log.info('camRunTime::updateIpCam: Conexao com camera restabelecida.')            
             
             self.conectado = True            
