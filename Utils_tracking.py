@@ -86,7 +86,7 @@ def saveImageBox(frame, classe):
         log.info('saveImageBox - imagem salva')
 
 
-def sendMail(subject, msg):
+def sendMail(subject, message):
 
     statusConfig = utils.StatusConfig() 
 
@@ -109,7 +109,7 @@ def sendMail(subject, msg):
     msg['From'] = sender
     msg['To'] = recipients
 
-    text = MIMEText(text)
+    text = MIMEText(message)
 
     msg.attach(text)
 
