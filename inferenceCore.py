@@ -166,18 +166,17 @@ class InferenceCore(QThread):
                 self.camRunTime.render_time = 0
         
         else:
-            log.info("inferenceCore:: TensorFlow on")
+            log.info("inferenceCore:: OpenCV DNN")
             self.camRunTime.init_video = True
             self.camRunTime.initOpenVinoStatus = False
             
             log.info('inferenceCore:: Tentando carregar TensorFlow')                
-            try:                    
-                #self.camRunTime.cvNetTensorFlow = cv.dnn.readNetFromTensorflow(self.camRunTime.pb, self.camRunTime.pbtxt)
-                #self.camRunTime.cvNetTensorFlow = cv.dnn.readNetFromTensorflow(self.camRunTime.pb, self.camRunTime.pbtxt)                                        
-                
-                self.camRunTime.cvNetTensorFlow = cv.dnn.readNet(self.camRunTime.pb, "Z:/deploy-win/config/dlModels/yolo-intel/yolov4.cfg")
+            try:
+
+                #self.camRunTime.cvNetTensorFlow = cv.dnn.readNet(self.camRunTime.pb + '.bin', self.camRunTime.pb + '.xml')
+                self.camRunTime.cvNetTensorFlow = cv.dnn.readNet(self.camRunTime.pb + '.weights', self.camRunTime.pb + '.cfg')
                 self.camRunTime.cvNetTensorFlow.setPreferableBackend(cv.dnn.DNN_BACKEND_INFERENCE_ENGINE)
-                #self.camRunTime.cvNetTensorFlow.setPreferableTarget(cv.dnn.DNN_TARGET_OPENCL_FP16)
+                self.camRunTime.cvNetTensorFlow.setPreferableTarget(cv.dnn.DNN_TARGET_CPU)
               
             except Exception as err:
                 log.critical('inferenceCore:: Erro ao carregar TensorFlow Erro: {}'.format(err))
@@ -194,7 +193,6 @@ class InferenceCore(QThread):
             self.camRunTime.frame = cv.resize(self.camRunTime.frame, (self.camRunTime.RES_X, self.camRunTime.RES_Y)) 
             self.camRunTime.w  = self.camRunTime.frame.shape[0]
             self.camRunTime.h = self.camRunTime.frame.shape[1]
-
 
         self.camRunTime.timeSessionInit = time.time()
         self.camRunTime.timeGravandoAllInit = time.time()
