@@ -60,8 +60,9 @@ class CamRunTime():
 
     #720p: 1280 x 720
     #480p: 854 x 480
-    RES_X = 854 
-    RES_Y = 480 
+    RES_X = 854
+    RES_Y = 480
+    
 
     posConfigPv = 255
 
@@ -94,7 +95,7 @@ class CamRunTime():
     w = RES_X
     #objects = None
     #FPS = ipCam.get(cv.CAP_PROP_FPS) #30.0 #frames per second
-    FPS = 30  #de acordo com o manual da mibo ic5 intelbras
+    FPS = 8  #de acordo com o manual da mibo ic5 intelbras
 
     #primeiro objeto é enviado
     listObjectMailAlerted = []
@@ -196,6 +197,8 @@ class CamRunTime():
     detector_pipeline = None
     args = None
     
+    model = None
+    
     
     
     
@@ -229,8 +232,10 @@ class CamRunTime():
             self.rtspStatus = True 
             self.errorWebcam = False
             self.errorRtsp = False
-            self.ipCam.set(3, self.RES_X)
+            self.ipCam.set(3, self.RES_X)            
             self.ipCam.set(4, self.RES_Y)
+            #self.cap.set(cv.CAP_PROP_FRAME_WIDTH, self.RES_X)
+            #self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, self.RES_Y)
             log.info('camRunTime::updateIpCam: Conexao com camera restabelecida.')            
             
             self.conectado = True            
@@ -342,7 +347,7 @@ class CamRunTime():
             self.errorWebcam = False
         else:            
             self.ipCam, self.error = utils.camSource(self.source)
-            self.ipCam = open_images_capture(self.source, True)
+            #self.ipCam = open_images_capture(self.source, True)
             self.camEmpty = False
             
         log.info('camRunTime::init:: camSource error: {}'.format(self.error))

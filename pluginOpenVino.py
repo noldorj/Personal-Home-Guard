@@ -142,17 +142,54 @@ def initOpenVino(device, model_xml, source):
     log.info(' ')    
     print('initOpenVino:: detector_pipeline ID: {}'.format(detector_pipeline.id_AsyncPipeline))
 
-    return detector_pipeline, args
+    return detector_pipeline, args, model
+
+
+def draw_detections(frame, detections, palette, labels, threshold, output_transform):
+    size = frame.shape[:2]
+    frame = output_transform.resize(frame)
+    for detection in detections:
+        if detection.score > threshold:
+            class_id = int(detection.id)
+            color = palette[class_id]
+            det_label = labels[class_id] if labels and len(labels) >= class_id else '#{}'.format(class_id)
+            xmin = max(int(detection.xmin), 0)
+            ymin = max(int(detection.ymin), 0)
+            xmax = min(int(detection.xmax), size[1])
+            ymax = min(int(detection.ymax), size[0])
+            xmin, ymin, xmax, ymax = output_transform.scale([xmin, ymin, xmax, ymax])
+            cv2.rectangle(frame, (xmin, ymin), (xmax, ymax), color, 2)
+            cv2.putText(frame, '{} {:.1%}'.format(det_label, detection.score),
+                        (xmin, ymin - 7), cv2.FONT_HERSHEY_COMPLEX, 0.6, color, 1)
+            if isinstance(detection, models.DetectionWithLandmarks):
+                for landmark in detection.landmarks:
+                    landmark = output_transform.scale(landmark)
+                    cv2.circle(frame, (int(landmark[0]), int(landmark[1])), 2, (0, 255, 255), 2)
+    return frame
+
+
+def print_raw_results(size, detections, labels, threshold):
+    log.info(' Class ID | Confidence | XMIN | YMIN | XMAX | YMAX ')
+    for detection in detections:
+        if detection.score > threshold:
+            xmin = max(int(detection.xmin), 0)
+            ymin = max(int(detection.ymin), 0)
+            xmax = min(int(detection.xmax), size[1])
+            ymax = min(int(detection.ymax), size[0])
+            class_id = int(detection.id)
+            det_label = labels[class_id] if labels and len(labels) >= class_id else '#{}'.format(class_id)
+            log.info('{:^9} | {:10f} | {:4} | {:4} | {:4} | {:4} '
+                     .format(det_label, detection.score, xmin, ymin, xmax, ymax))
 
 
 # next_frame_id_to_show = next_request_id
 # next_frame_id = cur_request_id
-def getListBoxDetected(detector_pipeline, next_frame_id_to_show, next_frame_id, prob_threshold, cap, source, args):
+def getListBoxDetected(detector_pipeline, next_frame_id_to_show, next_frame_id, prob_threshold, cap, source, args, model):
     
     print('getListBoxDetected')
-    print('next_frame_id:           {}'.format(next_frame_id))
-    print('next_frame_id_to_show:   {}'.format(next_frame_id_to_show))
-    print('prob_threshold:          {}'.format(prob_threshold))
+    # print('next_frame_id:           {}'.format(next_frame_id))
+    # print('next_frame_id_to_show:   {}'.format(next_frame_id_to_show))
+    # print('prob_threshold:          {}'.format(prob_threshold))
     
     prob_threshold_returned, xmin, xmax, ymin, ymax, det_label, class_id, label  = 0,0, 0, 0, 0, ' ', 0, ' '
 
@@ -163,58 +200,51 @@ def getListBoxDetected(detector_pipeline, next_frame_id_to_show, next_frame_id, 
     listObjectsTracking.clear()
     listRectanglesDetected.clear()
     
+    cap = open_images_capture(source, True)
+    
     #print('getListBoxDetected:: detector_pipeline ID: {}'.format(detector_pipeline.id_AsyncPipeline))
     
+    #while True:
     if detector_pipeline.callback_exceptions:
         print('detector_pipeline rase exceptions')
         raise detector_pipeline.callback_exceptions[0]
     
     results = detector_pipeline.get_result(next_frame_id_to_show)
     
-    print('results: {}'.format(results))
-    
-    cap = open_images_capture(source, True)
+    #print('results: {}'.format(results))
     
     if results:
-        print('results')
+        #print('results')
     
         objects, frame_meta = results
         frame = frame_meta['frame']
         start_time = frame_meta['start_time']
 
         #objects = detections
-        print('(len(objects): {}'.format(len(objects)))
+        #print('(len(objects): {}'.format(len(objects)))
         
         if len(objects):
+            #print('results:: print_raw_results')
+            
+            size = frame.shape[:2]
+            #print_raw_results(frame.shape[:2], objects, model.labels, args.prob_threshold)
+            
             for detection in objects:
-            
-                print('detection: {}'.detection.id)
-                print('detection.score: {}'.detection.score)
-                
-            
-                # Draw only objects when probability more than specified threshold
-                #print('tamanho obj: {:d}'.format(len(obj)))
-                
-                if detection.score > prob_threshold:
-
-                    xmin = int(detection.xmin * initial_w)
-                    ymin = int(detection.ymin * initial_h)
-                    xmax = int(detection.xmax * initial_w)
-                    ymax = int(detection.ymax * initial_h)
-                    
+                if detection.score > 0.30:
+                #if detection.score > prob_threshold:
+                    xmin = max(int(detection.xmin), 0)
+                    ymin = max(int(detection.ymin), 0)
+                    xmax = min(int(detection.xmax), size[1])
+                    ymax = min(int(detection.ymax), size[0])
                     class_id = int(detection.id)
+                    det_label = model.labels[class_id] if model.labels and len(model.labels) >= class_id else '#{}'.format(class_id)
                     
-                    det_label = labels[class_id] if labels and len(labels) >= class_id else '#{}'.format(class_id)
-                    
-                    #det_label = labels_map[class_id] if labels_map else str(class_id)
-                    
-                    prob_threshold_returned = detection.score
-                    
-                    label = det_label + ' ' + str(prob_threshold_returned) + ' %'
-
                     #teste para mais de um ID
                     box = (xmin, ymin, xmax, ymax, label, class_id, det_label)
                     print('det_label: {}'.format(det_label))
+                    prob_threshold_returned = detection.score
+                    label = det_label + ' ' + str(prob_threshold_returned) + ' %'
+                    
                     if det_label is 'person' or \
                                 det_label is 'cat' or \
                                 det_label is 'bike' or \
@@ -223,8 +253,8 @@ def getListBoxDetected(detector_pipeline, next_frame_id_to_show, next_frame_id, 
                         boxTracking = (xmin, ymin, xmax, ymax)
                         listObjectsTracking.append(boxTracking)
                         listRectanglesDetected.append(box)
-            
-          
+        
+        next_frame_id_to_show += 1                
        
 
     if detector_pipeline.is_ready():

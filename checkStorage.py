@@ -116,6 +116,7 @@ class CheckStorage(QThread):
                     self.warningHDCheio.emit() 
                 else:
                 
+
                     if not self.camRunTime.emailSentDiskFull:
                     
                         if self.camRunTime.eraseOldestFiles:

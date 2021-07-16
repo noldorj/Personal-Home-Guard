@@ -1240,8 +1240,8 @@ class FormProc(QWidget):
                                     #ui.txtUrlRstp.setText(cam.get('source'))
 
                                     self.camRunTime.rtspStatus = True 
-                                    self.camRunTime.ipCam.set(3, self.camRunTime.RES_X)
-                                    self.camRunTime.ipCam.set(4, self.camRunTime.RES_Y)
+                                    #self.camRunTime.ipCam.set(3, self.camRunTime.RES_X)
+                                    #self.camRunTime.ipCam.set(4, self.camRunTime.RES_Y)
                                     
                                     log.info('Conexao com camera restabelecida.')
                                     self.uiConfig.lblStatus.setText('Conexão com a camera estabelecida! Feche a janela para inciar o Portão Virtual')

@@ -1,0 +1,10 @@
+C:\Users\pv\Documents\openvino_2021.4.582\bin\setupvars.bat
+
+python object_detection_demo.py -m person-vehicle-bike-detection-crossroad-yolov3-1020.xml -d CPU -at yolo -i rtsp://admin:WWYZRL@192.168.5.101:554/profile0
+
+python object_detection_demo.py -m Z:\deploy-win\config\dlModels\intel\person-vehicle-bike-detection-crossroad-yolov3-1020\FP16-INT8\person-vehicle-bike-detection-crossroad-yolov3-1020.xml -d CPU -at yolo -i rtsp://admin:WWYZRL@192.168.5.101:554/profile0
+
+
+0 = pessoa
+1 = moto 
+2 = carro

@@ -109,7 +109,7 @@ def sendMail(subject, msg):
     msg['From'] = sender
     msg['To'] = recipients
 
-    text = MIMEText(text)
+    text = MIMEText(msg)
 
     msg.attach(text)
 
