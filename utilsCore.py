@@ -164,7 +164,9 @@ def camSource(source = 'webcam'):
         #log.info('capturando da webcam')    
 
     try:
-        ipCam = cv.VideoCapture(source)
+        
+        ipCam = cv.VideoCapture(source)        
+        
         
     except cv.error as e:
         status = False            

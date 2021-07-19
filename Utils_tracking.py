@@ -1,4 +1,3 @@
-#
 import os
 import cv2 as cv
 from email.mime.text import MIMEText
@@ -261,7 +260,7 @@ def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
         elif tipoObjetoDetectado == 'dog':
             tipoObjetoDetectado = 'Cachorro'
 
-        elif tipoObjetoDetectado == 'bike':
+        elif tipoObjetoDetectado == 'bicycle' or tipoObjetoDetectado == 'motorcycle':
             tipoObjetoDetectado = 'Moto'
 
         elif tipoObjetoDetectado == 'car':
@@ -383,7 +382,7 @@ def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoO
     elif tipoObjetoDetectado == 'dog':
         tipoObjetoDetectado = 'Cachorro'
 
-    elif tipoObjetoDetectado == 'bike':
+    elif tipoObjetoDetectado == 'bicycle' or tipoObjetoDetectado == 'motorcycle':
         tipoObjetoDetectado = 'Moto'
 
     elif tipoObjetoDetectado == 'car':
