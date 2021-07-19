@@ -37,7 +37,7 @@ def objectDetectionYolo(frame, cvNet):
             
             for (classid, score, box) in zip(classes, scores, boxes):                
 
-                if score > 0.20:
+                if score > 0.35:
                 
                     left = box[0] 
                     top = box[1] 
@@ -54,6 +54,7 @@ def objectDetectionYolo(frame, cvNet):
 
                     if classe == "person" or \
                         classe == "bicycle" or \
+                        classe == "dog" or \
                         classe == "car" or \
                         classe == "motorcycle":
                             

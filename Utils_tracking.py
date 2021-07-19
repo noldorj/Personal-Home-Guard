@@ -86,7 +86,7 @@ def saveImageBox(frame, classe):
         log.info('saveImageBox - imagem salva')
 
 
-def sendMail(subject, msg):
+def sendMail(subject, message):
 
     statusConfig = utils.StatusConfig() 
 
@@ -109,7 +109,7 @@ def sendMail(subject, msg):
     msg['From'] = sender
     msg['To'] = recipients
 
-    text = MIMEText(msg)
+    text = MIMEText(message)
 
     msg.attach(text)
 
@@ -261,7 +261,7 @@ def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
         elif tipoObjetoDetectado == 'dog':
             tipoObjetoDetectado = 'Cachorro'
 
-        elif tipoObjetoDetectado == 'bike':
+        elif tipoObjetoDetectado == 'bicycle' or tipoObjetoDetectado == 'motorcycle':
             tipoObjetoDetectado = 'Moto'
 
         elif tipoObjetoDetectado == 'car':
@@ -383,7 +383,7 @@ def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoO
     elif tipoObjetoDetectado == 'dog':
         tipoObjetoDetectado = 'Cachorro'
 
-    elif tipoObjetoDetectado == 'bike':
+    elif tipoObjetoDetectado == 'bicycle' or tipoObjetoDetectado == 'motorcycle':
         tipoObjetoDetectado = 'Moto'
 
     elif tipoObjetoDetectado == 'car':

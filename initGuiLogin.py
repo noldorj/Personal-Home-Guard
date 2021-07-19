@@ -8,7 +8,7 @@ from formLogin import *
 import logging as log
 import secrets
 import psutil
-from inferenceCore import *
+#from inferenceCore import *
 import winshell
 from win32com.client import Dispatch
 
