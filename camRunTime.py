@@ -264,9 +264,15 @@ class CamRunTime():
         self.LOGIN_AUTOMATICO = True if self.statusConfig.getLoginAutomatico() == 'True' else False
         
         
-        email = self.statusConfig.dataLogin['user']
-        passwd = utils.decrypt(self.statusConfig.dataLogin['passwd'])        
+        email = self.statusConfig.dataLogin['user']        
+        
+        if self.statusConfig.dataLogin['passwd'] == '':
+            passwd = self.statusConfig.dataLogin['passwd']
+        else:
+            passwd = utils.decrypt(self.statusConfig.dataLogin['passwd'])
+            
         self.login = {'user':utils.encrypt(email), 'passwd':utils.encrypt(passwd), 'token':utils.encrypt(self.token)}
+        
         #log.info('camRunTime::init TOKEN: {}'.format(utils.decrypt(self.login.get('token').decode())))
         
         
@@ -289,7 +295,8 @@ class CamRunTime():
         #    import pluginOpenVino as pOpenVino
 
         #device = statusConfig.data["openVinoDevice"]
-        self.device, self.openVinoModelXml, self.openVinoModelBin, self.openVinoCpuExtension, self.openVinoPluginDir, self.openVinoModelName  = self.statusConfig.getActiveDevice()
+        #self.device, self.openVinoModelXml, self.openVinoModelBin, self.openVinoCpuExtension, self.openVinoPluginDir, self.openVinoModelName  = self.statusConfig.getActiveDevice()
+        
         cam = self.statusConfig.getCamEmUsoConfig()        
         if cam is not None:
             self.nameCam = cam.get('nome')
@@ -303,6 +310,9 @@ class CamRunTime():
         #Carregando regioes salvas
         self.regions = self.statusConfig.getRegions()
         self.emailConfig = self.statusConfig.getEmailConfig()
+        
+        self.desativarAlarmes = self.statusConfig.getDesativarAlarmes()
+        
         if self.emailConfig['name'] != '' and \
                 self.emailConfig['port'] != '' and \
                 self.emailConfig['smtp'] != '' and \
@@ -371,6 +381,7 @@ class CamRunTime():
         
         #fourcc = cv.VideoWriter_fourcc(*'M','J','P','G')
         #fourcc = cv.VideoWriter_fourcc(*'MP4V')
+        
         
         
         self.dirVideosOnAlarmesUsedSpace = utils.getDirUsedSpace(self.statusConfig.data["dirVideosOnAlarmes"])

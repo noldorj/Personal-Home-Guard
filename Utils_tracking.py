@@ -99,13 +99,14 @@ def sendMail(subject, message):
     smtp = emailConfig['smtp']
     user = emailConfig['user']
     password = utils.decrypt(emailConfig['password'])
+    
 
 
     #data = utils.getDate()
     msg = MIMEMultipart()
 
     msg['Subject'] = subject 
-    msg['From'] = sender
+    msg['From'] = user
     msg['To'] = recipients
 
     text = MIMEText(message)
@@ -117,7 +118,7 @@ def sendMail(subject, message):
         smtpObj.ehlo()
         smtpObj.starttls()
         smtpObj.ehlo()
-        smtpObj.login(sender,password)
+        smtpObj.login(user,password)
         smtpObj.send_message(msg)
         smtpObj.quit()
 
@@ -195,19 +196,19 @@ def sendStorageAlert(user, titleMsg, msg):
     # Send a message to the device corresponding to the provided
 
     # registration token.
-    log.info('sendStorageAlert:: Enviando mensagem para App via Cloud Message')
+    log.info('sendStorageAlert:: Alerta Storage para App')
     statusMessage = False
     i = 1
     while statusMessage is False:
-        log.info('sendStorageAlert:: Enviando alerta App [{}]'.format(i))
+        log.info('sendStorageAlert:: Enviando alerta storage App [{}]'.format(i))
         try:
             response = messaging.send(message)
         except error as e:
-            log.critical('sendStorageAlert:: Erro ao enviar alerta: {}'.format(e))            
+            log.critical('sendStorageAlert:: Erro ao enviar alerta storage App: {}'.format(e))            
             i = i+1
             time.sleep(3)
         else:
-            log.info('sendStorageAlert:: Alerta enviado com sucesso: {}'.format(response))            
+            log.info('sendStorageAlert:: Alerta storage enviado com sucesso: {}'.format(response))            
             statusMessage = True
             i = 0
     
@@ -342,6 +343,7 @@ def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
 def sendMailAlert(sender, recipients, subject, servidorEmail, user, frame, tipoObjetoDetectado, region, nameCam):
     
     #external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
+    
 
     #log.info('InferenceCore::__init__:: External IP: {}'.format(external_ip))
     

@@ -925,7 +925,7 @@
          <item row="8" column="1">
           <widget class="QCheckBox" name="checkBoxDesativarAlarmes">
            <property name="text">
-            <string>Desativar envio de alarmes</string>
+            <string>Desativar envio de alarmes por email (via App continua)</string>
            </property>
            <property name="autoRepeat">
             <bool>true</bool>
@@ -1002,7 +1002,7 @@
          </rect>
         </property>
         <property name="title">
-         <string>Cameras ativas encontradas</string>
+         <string>Cameras ativas encontradas automaticamente </string>
         </property>
         <widget class="QWidget" name="gridLayoutWidget_10">
          <property name="geometry">

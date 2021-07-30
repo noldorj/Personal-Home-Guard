@@ -200,13 +200,18 @@ def decrypt(token):
     
         
     #token = statusConfig.dataLogin.get('passwd')
+    #print('token: {}'.format(token))
+    #print('token decode: {}'.format(token.decode()))
+    
     
     try:
         password = fernetKey.decrypt(token.encode())
 
     except Exception as e:
-
-        log.error('utils.decrypt: error: {}'.format(e))
+    
+        log.error('::utilsCore.decrypt: error: {}'.format(e))
+    
+    
     
     #log.info('decrypt passwd: {}'.format(password.decode()))
     
@@ -976,7 +981,8 @@ class StatusConfig:
         self.readConfigLogin(configLogin)
 
     def readConfigLogin(self, fileName = 'config/lconfig.json'):
-        #log.info('Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
+        log.info('readConfigLogin:: Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
+        
         self.dataLogin = json.load(open(fileName,'r'))
 
 
@@ -985,14 +991,14 @@ class StatusConfig:
         self.data = json.load(open(fileName,'r'))
 
     def readRegionsFile(self, fileName = 'config/regions.json'):
-        log.info('Lendo arquivo de regiões: ' + os.getcwd() + '/' + fileName)
+        log.info('readRegionsFile:: Lendo arquivo de regiões: ' + os.getcwd() + '/' + fileName)
         try:
             self.regions = json.load(open(fileName,'r'))
         except OSError as ex:
 
-            log.critical('Arquivo de Regioes inexistente - será criado um novo arquivo') 
+            log.critical('readRegionsFile:: Arquivo de Regioes inexistente - será criado um novo arquivo') 
         else:
-            log.info('Arquivo de regiões lido com sucesso')
+            log.info('readRegionsFile:: Arquivo de regiões lido com sucesso')
 
 
     def deleteAlarm(self, regionName, alarmName):

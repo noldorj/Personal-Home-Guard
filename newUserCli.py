@@ -18,7 +18,7 @@ from firebase_admin import auth
 
 import datetime
 
-emailCliente = 'contato@portaovirtual.com.br'
+emailCliente = 'igorddf@gmail.com'
 numCameras = '1'
 diasLicenca = '0'
 
@@ -63,14 +63,16 @@ def sendMailnewUser(to, port, smtp, userPassword):
     sent_from = 'contato@portaovirtual.com.br'    
     gmail_password = 'flevkztxyqcaovue'    
     
+    
+    
 
     subject = ('Portão Virtual - Compra de Licença')
 
     body = ('Obrigado pela sua compra do software Portao Virtual ! \n\n Dados do seu login: \
         \n\n Usuário: {} \n Senha: {} \n\n Recomendamos que você altere a senha o quanto antes. \
-    \n Link para download: https://ffc586ba-2e2b-4c36-abe6-ef6399680533.usrfiles.com/archives/ffc586_d900bfbbf80d4d92910d7b316a0c078e.zip \n \
+    \n Link para download: https://drive.google.com/file/d/15uXxEUdypnN55Mu139csoNtn2IwW5Sf0/view?usp=sharing \n \
     \n Link para o Manual: https://ffc586ba-2e2b-4c36-abe6-ef6399680533.usrfiles.com/ugd/ffc586_93634d61390045fe90c9fbe459e6ce9c.pdf \n \
-    \n Link para baiar o App do Portão Virtual (versão Android por enquanto): https://play.google.com/store/apps/details?id=br.com.portaovirtual.pv \n \
+    \n Link para baixar o App do Portão Virtual (versão Android por enquanto): https://play.google.com/store/apps/details?id=br.com.portaovirtual.pv \n \
     \n Obs: a senha do Aplicativo deve ser alterada por ele ! O Sistema Portão Virtual do seu computador não altera a senha do seu App que roda no seu celular \
     \n\n Atenciosamente, \n\n Equipe Portao Virtual \n\n www.portaovirtual.com.br ').format(to, userPassword)
 

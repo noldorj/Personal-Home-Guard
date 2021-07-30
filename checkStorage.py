@@ -55,7 +55,6 @@ class CheckStorage(QThread):
                         data_email_sent = data['hour'] + ' - ' + data['day'] + '/' + data['month'] + '/' + data['year']
                         log.critical('CheckStorage:: Espaço maximo na pasta {} atingido'.format(self.camRunTime.statusConfig.data["dirVideosOnAlarmes"]))
                         threadEmail = Thread(target=sendMail, args=(
-
                             'Portão Virtual - Aviso Falta de Espaço - Pasta "Alarmes"',
                             'Espaço máximo na pasta " {} " atingido. \n\n \
                             Status do armazenamento - {} \n \
@@ -64,7 +63,7 @@ class CheckStorage(QThread):
                             Espaço utilizado "Video Alarmes" : {:3.2f} GB \n \
                             Espaço utilizado "Video 24hs"    : {:3.2f} GB \n \
                             Número de dias estimados para gravação: {:3d} \n \
-                            '.format(self.camRunTime.statusConfig.data["dirVideosOnAlarmes"], 
+                            '.format(self.camRunTime.statusConfig.data["dirVideosOnAlarmes"],
                                 data_email_sent,
                                 self.camRunTime.diskUsageFree, 
                                 self.camRunTime.diskUsageFreeGb,

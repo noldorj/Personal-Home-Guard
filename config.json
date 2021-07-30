@@ -1,46 +1,109 @@
 {
-	"primeiroUso": "True",
-    "isRecordingAllTime": "True",
-    "isRecordingOnAlarmes": "True",
-    "isOpenVino": "True",
-    "camSource": "",
-    "dnnModelPb": "config/dlModels/ssd-mobilenet/frozen_inference_graph_v1_coco_2017_11_17.pb",
-    "dnnModelPbTxt": "config/dlModels/ssd-mobilenet/ssd_mobilenet_v1_coco_2017_11_17.pbtxt",
+    "primeiroUso": "False",
+    "isRecordingAllTime": "False",
+    "isRecordingOnAlarmes": "False",
+    "isOpenVino": "False",
+    "camSource": "rtsp://admin:WWYZRL@192.168.5.101:554/profile0",
+    "dnnModelPb": "config/dlModels/yolov4-tiny/yolov4",
+    "dnnModelPbTxt": "",
     "openVinoCpuExtension": "MKLDNNPlugin.dll",
-    "openVinoPluginDir": "",
+    "openVinoPluginDir": "config/openvino/deployment_tools/inference_engine/bin/intel64/Release",
+    "desativarAlarmes": "False",
     "openVinoModels": [
         {
-            "isActive": "True",
-            "name": "pedestre-veiculo-adas-001-CPU",
-            "openVinoModelXml": "config/dlModels/intel/pedestrian-and-vehicle-detector-adas-0001-old/FP32/pedestrian-and-vehicle-detector-adas-0001.xml",
-            "openVinoModelBin": "config/dlModels/intel/pedestrian-and-vehicle-detector-adas-0001-old/FP32/pedestrian-and-vehicle-detector-adas-0001.bin",
-            "openVinoDevice": "CPU"
+            "isActive": "False",
+            "name": "person-vehicle-bike-detection-crossroad-yolov3-1020-FP16-INT8",
+            "openVinoModelXml": "config/dlModels/intel/person-vehicle-bike-detection-crossroad-yolov3-1020/FP16-INT8/person-vehicle-bike-detection-crossroad-yolov3-1020.xml",
+            "openVinoModelBin": "config/dlModels/intel/person-vehicle-bike-detection-crossroad-yolov3-1020/FP16-INT8/person-vehicle-bike-detection-crossroad-yolov3-1020.bin",
+            "openVinoDevice": "CPU",
+            "architecture_type": "yolo"
         }
     ],
-    "camListEncontradas": [],
-    "camListAtivas": [],
+    "camListEncontradas": [
+        {
+            "channel": "profile0",
+            "emUso": "False",
+            "id": "2",
+            "ip": "192.168.5.157",
+            "mac": "d8:77:8b:b4:bd:53",
+            "nome": "Cam_2",
+            "passwd": "123456",
+            "port": "554",
+            "source": "rtsp://admin:123456@192.168.5.157:554/profile0",
+            "user": "admin"
+        }
+    ],
+    "camListAtivas": [
+        {
+            "channel": "profile0",
+            "emUso": "False",
+            "id": "0",
+            "ip": "192.168.5.59",
+            "mac": "30:ff:f6:77:40:a0",
+            "nome": "Cam_0",
+            "passwd": "123456",
+            "port": "554",
+            "source": "rtsp://admin:123456@192.168.5.59:554/profile0",
+            "user": "admin"
+        },
+        {
+            "channel": "profile0",
+            "emUso": "False",
+            "id": "3",
+            "ip": "192.168.5.213",
+            "mac": "30:ff:f6:77:40:a0",
+            "nome": "Cam_3",
+            "passwd": "123456",
+            "port": "554",
+            "source": "rtsp://admin:123456@192.168.5.213:554/profile0",
+            "user": "admin"
+        },
+        {
+            "channel": "profile0",
+            "emUso": "False",
+            "id": "4",
+            "ip": "192.168.5.220",
+            "mac": "00:0c:43:1f:61:6e",
+            "nome": "Cam_4",
+            "passwd": "123456",
+            "port": "8554",
+            "source": "rtsp://admin:123456@192.168.5.220:8554/profile0",
+            "user": "admin"
+        },
+        {
+            "channel": "profile0",
+            "emUso": "True",
+            "id": "1",
+            "ip": "192.168.5.101",
+            "mac": "58:10:8c:67:62:69",
+            "nome": "Cam_1",
+            "passwd": "WWYZRL",
+            "port": "554",
+            "source": "rtsp://admin:WWYZRL@192.168.5.101:554/profile0",
+            "user": "admin"
+        }
+    ],
     "storageConfig": {
         "diskMaxUsage": 85,
-        "diskMinUsage": "4",
+        "diskMinUsage": "3",
         "spaceMaxDirVideosAllTime": "0",
         "spaceMaxDirVideosOnAlarme": "0",
-        "eraseOldestFiles": "True",
-        "stopSaveNewVideos": "False"
+        "eraseOldestFiles": "False",
+        "stopSaveNewVideos": "True"
     },
     "prob_threshold": 0.65,
-    "desativarAlarmes": "False",
     "emailConfig": {
-        "name": "",
+        "name": "PV",
         "servidorEmail": "Outlook",
         "port": "587",
         "smtp": "smtp.office365.com",
         "user": "",
         "password": "",
-        "subject": "",
+        "subject": "PV",
         "to": ""
     },
     "dirVideosOnAlarmes": "videos_alarmes",
     "dirVideosAllTime": "videos_24h",
-    "diskMaxUsage": "90",
-    "diskMinUsage": "10"
+    "diskMaxUsage": "85",
+    "diskMinUsage": "3"
 }

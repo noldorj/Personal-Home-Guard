@@ -260,7 +260,8 @@ class InferenceCore(QThread):
                             #chamada para a CNN do OpenCV - TensorFlow Object Detection API 
                             #log.info("inferenceCore:: TensorFlow openCV API")
                             
-                            self.camRunTime.frame = cv.resize(self.camRunTime.frame, (self.camRunTime.RES_X, self.camRunTime.RES_Y))                                
+                            if self.camRunTime.frame is not None:
+                                self.camRunTime.frame = cv.resize(self.camRunTime.frame, (self.camRunTime.RES_X, self.camRunTime.RES_Y))                                
                                 
                             self.camRunTime.listObjects, self.camRunTime.listObjectsTracking  = objectDetectionYolo(self.camRunTime.frame, self.camRunTime.cvNetTensorFlow)
                             # self.camRunTime.listObjects, self.camRunTime.listObjectTradking  = objectDetection(self.camRunTime.frame, \
@@ -389,7 +390,6 @@ class InferenceCore(QThread):
                                                                                 #saveImageBox(frame_no_label, str(box[6]))
 
                                                                                 if utils.checkInternetAccess():
-
                                                                                     
                                                                                     if self.camRunTime.configEmailStatus and not self.camRunTime.desativarAlarmes:
                                                                                         log.info('inferenceCore:: Alerta enviado ID[' + str(objectID) + ']' + 'Tipo: ' + str(typeObject))
@@ -504,7 +504,7 @@ class InferenceCore(QThread):
                                                     threadAlertApp = Thread(target=sendAlertApp, args=(self.camRunTime.statusConfig.getUserLogin(),
                                                            frame_no_label_email,
                                                            str(typeObject), #tipo de objeto detectado
-                                                           r.get('nameRegion'),
+                                                           'toda camera',
                                                            self.camRunTime.nameCam))
                                                     threadAlertApp.start()
                                                         

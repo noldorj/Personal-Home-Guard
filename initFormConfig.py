@@ -1373,7 +1373,7 @@ class FormProc(QWidget):
             log.info('checkBoxPararAlarmes ligado')
             self.statusConfig.setDesativarAlarmes('True')
             
-    
+        self.refreshStatusConfig()
     
     
     def checkBoxDesabilitarLoginAutomatico(self, state):
@@ -1465,6 +1465,7 @@ class FormProc(QWidget):
         self.statusConfig = utils.StatusConfig()
         self.camRunTime.regions = self.statusConfig.getRegions()
         self.camRunTime.emailConfig = self.statusConfig.getEmailConfig()
+        self.camRunTime.init()
 
     def comboAlarmsUpdate(self, i):
         self.clearFieldsAlarm()
@@ -1648,6 +1649,7 @@ class FormProc(QWidget):
             if passwdEmail == 'error':
                 self.uiConfig.lblStatus.setText('Cheque se sua senha do email está cadastrada corretamente')
                 self.uiConfig.txtEmailPassword.setFocus()
+                
         
         self.uiConfig.txtEmailSubject.setText(self.statusConfig.data["emailConfig"].get('subject'))
         self.uiConfig.txtEmailTo.setText(self.statusConfig.data["emailConfig"].get('to'))

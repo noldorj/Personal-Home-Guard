@@ -1,8 +1,7 @@
 {
-    "user": "",
-    "passwd": "",
+    "user": "igorddf@gmail.com",
+    "passwd": "gAAAAABhBFBSGC32doEL4-fNmFn12HhPQIAFtIOMeDWCuDCvxgtt2FI9FrIoa-rBg9aVL5XTjY1UaTM27h8O9rGg3WjVdKAg3Q==",
     "loginAutomatico": "False",
     "autoStart": "False",
-    "salvarLogin": "False",
-    "atalhoDesktop": "False"
+    "salvarLogin": "True"
 }
