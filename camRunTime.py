@@ -79,6 +79,11 @@ class CamRunTime():
 
     timeGravandoAll = 0
     timeGravandoAllInit = 0
+    timeAlertaStart = 0 
+    timeAlertaEnd = 0
+    timeAlertaDelta = 0
+    timeAlerta = 0 
+    
     end = 0
     start = 0
 

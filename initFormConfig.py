@@ -253,7 +253,7 @@ class FormProc(QWidget):
                 self.threadStorage.warningHDCheio.connect(self.warningHDCheio)
                 self.threadStorage.start()
                                                             
-                utils.initWatchDog()                
+                #utils.initWatchDog()                
 
             else: 
                 
@@ -706,6 +706,11 @@ class FormProc(QWidget):
                       'car':'True' if self.uiConfig.checkCar.isChecked() else 'False'}
                       #'bike':'True' if self.uiConfig.checkBike.isChecked() else 'False',
                       #'dog':'True' if self.uiConfig.checkDog.isChecked() else 'False'}
+                      
+        if self.uiConfig.txtAlertaTimer.text() == 0:
+            timerAlerta = 0
+        else:
+            timerAlerta = int(self.uiConfig.txtAlertaTimer.text())
 
 
         if statusFields:
@@ -718,7 +723,7 @@ class FormProc(QWidget):
                 points = self.camRunTime.ref_point_polygon
 
             self.statusConfig.addRegion(self.uiConfig.txtRegionName.displayText(),
-                                   newAlarm, objectType, round(float(self.uiConfig.txtThreshold.displayText()),2), points )
+                                   newAlarm, objectType, round(float(self.uiConfig.txtThreshold.displayText()),2), points, timerAlerta )
             self.refreshStatusConfig()
             
             

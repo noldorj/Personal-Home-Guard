@@ -607,7 +607,8 @@ class StatusConfig:
                 }
         ],
         "objectType"        : {'person':'true', 'car':'true', 'bike':'true', 'dog':'true'},
-        "prob_threshold"    : 0.70,
+        "prob_threshold"    : 0.65,
+        "timerAlerta"    : 0,
         "pointsPolygon"     : []
     }
 
@@ -640,7 +641,10 @@ class StatusConfig:
     
     def getEmailConfig(self):
         return self.data["emailConfig"]
-
+        
+    def getTimeAlerta(self):
+        return int(self.data["timerAlerta"])
+    
     def getDesativarAlarmes(self):
         return self.data["desativarAlarmes"]
     
@@ -827,11 +831,12 @@ class StatusConfig:
         self.saveConfigFile()
 
     def setConfig(self, isRecordingAllTime, isRecordingOnAlarmes, isOpenVino,
-                      dnnModel, openVinoModel, emailConfig, dirVideos, camSource, openVinoDevice, prob_threshold):
+                      dnnModel, openVinoModel, emailConfig, dirVideos, camSource, openVinoDevice, prob_threshold, timerAlerta):
         self.data["isRecordingAllTime"]       = isRecordingAllTime
         self.data["isRecordingOnAlarmes"]     = isRecordingOnAlarmes
         self.data["camSource"]                = camSource
         self.data["prob_threshold"]           = prob_threshold
+        self.data["timerAlerta"]              = timerAlerta
         self.data["isOpenVino"]               = isOpenVino
         self.data["dnnModelPb"]               = dnnModelPb
         self.data["dnnModelPbTxt"]            = dnnModelPbTxt
@@ -919,14 +924,15 @@ class StatusConfig:
         self.data["camListAtivas"].append(cam)
         self.saveConfigFile()
 
-    def addRegion(self, nameRegion, alarm, objectType, prob_threshold, pointsPolygon):
+    def addRegion(self, nameRegion, alarm, objectType, prob_threshold, pointsPolygon, timerAlerta):
 
         region = {
             "nameRegion"     : nameRegion,
             "alarm"          : alarm,
             "objectType"     : objectType,
             "prob_threshold" : prob_threshold,
-            "pointsPolygon"  : pointsPolygon
+            "pointsPolygon"  : pointsPolygon,
+            "timerAlerta"    : timerAlerta
         }
 
         edit = False

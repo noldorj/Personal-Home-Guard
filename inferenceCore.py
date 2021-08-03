@@ -53,6 +53,8 @@ class InferenceCore(QThread):
     camRunTime = None
     #isDiskFull = False
     
+    objectIdTimeList = {}
+    
     cred = {
       "type": "service_account",
       "project_id": "pvalarmes-3f7ee",
@@ -296,9 +298,19 @@ class InferenceCore(QThread):
 
                                 #objetos com ID e centro de massa
                                 self.camRunTime.objectsTracking = self.camRunTime.ct.update(self.camRunTime.listObjectsTracking)
+                                
+                                print('Tamanho: {}'.format(len(self.camRunTime.objectsTracking)))
+                                
 
                                 for (objectID, centroid) in self.camRunTime.objectsTracking.items():
-
+                                    
+                                    if self.objectIdTimeList.get(objectID) == None:
+                                        self.objectIdTimeList[objectID] = {'timeStart':time.time(), 'timeEnd':0, 'time':0}
+                                        print('ID: {} inicializado'.format(objectID))
+                                    else:                                    
+                                        self.objectIdTimeList[objectID]['time'] = time.time() - self.objectIdTimeList[objectID].get('timeStart')
+                                        print('ID: {} time: {}'.format(objectID, int(self.objectIdTimeList[objectID].get('time')) ))
+                                    
                                     # ajustando posicao do centroid 
 
                                     #desenhando o box e label
@@ -324,7 +336,8 @@ class InferenceCore(QThread):
 
                                             if r.get('objectType').get(typeObject) == "True":
 
-                                                if self.camRunTime.prob_threshold_returned >= int(r.get('prob_threshold')):
+                                                if self.camRunTime.prob_threshold_returned >= int(r.get('prob_threshold')) and \
+                                                   self.objectIdTimeList[objectID].get('time') >= float(r.get('timerAlerta')):
 
                                                     #evitar regioes que foram inseridas sem determinar o box pela GUI
                                                     if len(r.get('pointsPolygon')) >= 3:
@@ -377,21 +390,24 @@ class InferenceCore(QThread):
                                                                                 utils.playSound()
                                                                                 self.camRunTime.listObjectSoundAlerted.append(objectID)
 
-                                                                        if a.get('isEmailAlert') == "True":
+                                                                        
 
-                                                                            #evitar emails seguidos para mesmo objeto
-                                                                            if self.camRunTime.listObjectMailAlerted.count(objectID) == 0:
+                                                                        #evitar emails seguidos para mesmo objeto
+                                                                        if self.camRunTime.listObjectMailAlerted.count(objectID) == 0:
 
-                                                                                log.info('inferenceCore:: Enviando alerta por email')
-                                                                                #salvando foto para treinamento
-                                                                                #crop no box
-                                                                                #left, top, right, bottom
-                                                                                #frame_no_label = frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
-                                                                                #saveImageBox(frame_no_label, str(box[6]))
+                                                                            log.info('inferenceCore:: Enviando alerta por email')
+                                                                            #salvando foto para treinamento
+                                                                            #crop no box
+                                                                            #left, top, right, bottom
+                                                                            #frame_no_label = frame_no_label[int(box[1])-10:int(box[1]) + int(box[3]) , int(box[0])+10:int(box[2])]
+                                                                            #saveImageBox(frame_no_label, str(box[6]))
 
-                                                                                if utils.checkInternetAccess():
+                                                                            if utils.checkInternetAccess():
+                                                                                
+                                                                                if self.camRunTime.configEmailStatus and not self.camRunTime.desativarAlarmes:
+                                                                                
+                                                                                    if a.get('isEmailAlert') == "True":
                                                                                     
-                                                                                    if self.camRunTime.configEmailStatus and not self.camRunTime.desativarAlarmes:
                                                                                         log.info('inferenceCore:: Alerta enviado ID[' + str(objectID) + ']' + 'Tipo: ' + str(typeObject))
                                                                                         threadEmail = Thread(target=sendMailAlert, args=(self.camRunTime.emailConfig['name'],
                                                                                                                                            self.camRunTime.emailConfig['to'],
@@ -406,39 +422,43 @@ class InferenceCore(QThread):
                                                                                         threadEmail.start()
                                                                                     else:
                                                                                         log.critical('inferenceCore:: configEmailStatus: '.format(self.camRunTime.configEmailStatus))
-                                                                                        
-                                                                                        
-                                                                                    #mensagem ao app é enviado de qualquer forma
-                                                                                    threadAlertApp = Thread(target=sendAlertApp, args=(self.camRunTime.statusConfig.getUserLogin(),
-                                                                                                                                           frame_no_label_email,
-                                                                                                                                           str(typeObject), #tipo de objeto detectado
-                                                                                                                                           r.get('nameRegion'),
-                                                                                                                                           self.camRunTime.nameCam))
-                                                                                    threadAlertApp.start()
-                                                                                        
-                                                                                        
-                                                                                        
+                                                                                    
+                                                                                    #end if a.get('isEmailAlert') == "True":
+                                                                                    
+                                                                                    
+                                                                                #mensagem ao app é enviado de qualquer forma
+                                                                                threadAlertApp = Thread(target=sendAlertApp, args=(self.camRunTime.statusConfig.getUserLogin(),
+                                                                                                                                       frame_no_label_email,
+                                                                                                                                       str(typeObject), #tipo de objeto detectado
+                                                                                                                                       r.get('nameRegion'),
+                                                                                                                                       self.camRunTime.nameCam))
+                                                                                threadAlertApp.start()
                                                                                     
                                                                                     
                                                                                     
-                                                                                    self.camRunTime.listObjectMailAlerted.append(objectID)
-                                                                                else:
-                                                                                    alertaNaoEnviado = [self.camRunTime.emailConfig['name'],
-                                                                                                          self.camRunTime.emailConfig['to'],
-                                                                                                          self.camRunTime.emailConfig['subject'],
-                                                                                                          self.camRunTime.emailConfig['servidorEmail'],
-                                                                                                          self.camRunTime.emailConfig['user'],
-                                                                                                          frame_no_label_email,
-                                                                                                          str(typeObject),
-                                                                                                          r.get('nameRegion'),
-                                                                                                          self.camRunTime.nameCam]
+                                                                                
+                                                                                
+                                                                                
+                                                                                self.camRunTime.listObjectMailAlerted.append(objectID)
+                                                                            else:
+                                                                                alertaNaoEnviado = [self.camRunTime.emailConfig['name'],
+                                                                                                      self.camRunTime.emailConfig['to'],
+                                                                                                      self.camRunTime.emailConfig['subject'],
+                                                                                                      self.camRunTime.emailConfig['servidorEmail'],
+                                                                                                      self.camRunTime.emailConfig['user'],
+                                                                                                      frame_no_label_email,
+                                                                                                      str(typeObject),
+                                                                                                      r.get('nameRegion'),
+                                                                                                      self.camRunTime.nameCam]
 
-                                                                                    self.camRunTime.pilhaAlertasNaoEnviados.append(alertaNaoEnviado)
-                                                                                    
-                                                                                    self.camRunTime.listObjectMailAlerted.append(objectID)
+                                                                                self.camRunTime.pilhaAlertasNaoEnviados.append(alertaNaoEnviado)
+                                                                                
+                                                                                self.camRunTime.listObjectMailAlerted.append(objectID)
 
-                                                                                    log.critical('Sem conexao com a Internet - Alarmes serão enviados assim que houver conexao')
-                                                                                    log.critical('Numero de alarmes não enviados até o momento: {:d}'.format(len(self.camRunTime.pilhaAlertasNaoEnviados)))
+                                                                                log.critical('Sem conexao com a Internet - Alarmes serão enviados assim que houver conexao')
+                                                                                log.critical('Numero de alarmes não enviados até o momento: {:d}'.format(len(self.camRunTime.pilhaAlertasNaoEnviados)))
+                                                                    
+                                                                        #end if a.get('isEmailAlert') == "True":            
                                                             #end loop alarms
                                                         else:
 
@@ -756,7 +776,9 @@ class InferenceCore(QThread):
                         self.camRunTime.timeSessionInit = time.time()
 
                     
-                    self.camRunTime.listObjects.clear()                
+                    self.camRunTime.listObjects.clear()
+                    #self.objectIdTimeList.clear()
+
                     
                     
 

@@ -53,7 +53,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>4</number>
+       <number>1</number>
       </property>
       <property name="tabsClosable">
        <bool>false</bool>
@@ -686,7 +686,7 @@
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>230</y>
+          <y>290</y>
           <width>391</width>
           <height>41</height>
          </rect>
@@ -710,6 +710,38 @@
           <widget class="QPushButton" name="btnCancelRegion">
            <property name="text">
             <string>Cancelar</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="formLayoutWidget_13">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>230</y>
+          <width>330</width>
+          <height>41</height>
+         </rect>
+        </property>
+        <layout class="QFormLayout" name="formAccuracy_2">
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_100">
+           <property name="text">
+            <string>Enviar alerta após quantos segundos ? </string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="txtAlertaTimer">
+           <property name="text">
+            <string>0</string>
+           </property>
+           <property name="maxLength">
+            <number>2</number>
+           </property>
+           <property name="placeholderText">
+            <string/>
            </property>
           </widget>
          </item>
