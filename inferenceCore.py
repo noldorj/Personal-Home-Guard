@@ -301,6 +301,10 @@ class InferenceCore(QThread):
                                 
                                 print('Tamanho: {}'.format(len(self.camRunTime.objectsTracking)))
                                 
+                                if len(self.camRunTime.objectsTracking) == 0:
+                                    self.objectIdTimeList.clear()
+                                    
+                                
 
                                 for (objectID, centroid) in self.camRunTime.objectsTracking.items():
                                     
@@ -310,6 +314,7 @@ class InferenceCore(QThread):
                                     else:                                    
                                         self.objectIdTimeList[objectID]['time'] = time.time() - self.objectIdTimeList[objectID].get('timeStart')
                                         print('ID: {} time: {}'.format(objectID, int(self.objectIdTimeList[objectID].get('time')) ))
+                                        print(' ')
                                     
                                     # ajustando posicao do centroid 
 
@@ -395,7 +400,8 @@ class InferenceCore(QThread):
                                                                         #evitar emails seguidos para mesmo objeto
                                                                         if self.camRunTime.listObjectMailAlerted.count(objectID) == 0:
 
-                                                                            log.info('inferenceCore:: Enviando alerta por email')
+                                                                            
+                                                                            
                                                                             #salvando foto para treinamento
                                                                             #crop no box
                                                                             #left, top, right, bottom
@@ -408,7 +414,7 @@ class InferenceCore(QThread):
                                                                                 
                                                                                     if a.get('isEmailAlert') == "True":
                                                                                     
-                                                                                        log.info('inferenceCore:: Alerta enviado ID[' + str(objectID) + ']' + 'Tipo: ' + str(typeObject))
+                                                                                        log.info('inferenceCore:: Alerta enviado - ID[' + str(objectID) + ']' + 'Tipo: ' + str(typeObject))
                                                                                         threadEmail = Thread(target=sendMailAlert, args=(self.camRunTime.emailConfig['name'],
                                                                                                                                            self.camRunTime.emailConfig['to'],
                                                                                                                                            self.camRunTime.emailConfig['subject'],
@@ -427,19 +433,16 @@ class InferenceCore(QThread):
                                                                                     
                                                                                     
                                                                                 #mensagem ao app é enviado de qualquer forma
+                                                                                log.info('inferenceCore:: Enviando alerta por App - Object ID: {}'.format(objectID))
                                                                                 threadAlertApp = Thread(target=sendAlertApp, args=(self.camRunTime.statusConfig.getUserLogin(),
                                                                                                                                        frame_no_label_email,
                                                                                                                                        str(typeObject), #tipo de objeto detectado
                                                                                                                                        r.get('nameRegion'),
                                                                                                                                        self.camRunTime.nameCam))
                                                                                 threadAlertApp.start()
-                                                                                    
-                                                                                    
-                                                                                    
-                                                                                
-                                                                                
                                                                                 
                                                                                 self.camRunTime.listObjectMailAlerted.append(objectID)
+                                                                                
                                                                             else:
                                                                                 alertaNaoEnviado = [self.camRunTime.emailConfig['name'],
                                                                                                       self.camRunTime.emailConfig['to'],
@@ -484,6 +487,7 @@ class InferenceCore(QThread):
 
                                         #evitar emails seguidos para mesmo objeto
                                         if self.camRunTime.listObjectMailAlerted.count(objectID) == 0:
+                                        
                                             
                                             
                                             #60% acuracia padrao 
@@ -526,12 +530,10 @@ class InferenceCore(QThread):
                                                            str(typeObject), #tipo de objeto detectado
                                                            'toda camera',
                                                            self.camRunTime.nameCam))
-                                                    threadAlertApp.start()
-                                                        
-                                                        
-                                                    
+                                                    threadAlertApp.start()                                                    
                                                     
                                                     self.camRunTime.listObjectMailAlerted.append(objectID)
+                                                    
                                                 else:
                                                     alertaNaoEnviado = [self.camRunTime.emailConfig['name'],
                                                                           self.camRunTime.emailConfig['to'],

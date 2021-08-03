@@ -942,6 +942,7 @@ class StatusConfig:
             if r.get('nameRegion') == nameRegion:
                 self.regions[i]['objectType']       = objectType
                 self.regions[i]['prob_threshold']   = prob_threshold 
+                self.regions[i]['timerAlerta']      = timerAlerta 
                 edit = True
                 break
             else:

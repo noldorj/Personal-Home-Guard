@@ -646,6 +646,12 @@ class FormProc(QWidget):
             msg.exec()
             self.uiConfig.txtRegionName.setFocus()
             statusFields = False
+            
+        if len(self.uiConfig.txtAlertaTimer.text()) == 0:
+            msg.setText("Campo 'Alerta após n segundos' em branco")
+            msg.exec()
+            self.uiConfig.txtAlertaTimer.setFocus()
+            statusFields = False
 
         elif len(self.uiConfig.txtThreshold.text()) == 0:
             msg.setText("Campo 'Acurácia' em branco")
@@ -1525,7 +1531,8 @@ class FormProc(QWidget):
             if r is not None:
                 #print('comboRegionsUpdate:: nameRegion: {}'.format(r.get('nameRegion')))
                 self.uiConfig.txtRegionName.setText(r.get('nameRegion'))
-                self.uiConfig.txtThreshold.setText(str(r.get('prob_threshold')))            
+                self.uiConfig.txtThreshold.setText(str(r.get('prob_threshold')))
+                self.uiConfig.txtAlertaTimer.setText(str(r.get('timerAlerta')))
                 self.uiConfig.checkPerson.setCheckState(r.get('objectType').get('person')=="True")
                 self.uiConfig.checkCar.setCheckState(r.get('objectType').get('car')=="True")
                 #self.uiConfig.checkBike.setCheckState(r.get('objectType').get('bike')=="True")
@@ -1575,6 +1582,7 @@ class FormProc(QWidget):
         self.uiConfig.txtRegionName.clear()
         self.uiConfig.txtNameAlarm.clear()
         self.uiConfig.txtThreshold.clear()
+        self.uiConfig.txtAlertaTimer.clear()
         self.uiConfig.comboAlarms.clear()
         self.uiConfig.comboRegions.clear()        
         self.uiConfig.checkPerson.setCheckState(False)

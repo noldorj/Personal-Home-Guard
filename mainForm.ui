@@ -738,7 +738,7 @@
             <string>0</string>
            </property>
            <property name="maxLength">
-            <number>2</number>
+            <number>4</number>
            </property>
            <property name="placeholderText">
             <string/>

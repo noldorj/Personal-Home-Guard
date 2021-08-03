@@ -5,7 +5,7 @@ import numpy as np
 
 class CentroidTracker():
     #estava 50 .. colocando 90 para dar 3 segundos considerando 30 FPS
-    def __init__(self, maxDisappeared=30):
+    def __init__(self, maxDisappeared=90):
         # initialize the next unique object ID along with two ordered
         # dictionaries used to keep track of mapping a given object
         # ID to its centroid and number of consecutive frames it has
@@ -90,11 +90,15 @@ class CentroidTracker():
             # indexes based on their minimum values so that the row
             # with the smallest value as at the *front* of the index
             # list
+            
             rows = D.min(axis=1).argsort()
+            #rows = D.max(axis=1).argsort()
 
             # next, we perform a similar process on the columns by
             # finding the smallest value in each column and then
             # sorting using the previously computed row index list
+            
+            #cols = D.argmin(axis=1)[rows]
             cols = D.argmin(axis=1)[rows]
 
             # in order to determine if we need to update, register,

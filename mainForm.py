@@ -322,7 +322,7 @@ class Ui_formConfig(object):
         self.label_100.setObjectName("label_100")
         self.formAccuracy_2.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.label_100)
         self.txtAlertaTimer = QtWidgets.QLineEdit(self.formLayoutWidget_13)
-        self.txtAlertaTimer.setMaxLength(2)
+        self.txtAlertaTimer.setMaxLength(4)
         self.txtAlertaTimer.setPlaceholderText("")
         self.txtAlertaTimer.setObjectName("txtAlertaTimer")
         self.formAccuracy_2.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.txtAlertaTimer)
