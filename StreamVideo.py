@@ -49,8 +49,7 @@ def video_feed():
 
       
             
-if __name__=="__main__":    
-                 
+if __name__=="__main__":                
     
     
     log.info('StreamVideo::__init__')

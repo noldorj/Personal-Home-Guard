@@ -94,7 +94,7 @@ class InferenceCore(QThread):
     def setCamRunTime(self, camRunTime):
         log.info('::setCamRunTime')
         self.camRunTime = camRunTime
-        #print('setCamRunTime:: nameCam: {}'.format(self.camRunTime.nameCam))
+        
 
     
     def isIdInsideRegion(self, centroid, ref_point_polygon):
@@ -299,7 +299,7 @@ class InferenceCore(QThread):
                                 #objetos com ID e centro de massa
                                 self.camRunTime.objectsTracking = self.camRunTime.ct.update(self.camRunTime.listObjectsTracking)
                                 
-                                print('Tamanho: {}'.format(len(self.camRunTime.objectsTracking)))
+                                #print('Tamanho: {}'.format(len(self.camRunTime.objectsTracking)))
                                 
                                 if len(self.camRunTime.objectsTracking) == 0:
                                     self.objectIdTimeList.clear()
@@ -310,11 +310,11 @@ class InferenceCore(QThread):
                                     
                                     if self.objectIdTimeList.get(objectID) == None:
                                         self.objectIdTimeList[objectID] = {'timeStart':time.time(), 'timeEnd':0, 'time':0}
-                                        print('ID: {} inicializado'.format(objectID))
+                                        #print('ID: {} inicializado'.format(objectID))
                                     else:                                    
                                         self.objectIdTimeList[objectID]['time'] = time.time() - self.objectIdTimeList[objectID].get('timeStart')
-                                        print('ID: {} time: {}'.format(objectID, int(self.objectIdTimeList[objectID].get('time')) ))
-                                        print(' ')
+                                        #print('ID: {} time: {}'.format(objectID, int(self.objectIdTimeList[objectID].get('time')) ))
+                                        #print(' ')
                                     
                                     # ajustando posicao do centroid 
 
@@ -560,7 +560,7 @@ class InferenceCore(QThread):
 
                     self.camRunTime.tEmptyEnd = time.time()
                     self.camRunTime.tEmpty = self.camRunTime.tEmptyEnd - self.camRunTime.tEmptyStart
-                    #print('tEmpty end loop {}'.format(self.camRunTime.tEmpty))
+                    
 
                     self.camRunTime.timeGravandoAll = time.time() - self.camRunTime.timeGravandoAllInit
                     
@@ -592,7 +592,7 @@ class InferenceCore(QThread):
                             #if gravando:
                             if self.camRunTime.gravandoOnAlarmes and (self.camRunTime.STOP_ALL == False):
                                 if self.camRunTime.out_video is not None:
-                                    #print('gravandoOnAlarmes')
+                                    
                                     self.camRunTime.out_video.write(frame_no_label)
 
                        
@@ -623,8 +623,7 @@ class InferenceCore(QThread):
                                     
                         if self.camRunTime.gravandoAllTime and (self.camRunTime.STOP_ALL == False):
                             if self.camRunTime.out_video_all_time is not None:
-                                #print('gravandoAllTime')
-                                #print('out_video_all_time type: {}'.format(self.camRunTime.out_video_all_time))                            
+                                
                                 self.camRunTime.out_video_all_time.write(frame_no_label)
                    
 
@@ -694,13 +693,13 @@ class InferenceCore(QThread):
                                     alertaEmail[8],
                                     alertaEmail[9]))                                    
                                     
-                                    log.info('inferenceCore:: Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
+                                    log.info('inferenceCore:: Email de alerta durante perda de conexao enviado. pilha: {}'.format(len(self.camRunTime.pilhaAlertasNaoEnviados)))
                                     threadEmail.start()
                                 else:
                                     log.critical('inferenceCore:: configEmailStatus: '.format(self.camRunTime.configEmailStatus))
                                 
                                 #Alertas pra o App sao enviados de qualquer forma
-                                log.info('inferenceCore:: Lista de alertas devido a perda de conexao enviados ao App pilha: {}'.format(len(pilhaAlertasNaoEnviados)))
+                                log.info('inferenceCore:: Lista de alertas devido a perda de conexao enviados ao App pilha: {}'.format(len(self.camRunTime.pilhaAlertasNaoEnviados)))
                                 threadAlertApp = Thread(target=sendAlertApp, args=(self.camRunTime.statusConfig.getUserLogin(),
                                                            frame_no_label_email,
                                                            str(typeObject), #tipo de objeto detectado

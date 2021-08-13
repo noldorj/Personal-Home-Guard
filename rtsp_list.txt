@@ -1,5 +1,5 @@
 IntelBras
-rtsp://admin:WWYZRL@192.168.5.101/live/mpeg4:554
+rtsp://admin:WWYZRL@192.168.5.101/profile0
 
 CareCam
 rtsp://admin:123456@192.168.5.220:8554/profile0
