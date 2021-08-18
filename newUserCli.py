@@ -61,8 +61,7 @@ def sendMailnewUser(to, port, smtp, userPassword):
     
     
     sent_from = 'contato@portaovirtual.com.br'    
-    gmail_password = 'flevkztxyqcaovue'    
-    
+    gmail_password = 'flevkztxyqcaovue'
     
     
 
@@ -70,7 +69,7 @@ def sendMailnewUser(to, port, smtp, userPassword):
 
     body = ('Obrigado pela sua compra do software Portao Virtual ! \n\n Dados do seu login: \
         \n\n Usuário: {} \n Senha: {} \n\n Recomendamos que você altere a senha o quanto antes. \
-    \n Link para download: https://drive.google.com/file/d/15uXxEUdypnN55Mu139csoNtn2IwW5Sf0/view?usp=sharing \n \
+    \n Link para download: https://drive.google.com/file/d/1YM7G-xrg2xinNQM6YoRmkYWpuI9cBr-b/view?usp=sharing \n \
     \n Link para o Manual: https://ffc586ba-2e2b-4c36-abe6-ef6399680533.usrfiles.com/ugd/ffc586_93634d61390045fe90c9fbe459e6ce9c.pdf \n \
     \n Link para baixar o App do Portão Virtual (versão Android por enquanto): https://play.google.com/store/apps/details?id=br.com.portaovirtual.pv \n \
     \n Obs: a senha do Aplicativo deve ser alterada por ele ! O Sistema Portão Virtual do seu computador não altera a senha do seu App que roda no seu celular \
