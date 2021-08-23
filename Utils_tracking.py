@@ -273,6 +273,9 @@ def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
         
         body= tipoObjetoDetectado + ' na Região: ' + region + '- ' + date['hour'] + \
                 ' - ' + date['day'] + '/' + date['month'] + '/' + date['year'] + '. Camera: ' + nameCam
+                
+         
+               
         
         message = messaging.Message (    
         
@@ -294,9 +297,9 @@ def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
             ),
             
             notification = messaging.Notification(
-                title= title, 
-                body= body,
-                image= urlImageDownload,
+                title = title, 
+                body = body,
+                image = urlImageDownload,
                 
             ), 
             
@@ -313,6 +316,45 @@ def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
             },
                 
             topic=topic,
+            
+            apns = messaging.APNSConfig(
+                headers={'apns-priority': '10'},
+                payload=messaging.APNSPayload(
+                    aps=messaging.Aps(
+                        alert=messaging.ApsAlert(
+                            title=title,                           
+                            body=body,                            
+                            custom_data = {
+                                            'cameraName': nameCam, 
+                                            'regionName': region, 
+                                            'urlImageFirebase': urlImageFirebase,
+                                            'urlImageDownload': urlImageDownload,
+                                            'id': idImage,
+                                            'date': date['day'] + '/' + date['month'] + '/' + date['year'], 
+                                            'hour': date['hour'], 
+                                            'click_action': 'FLUTTER_NOTIFICATION_CLICK', 
+                                            'objectDetected': tipoObjetoDetectado,
+                                        },                            
+                        ),
+                        sound="default",
+                        content_available=1,
+                        custom_data = {
+                'cameraName': nameCam, 
+                'regionName': region, 
+                'urlImageFirebase': urlImageFirebase,
+                'urlImageDownload': urlImageDownload,
+                'id': idImage,
+                'date': date['day'] + '/' + date['month'] + '/' + date['year'], 
+                'hour': date['hour'], 
+                'click_action': 'FLUTTER_NOTIFICATION_CLICK', 
+                'objectDetected': tipoObjetoDetectado,
+            }
+                        
+                    ),
+                ),
+                fcm_options = messaging.APNSFCMOptions(image=urlImageDownload),               
+            ), 
+            
         )
         # Send a message to the device corresponding to the provided
 

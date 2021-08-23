@@ -50,6 +50,7 @@ class CamRunTime():
     CHECK_SESSION = 300 # checar sessao a cada 5 min
     #CHECK_SESSION = 60 # checar sessao a cada 5 min    
     GRAVANDO_TIME = 300 #gravar videos de 5min 
+    #GRAVANDO_TIME = 10 
 
     LOGIN_AUTOMATICO = False
 
@@ -283,7 +284,7 @@ class CamRunTime():
         
         self.gravandoAllTime = True if self.statusConfig.data["isRecordingAllTime"] == 'True' else False
         self.gravandoOnAlarmes = True if self.statusConfig.data["isRecordingOnAlarmes"] == 'True' else False
-        self.diskMinUsage = int(self.statusConfig.data["storageConfig"]["diskMinUsage"])
+        self.diskMinUsage = int(float(self.statusConfig.data["storageConfig"]["diskMinUsage"]))
         
         self.isOpenVino = self.statusConfig.data["isOpenVino"] == 'True'
 
@@ -382,10 +383,13 @@ class CamRunTime():
 
         #self.fourcc = cv.VideoWriter_fourcc(*'X''2''6''4') erro
         #for linux x264 need to recompile opencv mannually
-        self.fourcc = cv.VideoWriter_fourcc(*'X''V''I''D') #menor tamanho de arquivo
+        #self.fourcc = cv.VideoWriter_fourcc(*'DIVX') #menor tamanho de arquivo
         
-        #fourcc = cv.VideoWriter_fourcc(*'M','J','P','G')
-        #fourcc = cv.VideoWriter_fourcc(*'MP4V')
+        
+        
+        #self.fourcc = cv.VideoWriter_fourcc(*'M','J','P','G')
+        self.fourcc = cv.VideoWriter_fourcc(*'XVID') 
+        #self.fourcc = cv.VideoWriter_fourcc(*'MP4V') #nao funciona windows
         
         
         

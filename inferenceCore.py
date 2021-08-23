@@ -133,8 +133,8 @@ class InferenceCore(QThread):
 
             #self.camRunTime.cvNetTensorFlow = cv.dnn.readNet(self.camRunTime.pb + '.bin', self.camRunTime.pb + '.xml')
             self.camRunTime.cvNetTensorFlow = cv.dnn.readNet(self.camRunTime.pb + '.weights', self.camRunTime.pb + '.cfg')
-            self.camRunTime.cvNetTensorFlow.setPreferableBackend(cv.dnn.DNN_BACKEND_INFERENCE_ENGINE)
-            self.camRunTime.cvNetTensorFlow.setPreferableTarget(cv.dnn.DNN_TARGET_CPU)
+            #self.camRunTime.cvNetTensorFlow.setPreferableBackend(cv.dnn.DNN_BACKEND_INFERENCE_ENGINE)
+            #self.camRunTime.cvNetTensorFlow.setPreferableTarget(cv.dnn.DNN_TARGET_CPU)
           
         except Exception as err:
             log.critical('inferenceCore:: Erro ao carregar OpenCV DNN Erro: {}'.format(err))
@@ -149,8 +149,8 @@ class InferenceCore(QThread):
         
         if self.camRunTime.frame is not None:
             self.camRunTime.frame = cv.resize(self.camRunTime.frame, (self.camRunTime.RES_X, self.camRunTime.RES_Y)) 
-            self.camRunTime.w  = self.camRunTime.frame.shape[0]
-            self.camRunTime.h = self.camRunTime.frame.shape[1]
+            #self.camRunTime.w  = self.camRunTime.frame.shape[1]
+            #self.camRunTime.h = self.camRunTime.frame.shape[0]
 
         self.camRunTime.timeSessionInit = time.time()
         self.camRunTime.timeGravandoAllInit = time.time()
@@ -159,8 +159,7 @@ class InferenceCore(QThread):
         self.camRunTime.hora = utils.getDate()['hour'].replace(':','-')
         self.camRunTime.nameVideoAllTime = self.camRunTime.dir_video_trigger_all_time + '/' + self.camRunTime.hora + '.avi'
         
-        
-        self.camRunTime.out_video_all_time = cv.VideoWriter(self.camRunTime.nameVideoAllTime, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h))
+        self.camRunTime.out_video_all_time = cv.VideoWriter(self.camRunTime.nameVideoAllTime, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h), True)
 
     def run(self):
     
@@ -399,8 +398,6 @@ class InferenceCore(QThread):
 
                                                                         #evitar emails seguidos para mesmo objeto
                                                                         if self.camRunTime.listObjectMailAlerted.count(objectID) == 0:
-
-                                                                            
                                                                             
                                                                             #salvando foto para treinamento
                                                                             #crop no box
@@ -487,8 +484,6 @@ class InferenceCore(QThread):
 
                                         #evitar emails seguidos para mesmo objeto
                                         if self.camRunTime.listObjectMailAlerted.count(objectID) == 0:
-                                        
-                                            
                                             
                                             #60% acuracia padrao 
                                             if self.camRunTime.prob_threshold_returned >= 60:
@@ -566,13 +561,12 @@ class InferenceCore(QThread):
                     
                     
                     if not self.camRunTime.isDiskFull:
-                   
                         
                         if self.camRunTime.spaceMaxDirVideosOnAlarme == 0 or ( self.camRunTime.spaceMaxDirVideosOnAlarme >= self.camRunTime.dirVideosOnAlarmesUsedSpace ):
 
                             if self.camRunTime.newVideo and self.camRunTime.gravandoOnAlarmes and (self.camRunTime.STOP_ALL == False):
                             
-                                if self.camRunTime.out_video is not None:
+                                if self.camRunTime.out_video is not None:                                   
                                    self.camRunTime.out_video.release()
                                    self.camRunTime.out_video = None
                                    self.camRunTime.releaseVideoOnAlarmes = False
@@ -584,7 +578,8 @@ class InferenceCore(QThread):
                                 #if out_video is not None:
                                 #h = nchw[2]
                                 #w = nchw[3]
-                                self.camRunTime.out_video = cv.VideoWriter(self.camRunTime.nameVideo, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h))
+                                
+                                self.camRunTime.out_video = cv.VideoWriter(self.camRunTime.nameVideo, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h), True)
                                 self.camRunTime.out_video.write(frame_no_label)
                                 self.camRunTime.newVideo = False
 
@@ -592,53 +587,46 @@ class InferenceCore(QThread):
                             #if gravando:
                             if self.camRunTime.gravandoOnAlarmes and (self.camRunTime.STOP_ALL == False):
                                 if self.camRunTime.out_video is not None:
-                                    
                                     self.camRunTime.out_video.write(frame_no_label)
-
-                       
-
+                                    #print('gravando gravandoOnAlarmes')
 
                         if self.camRunTime.spaceMaxDirVideosAllTime == 0 or ( self.camRunTime.spaceMaxDirVideosAllTime >= self.camRunTime.dirVideosAllTimeUsedSpace ):                        
                             
                             if self.camRunTime.gravandoAllTime and (self.camRunTime.timeGravandoAll >= self.camRunTime.GRAVANDO_TIME) and (self.camRunTime.STOP_ALL == False):
 
-                                if self.camRunTime.out_video_all_time is not None:
-                                     self.camRunTime.out_video_all_time.release()
-                                     self.camRunTime.out_video_all_time = None
+                                if self.camRunTime.out_video_all_time is not None:                                    
+                                    self.camRunTime.out_video_all_time.release()
+                                    self.camRunTime.out_video_all_time = None
                                 
-                                #if out_video_all_time is not None:
+                                    #if out_video_all_time is not None:
                                 
                                 hora = utils.getDate()['hour'].replace(':','-')
                                 self.camRunTime.nameVideoAllTime = self.camRunTime.dir_video_trigger_all_time + '/' + hora + '.avi'
                                 
-                                #if out_video_all_time is not None:
-                                #h = nchw[2]
-                                #w = nchw[3]
+                                # if out_video_all_time is not None:
+                                    # h = nchw[2]
+                                    # w = nchw[3]
                                 
-                                
-                                self.camRunTime.out_video_all_time = cv.VideoWriter(self.camRunTime.nameVideoAllTime, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h))
+                                self.camRunTime.out_video_all_time = cv.VideoWriter(self.camRunTime.nameVideoAllTime, self.camRunTime.fourcc, self.camRunTime.FPS, (self.camRunTime.w, self.camRunTime.h), True)
                                 self.camRunTime.out_video_all_time.write(frame_no_label)
-
                                 self.camRunTime.timeGravandoAllInit = time.time()
                                     
-                        if self.camRunTime.gravandoAllTime and (self.camRunTime.STOP_ALL == False):
-                            if self.camRunTime.out_video_all_time is not None:
+                            if self.camRunTime.gravandoAllTime and (self.camRunTime.STOP_ALL == False):
+                                if self.camRunTime.out_video_all_time is not None:
+                                    self.camRunTime.out_video_all_time.write(frame_no_label)
+                                    
                                 
-                                self.camRunTime.out_video_all_time.write(frame_no_label)
                    
 
                     #disco cheio 
                     else:
-                        #print('disco cheio')
+                        print('disco cheio')
                         # ou então parar de gravar novos videos
                         if self.camRunTime.stopSaveNewVideos:                        
                             self.camRunTime.gravandoAllTime = False
                             self.camRunTime.gravandoOnAlarmes = False
-                            
-                       
-                        
                     
-                    #end else disco cheio  
+                    #end else disco cheio
                                 
                     self.change_pixmap_signal.emit(frame_screen)                    
                     #self.change_pixmap_signal.emit(self.camRunTime.frame)
@@ -747,6 +735,7 @@ class InferenceCore(QThread):
                             
 
 
+                        #if conexao 
                         else:
                             log.critical(' ')
                             log.critical("inferenceCore:: Sem internet - sessao não checada")
@@ -783,6 +772,7 @@ class InferenceCore(QThread):
                     
                     
 
+                #if (self.camRunTime.conectado) and (self.camRunTime.frame is not None):
                 else:
                     if not self.camRunTime.conectado:
                         log.warning('inferenceCore:: Conectado False - Reconectando em 5 segundos...')
@@ -850,9 +840,9 @@ class InferenceCore(QThread):
         self._run_flag = False
         #self.wait()
 
-        # if self.camRunTime.out_video_all_time is not None:
-            # log.warning('Fim da captura de video out_video_all_time')
-            # self.camRunTime.out_video_all_time.release()
+        if self.camRunTime.out_video_all_time is not None:
+            log.warning('Fim da captura de video out_video_all_time')
+            self.camRunTime.out_video_all_time.release()
 
 
         # if self.camRunTime.ipCam and cv is not None:
