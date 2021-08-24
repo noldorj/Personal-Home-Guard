@@ -84,7 +84,7 @@ class InferenceCore(QThread):
             log.info('InferenceCore:: Inicializando Firebase')
         
             try:
-                firebase_admin.initialize_app(credential, {'storageBucket': 'pvalarmes-3f7ee.appspot.com'})
+                firebase_admin.initialize_app(credential, {'storageBucket': 'pvalarmes-3f7ee.appspot.com', 'databaseURL': 'https://pvalarmes-3f7ee-default-rtdb.firebaseio.com/'})
             except Exception as err:
                 log.critical('Erro ao inicializar o Firebase: {}'.format(err))            
             else:

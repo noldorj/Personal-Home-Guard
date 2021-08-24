@@ -15,6 +15,7 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import messaging
 from firebase_admin import storage
+from firebase_admin import db
 import datetime
 
 
@@ -130,6 +131,8 @@ def sendMail(subject, message):
         status = True
 
     return status
+
+
 
 def sendStorageAlert(user, titleMsg, msg):
     log.info('sendStorageAlert::')
@@ -275,7 +278,27 @@ def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
                 ' - ' + date['day'] + '/' + date['month'] + '/' + date['year'] + '. Camera: ' + nameCam
                 
          
-               
+        #Estrutura para salvar no Realtime DAtabase 
+        emailId = topic.replace('.','_')        
+        idImageDb = idImage.replace('.','_')
+        #print('idImageDb: {}'.format(idImageDb))
+        
+        ref = db.reference('/users/' + emailId + '/alerts')
+        users_ref = ref.child(idImageDb)
+        
+        users_ref.set(            
+            {
+                'cameraName': nameCam, 
+                'regionName': region, 
+                'urlImageFirebase': urlImageFirebase,
+                'urlImageDownload': urlImageDownload,
+                'id': idImageDb,
+                'date': date['day'] + '/' + date['month'] + '/' + date['year'], 
+                'hour': date['hour'], 
+                'click_action': 'FLUTTER_NOTIFICATION_CLICK', 
+                'objectDetected': tipoObjetoDetectado,
+            }
+        )        
         
         message = messaging.Message (    
         
