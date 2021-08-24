@@ -3,6 +3,7 @@ from inferenceCore import *
 from Utils_tracking import sendMailAlert
 from Utils_tracking import sendMail
 from Utils_tracking import sendStorageAlert
+from Utils_tracking import saveStorageInfoDb
 from camRunTime import CamRunTime
 import utilsCore as utils
 import time
@@ -36,14 +37,28 @@ class CheckStorage(QThread):
         self.camRunTime.diskUsageFree = utils.getDiskUsageFree() 
         self.camRunTime.diskUsageFreeGb = utils.getDiskUsageFreeGb()
         self.camRunTime.dirVideosAllTimeUsedSpace = utils.getDirUsedSpace(self.statusConfig.data['dirVideosOnAlarmes'])
-        self.camRunTime.numDaysRecording = utils.getNumDaysRecording()                     
+        self.camRunTime.numDaysRecording = utils.getNumDaysRecording()  
+
+        
             
         while self.checkStorageRun:
+        
+            self.camRunTime.isDiskFull = utils.isDiskFull(self.camRunTime.diskMinUsage) 
+            
+            storageStatus = {
+                'diskUsageFree'  : self.camRunTime.diskUsageFree, 
+                'diskUsageFreeGb': self.camRunTime.diskUsageFreeGb,
+                'dirVideosOnAlarmesUsedSpace' : self.camRunTime.dirVideosOnAlarmesUsedSpace,
+                'dirVideosAllTimeUsedSpace' : self.camRunTime.dirVideosAllTimeUsedSpace, 
+                'numDaysRecording' : self.camRunTime.numDaysRecording,
+                'isDiskFull' : self.camRunTime.isDiskFull
+            }        
+            saveStorageInfoDb(self.statusConfig.getUserLogin(), storageStatus) 
         
             log.info('\n checkStorage:: checking')
             self.updateStorageInfo.emit()
             
-            if not utils.isDiskFull(self.camRunTime.diskMinUsage):
+            if not self.camRunTime.isDiskFull:
                         
                 if self.camRunTime.spaceMaxDirVideosOnAlarme > 0 and self.camRunTime.spaceMaxDirVideosOnAlarme <= self.camRunTime.dirVideosOnAlarmesUsedSpace :
                 
@@ -177,7 +192,7 @@ class CheckStorage(QThread):
 
                         
                             #se ainda não tiver sido suficiente
-                            if utils.isDiskFull(self.camRunTime.diskMinUsage):
+                            if self.camRunTime.isDiskFull:
                                 log.info('checkStorage:: Apagando diretórios de Alarmes')
                                 #log.info('Dir: {}'.format(statusConfig.getDirVideosOnAlarmes()))
                                 if self.statusConfig.getDirVideosOnAlarmes() == "":

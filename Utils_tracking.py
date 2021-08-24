@@ -133,6 +133,20 @@ def sendMail(subject, message):
     return status
 
 
+def saveStorageInfoDb(user, storageInfo):
+
+    #Estrutura para salvar no Realtime DAtabase 
+    userId = user.replace('.','_')
+    userId = userId.replace('@','_')
+    print('userId: {}'.format(userId))
+    
+    ref = db.reference('/users/' + userId + '/storageStatus')
+    #users_ref = ref.child(idImageDb)
+
+    ref.set(storageInfo)
+
+
+
 
 def sendStorageAlert(user, titleMsg, msg):
     log.info('sendStorageAlert::')
