@@ -150,6 +150,8 @@ class FormProc(QWidget):
             self.infCam.setCamRunTime(self.camRunTime)
             self.checkStorage()
             
+            self.statusConfig.setDateSessionInit()
+            
             #slots            
             tracker = MouseTracker(self.uiConfig.lblCam1)
             tracker.positionChanged.connect(self.on_positionChanged)       

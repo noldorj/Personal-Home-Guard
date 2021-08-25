@@ -465,6 +465,22 @@ def freeDiskSpace(dirVideo):
        
      #log.info('Total liberado: {:f}'.format(totalLiberado))
 
+def getMonthDigit(month):
+
+    if month == 'Jan': month = '01'
+    if month == 'Feb': month = '02'
+    if month == 'Mar': month = '03'
+    if month == 'Apr': month = '04'
+    if month == 'May': month = '05'
+    if month == 'Jun': month = '06'
+    if month == 'Jul': month = '07'
+    if month == 'Aug': month = '08'
+    if month == 'Sep': month = '09'
+    if month == 'Oct': month = '10'
+    if month == 'Nov': month = '11'
+    if month == 'Dec': month = '12'
+    
+    return month
 
 def getDate():    
     
@@ -626,6 +642,9 @@ class StatusConfig:
 
     def getDiskMaxUsage(self):
         return self.data["diskMaxUsage"]
+    
+    def getDateSessionInit(self):
+        return self.data["dateSessionInit"]
     
     def getCpuExtension(self):
         return self.data["openVinoCpuExtension"]
@@ -793,6 +812,13 @@ class StatusConfig:
     
     def setRtspConfig(self, camSource):
         self.data["camSource"] = camSource
+        
+    def setDateSessionInit(self):
+        date = getDate()
+        date = date['year'] + '-' + getMonthDigit(date['month']) + '-' + date['day'] + ' ' + date['hour']
+        print('date: {}'.format(date))
+        self.data["dateSessionInit"] = date
+        self.saveConfigFile()
 
     def addConfigGeral(self, name, servidorEmail, user, password, subject, to, isRecordingAllTime, isRecordingOnAlarmes, dirVideosAllTime, dirVideosOnAlarmes, camSource, diskMinUsage):
         

@@ -4,11 +4,13 @@ from Utils_tracking import sendMailAlert
 from Utils_tracking import sendMail
 from Utils_tracking import sendStorageAlert
 from Utils_tracking import saveStorageInfoDb
+from Utils_tracking import savePvStatusDb
 from camRunTime import CamRunTime
 import utilsCore as utils
 import time
 from PyQt5.QtCore import QThread
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
+import psutil
 
 
 class CheckStorage(QThread):
@@ -54,6 +56,29 @@ class CheckStorage(QThread):
                 'isDiskFull' : self.camRunTime.isDiskFull
             }        
             saveStorageInfoDb(self.statusConfig.getUserLogin(), storageStatus) 
+            
+            if self.camRunTime.nameCam is None:
+                self.camRunTime.nameCam = 'nao configurada'                
+           
+            date = utils.getDate()
+            lastCheckInternet = date['year'] + '-' + utils.getMonthDigit(date['month']) + '-' + date['day'] + ' ' + date['hour']
+            
+            pvStatus = {
+            
+                'cpuUsage': psutil.cpu_percent(),
+                'ramUsage': psutil.virtual_memory().percent,
+                'ramFree': psutil.virtual_memory().available * 100 / psutil.virtual_memory().total,
+                'dateSessionInit': self.statusConfig.getDateSessionInit(),
+                'camConexao' : self.camRunTime.conectado,
+                'nomeCam' : self.camRunTime.nameCam,
+                'lastCheckInternet' : lastCheckInternet
+            }
+            
+            savePvStatusDb(self.statusConfig.getUserLogin(), pvStatus) 
+                
+            
+            
+            
         
             log.info('\n checkStorage:: checking')
             self.updateStorageInfo.emit()

@@ -133,12 +133,24 @@ def sendMail(subject, message):
     return status
 
 
+def savePvStatusDb(user, statusPv):
+
+    #Estrutura para salvar no Realtime DAtabase 
+    userId = user.replace('.','_')
+    userId = userId.replace('@','_')    
+    
+    ref = db.reference('/users/' + userId + '/pvStatus')
+    #users_ref = ref.child(idImageDb)
+
+    ref.set(statusPv)
+
+
 def saveStorageInfoDb(user, storageInfo):
 
     #Estrutura para salvar no Realtime DAtabase 
     userId = user.replace('.','_')
     userId = userId.replace('@','_')
-    print('userId: {}'.format(userId))
+    
     
     ref = db.reference('/users/' + userId + '/storageStatus')
     #users_ref = ref.child(idImageDb)
