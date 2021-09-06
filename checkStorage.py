@@ -11,6 +11,7 @@ import time
 from PyQt5.QtCore import QThread
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
 import psutil
+import urllib.request
 
 
 class CheckStorage(QThread):
@@ -21,6 +22,7 @@ class CheckStorage(QThread):
     warningHDCheio = pyqtSignal()
     CHECK_STORAGE_TIME = 300
     checkStorageRun = True
+    ipExterno = ''
 
     def __init__(self, camRunTime):
         log.info('CheckStorage::init')
@@ -28,6 +30,9 @@ class CheckStorage(QThread):
         self._run_flag = True
         self.camRunTime = camRunTime
         self.statusConfig = camRunTime.statusConfig
+        
+        self.ipExterno = urllib.request.urlopen('https://ident.me').read().decode('utf8')
+        log.info('CheckStorage::__init__:: External IP: {}'.format(self.ipExterno))
 
 
     def run(self):
@@ -71,7 +76,8 @@ class CheckStorage(QThread):
                 'dateSessionInit': self.statusConfig.getDateSessionInit(),
                 'camConexao' : self.camRunTime.conectado,
                 'nomeCam' : self.camRunTime.nameCam,
-                'lastCheckInternet' : lastCheckInternet
+                'lastCheckInternet' : lastCheckInternet,
+                'ip' : self.ipExterno
             }
             
             savePvStatusDb(self.statusConfig.getUserLogin(), pvStatus) 
@@ -193,12 +199,14 @@ class CheckStorage(QThread):
 
 
                         # realmente apaga os videos mais antigos ? 
-                        if self.camRunTime.eraseOldestFiles:                            
+                        if self.camRunTime.eraseOldestFiles:
+                            log.info('checkStorage:: eraseOldestFiles true')
                             if self.camRunTime.statusConfig.getDirVideosAllTime() == "":
                                 log.info('checkStorage:: Não existem arquivos a serem apagados na pasta "Videos 24hs"')
                                 
                             else:                          
                             
+                                log.info('checkStorage:: chamando freeDiskSpace')
                                 if utils.freeDiskSpace(self.camRunTime.statusConfig.getDirVideosAllTime()) == False:
                                 
                                     log.critical('checkStorage:: Diretorios de "Videos 24hs" já está vazio')
@@ -225,7 +233,7 @@ class CheckStorage(QThread):
                                     
                                 else:
                                     if utils.freeDiskSpace(self.statusConfig.getDirVideosOnAlarmes()) == False:
-                                        log.critical('Diretorios de "Vidos Alarme" já está vazio')                                    
+                                        log.critical('Diretorios de "Vidos Alarme" já está vazio')
 
                                         if not self.camRunTime.emailSentdirVideosOnAlarmesEmpty:
                                             textEmail = 'Mesmo apagando a pasta "Videos Alarme", seu HD continua cheio ! \n\n  \

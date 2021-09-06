@@ -9,6 +9,7 @@ import utilsCore as utils
 import logging as log
 import sys
 import urllib.request
+import time
 
 
 import firebase_admin
@@ -50,7 +51,8 @@ def saveImageFirebase(frame, idImage, user):
 
     except OSError as error:
         log.critical('saveImageFirebase:: Erro ao salvar a foto: ' + str(error))
-        return None, None, False
+        img_file = os.getcwd() + '/config/disco_cheio.jpg'
+        #return None, None, False
     else:
         log.info('saveImageFirebase:: Foto alarme app salva')        
 
@@ -142,7 +144,19 @@ def savePvStatusDb(user, statusPv):
     ref = db.reference('/users/' + userId + '/pvStatus')
     #users_ref = ref.child(idImageDb)
 
-    ref.set(statusPv)
+    statusMessage = False
+    i = 1
+    while statusMessage is False:
+        log.info('savePvStatusDb:: Savando PvStatus tentativa [{}]'.format(i))   
+        try:
+            ref.set(statusPv)
+        except Exception as e:
+            log.critical('savePvStatusDb:: Erro salvar PvStatus Firebase DB')
+            i = i + 1
+            time.sleep(1)
+        else:
+            statusMessage = True
+            i = 0
 
 
 def saveStorageInfoDb(user, storageInfo):
@@ -155,7 +169,20 @@ def saveStorageInfoDb(user, storageInfo):
     ref = db.reference('/users/' + userId + '/storageStatus')
     #users_ref = ref.child(idImageDb)
 
-    ref.set(storageInfo)
+    log.info('saveStorageInfoDb:: Salvando PvStatus no Firebase DB')
+    statusMessage = False
+    i = 1
+    while statusMessage is False:
+        log.info('saveStorageInfoDb:: Savando PvStatus tentativa [{}]'.format(i))   
+        try:
+            ref.set(storageInfo)
+        except Exception as e:
+            log.critical('saveStorageInfoDb:: Erro salvar PvStatus Firebase DB')
+            i = i + 1
+            time.sleep(1)
+        else:
+            statusMessage = True
+            i = 0
 
 
 
@@ -232,7 +259,7 @@ def sendStorageAlert(user, titleMsg, msg):
         log.info('sendStorageAlert:: Enviando alerta storage App [{}]'.format(i))
         try:
             response = messaging.send(message)
-        except error as e:
+        except Exception as e:
             log.critical('sendStorageAlert:: Erro ao enviar alerta storage App: {}'.format(e))            
             i = i+1
             time.sleep(3)
@@ -241,8 +268,7 @@ def sendStorageAlert(user, titleMsg, msg):
             statusMessage = True
             i = 0
     
-
-    
+   
     
 
 def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
@@ -275,7 +301,8 @@ def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
     
     
     log.info('sendAlertApp:: Salvando imagem Firebase')
-    urlImageDownload, urlImageFirebase, status = saveImageFirebase(frame, idImage, topic)    
+    urlImageDownload, urlImageFirebase, status = saveImageFirebase(frame, idImage, topic)
+        
     
     #print('urlImageDownload: {}'.format(urlImageDownload))
     #print('urlImageFirebase: {}'.format(urlImageFirebase))
@@ -309,7 +336,7 @@ def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
         idImageDb = idImage.replace('.','_')
         #print('idImageDb: {}'.format(idImageDb))
         
-        ref = db.reference('/users/' + emailId + '/alerts')
+        ref = db.reference('/users/' + emailId + '/alerts/' + date['year'] + '/' + date['month'] + '/' + date['day'] + '/' + date['hourOnly'])
         users_ref = ref.child(idImageDb)
         
         users_ref.set(            
@@ -323,6 +350,7 @@ def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
                 'hour': date['hour'], 
                 'click_action': 'FLUTTER_NOTIFICATION_CLICK', 
                 'objectDetected': tipoObjetoDetectado,
+                'textAlert': body,
             }
         )        
         
@@ -415,7 +443,7 @@ def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
             log.info('sendAlertApp:: Enviando alerta App [{}]'.format(i))
             try:
                 response = messaging.send(message)
-            except error as e:
+            except Exception as e:
                 log.critical('sendAlertApp:: Erro ao enviar alerta: {}'.format(e))            
                 i = i+1
                 time.sleep(3)

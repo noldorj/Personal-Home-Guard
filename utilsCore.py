@@ -294,6 +294,7 @@ def getDiskUsageFree():
 
     statusConfig = StatusConfig()    
     particao = statusConfig.getDirVideosAllTime()
+    
     particao = particao.split(':')
     if len(particao) > 1:
         particao = particao[0] + ':/'
@@ -320,8 +321,18 @@ def isDiskFull(diskMinUsage):
     isFull = False 
     total, used, free = shutil.disk_usage(particao)
 
-    if ((free / total)*100) <= float(diskMinUsage):
-       
+    #garantir um minimo de disco para funcionamento do sistema
+    if float((free / total)*100) < 5.0:
+        diskMinUsage = 5        
+        logger = log.getLogger()
+        logger.disabled = True
+        log.critical('isDiskFull:: desabilitando log')
+    else:
+        logger = log.getLogger()
+        logger.disabled = True
+        log.critical('isDiskFull:: reabilitando log')
+    
+    if ((free / total)*100) <= float(diskMinUsage):       
         isFull = True 
 
     return isFull
@@ -1014,7 +1025,7 @@ class StatusConfig:
         self.readConfigLogin(configLogin)
 
     def readConfigLogin(self, fileName = 'config/lconfig.json'):
-        log.info('readConfigLogin:: Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
+        #log.info('readConfigLogin:: Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
         
         self.dataLogin = json.load(open(fileName,'r'))
 
@@ -1024,7 +1035,7 @@ class StatusConfig:
         self.data = json.load(open(fileName,'r'))
 
     def readRegionsFile(self, fileName = 'config/regions.json'):
-        log.info('readRegionsFile:: Lendo arquivo de regiões: ' + os.getcwd() + '/' + fileName)
+        #log.info('readRegionsFile:: Lendo arquivo de regiões: ' + os.getcwd() + '/' + fileName)
         try:
             self.regions = json.load(open(fileName,'r'))
         except OSError as ex:

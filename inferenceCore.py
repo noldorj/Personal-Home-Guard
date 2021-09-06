@@ -620,7 +620,7 @@ class InferenceCore(QThread):
 
                     #disco cheio 
                     else:
-                        print('disco cheio')
+                        #print('disco cheio')
                         # ou então parar de gravar novos videos
                         if self.camRunTime.stopSaveNewVideos:                        
                             self.camRunTime.gravandoAllTime = False
