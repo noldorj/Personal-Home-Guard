@@ -18,7 +18,7 @@ from firebase_admin import auth
 
 import datetime
 
-emailCliente = 'igorddf@gmail.com'
+emailCliente = 'igorddf2@gmail.com'
 numCameras = '1'
 diasLicenca = '0'
 
@@ -69,9 +69,13 @@ def sendMailnewUser(to, port, smtp, userPassword):
 
     body = ('Obrigado pela sua compra do software Portao Virtual ! \n\n Dados do seu login: \
         \n\n Usuário: {} \n Senha: {} \n\n Recomendamos que você altere a senha o quanto antes. \
-    \n Link para download: https://drive.google.com/file/d/1-IXgAJ1qegIzgKoiSItUViqeyM-VzmqH/view?usp=sharing \n \
+    \n Link para download: https://drive.google.com/file/d/1TZIqDz9FNksZbmfkxB1nTFSoEcOg8T1L/view?usp=sharing \n \
     \n Link para o Manual: https://ffc586ba-2e2b-4c36-abe6-ef6399680533.usrfiles.com/ugd/ffc586_93634d61390045fe90c9fbe459e6ce9c.pdf \n \
-    \n Link para baixar o App do Portão Virtual (versão Android por enquanto): https://play.google.com/store/apps/details?id=br.com.portaovirtual.pv \n \
+    \n Link para baixar o App do Portão Virtual : \n \
+    \n    Android: https://play.google.com/store/apps/details?id=br.com.portaovirtual.pv \n \
+    \n    iPhone: https://apps.apple.com/mm/app/portao-virtual/id1578932850 \n \
+    \n\n Importante: Após baixar o Portão Virtual no seu Windows 10.0 - Siga os passos descritos no link abaixo para um correto funcionamento: \
+    \n    Configuração do Windows Defender: https://2f3b850e-5832-4ea9-99ee-6bc9a399b707.filesusr.com/ugd/ffc586_e574d5b3ed794ab5bb559c57c8c58c7d.pdf    \
     \n Obs: a senha do Aplicativo deve ser alterada por ele ! O Sistema Portão Virtual do seu computador não altera a senha do seu App que roda no seu celular \
     \n\n Atenciosamente, \n\n Equipe Portao Virtual \n\n www.portaovirtual.com.br ').format(to, userPassword)
 

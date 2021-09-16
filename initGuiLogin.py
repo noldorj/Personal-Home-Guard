@@ -11,6 +11,8 @@ import psutil
 #from inferenceCore import *
 import winshell
 from win32com.client import Dispatch
+import getpass
+import os
 
 
 from checkLicence.sendingData import checkLoginPv 
@@ -74,61 +76,66 @@ class FormLogin(QDialog):
 
     
     def setEnv(self, camRunTimeP, statusConfigP):
-        print('setEnv login')
+        log.info('setEnv login')
         self.statusConfig = statusConfigP
         self.camRunTime = camRunTimeP
        
     def isLogged(self):
-        print('isLogged')
+        log.info('isLogged')
         return self.logged    
 
-    def checkBoxLoginAutoStart(self, state):
-      
+    def checkBoxLoginAutoStart(self, state):     
         
         
-        #criando o atalho
-        #desktop = winshell.desktop()
-        
-
-
         if self.camRunTime.OS_PLATFORM == 'windows':
             ATALHO_PATH = 'PortaoVirtual.lnk'
             USER_NAME = getpass.getuser()       
             ROOT_PATH = os.path.splitdrive(os.environ['WINDIR'])[0]    
             AUTO_START_PATH = ROOT_PATH + '/Users/' + USER_NAME + '/AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup' 
-
             
-           
         
         if state == 0:
             
             log.info('Auto start login off')
             self.statusConfig.setLoginAutoStart('False')
             
-            if os.path.exists(AUTO_START_PATH + '/' + ATALHO_PATH):
-                os.remove(AUTO_START_PATH + '/' + ATALHO_PATH)
+            try:
+                if os.path.exists(AUTO_START_PATH + '/' + ATALHO_PATH):
+                    os.remove(AUTO_START_PATH + '/' + ATALHO_PATH)
+                else:
+                    log.info("Atalho na pasta de Inicialização do sistema não existe")
+            except OSError as error:
+                log.error('checkBoxLoginAutoStart:: error: {}'.formart(error))
             else:
-                log.info("Atalho na pasta de Inicialização do sistema não existe")
+                log.info('checkBoxLoginAutoStart:: Auto Start off')
 
         elif (state == 1 or state == 2):
             
             log.info('Auto start login On')
             self.statusConfig.setLoginAutoStart('True')  
             
-            if not os.path.exists(AUTO_START_PATH + '/' + ATALHO_PATH):              
-                
-                path = os.path.join(AUTO_START_PATH, "PortaoVirtual.lnk")
-                target = os.getcwd() + '/' + 'pv.exe'
-                wDir = os.getcwd()
-                #icon = r"P:\Media\Media Player Classic\mplayerc.exe"
-                shell = Dispatch('WScript.Shell')
-                shortcut = shell.CreateShortCut(path)
-                shortcut.Targetpath = target
-                shortcut.WorkingDirectory = wDir
-                #shortcut.IconLocation = icon
-                shortcut.save()
-                print('AUTO_START_PATH: {}'.format(AUTO_START_PATH))
-                #shutil.copy2(ATALHO_PATH, AUTO_START_PATH) # complete target filename given
+            try:
+            
+                if not os.path.exists(AUTO_START_PATH + '/' + ATALHO_PATH):              
+                    
+                    path = os.path.join(AUTO_START_PATH, "PortaoVirtual.lnk")
+                    target = os.getcwd() + '/' + 'pv.exe'
+                    wDir = os.getcwd()
+                    #icon = r"P:\Media\Media Player Classic\mplayerc.exe"
+                    shell = Dispatch('WScript.Shell')
+                    shortcut = shell.CreateShortCut(path)
+                    shortcut.Targetpath = target
+                    shortcut.WorkingDirectory = wDir
+                    #shortcut.IconLocation = icon
+                    shortcut.save()
+                    #print('AUTO_START_PATH: {}'.format(AUTO_START_PATH))
+                    #shutil.copy2(ATALHO_PATH, AUTO_START_PATH) # complete target filename given
+                    
+            except OSError as err:
+                log.error('checkBoxLoginAutoStart:: error: {}'.formart(error))              
+            
+            else:
+                log.info('checkBoxLoginAutoStart:: Auto Start On')
 
     def checkBoxAtalhoDesktop(self, state):
     
@@ -161,25 +168,23 @@ class FormLogin(QDialog):
     
     def checkBoxLoginAutomatico(self, state):
         #global LOGIN_AUTOMATICO, self.statusConfig        
-        print('checkBoxLoginAutomatico')
+        log.info('checkBoxLoginAutomatico')
         
         if state == 0:
             
-            print('Login automatico off')
+            log.info('checkBoxLoginAutomatico:: Login automatico off')
             self.statusConfig.setLoginAutomatico('False')
             self.camRunTime.LOGIN_AUTOMATICO = False
 
 
         elif (state == 1 or state == 2):
             
-            print('Login automatico on')
+            log.info('checkBoxLoginAutomatico:: Login automatico on')
             self.statusConfig.setLoginAutomatico('True')
             self.camRunTime.LOGIN_AUTOMATICO = True 
 
     def checkBoxSalvarLogin(self, state):
-        #global fernetKey, statusConfig
-
-        
+        #global fernetKey, statusConfig        
         
         if state == 0:
             
