@@ -17,6 +17,8 @@ import psutil
 from pbkdf2 import PBKDF2
 
 import winsound
+import platform
+import locale
 
 
 from cryptography.fernet import Fernet
@@ -34,9 +36,47 @@ if sys.platform == 'linux':
 #locale.setlocale(locale.LC_ALL, 'pt_BR.utf-8')
 #timezone = pytz.timezone("America/Sao_Paulo")
 
-locale.setlocale(locale.LC_ALL, 'en_US.utf-8')
-#locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
+#locale.setlocale(locale.LC_ALL, 'en_US.utf-8')
+
+def setLocaleWindows():
+
+    plat = platform.platform()
     
+    if 'Windows-7' in plat:
+        try:
+            for x in locale.windows_locale.values():
+                if 'en_US' in x:
+                    x.replace('_','-')
+                    locale.setlocale(locale.LC_ALL, x)
+                    break                    
+                elif 'pt_BR' in x:                    
+                    x.replace('_','-')
+                    locale.setlocale(locale.LC_ALL, x)
+                    break
+                elif 'pt_PT' in x:                    
+                    x.replace('_','-')
+                    locale.setlocale(locale.LC_ALL, x)
+                    break
+                   
+        except Exception as error:
+            log.error('setLocaleWindows:: win7 error: {}'.format(error))
+        else:
+            log.info('setLocaleWindows setLocale ok win7')
+    else:
+        try:
+            locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+        except Exception as err:
+            log.error('setLocaleWindows:: win10 error: {}'.format(error))
+        else:
+            log.info('setLocaleWindows setLocale ok win10')
+            
+        
+        
+            
+
+setLocaleWindows()
+#locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
+
 
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
 #log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.INFO, stream=sys.stdout)

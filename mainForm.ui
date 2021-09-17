@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>936</width>
+    <width>937</width>
     <height>675</height>
    </rect>
   </property>
@@ -34,7 +34,7 @@
   <property name="windowTitle">
    <string>Configurações</string>
   </property>
-  <widget class="QWidget" name="horizontalLayoutWidget">
+  <widget class="QWidget" name="horizontalWidget" native="true">
    <property name="geometry">
     <rect>
      <x>0</x>
@@ -43,7 +43,16 @@
      <height>671</height>
     </rect>
    </property>
-   <layout class="QHBoxLayout" name="layoutForm">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <layout class="QHBoxLayout" name="layoutForm" stretch="0">
+    <property name="sizeConstraint">
+     <enum>QLayout::SetNoConstraint</enum>
+    </property>
     <item>
      <widget class="QTabWidget" name="tabConfig">
       <property name="sizePolicy">
@@ -52,13 +61,24 @@
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+       </font>
+      </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <property name="tabsClosable">
        <bool>false</bool>
       </property>
       <widget class="QWidget" name="tabCam">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="focusPolicy">
         <enum>Qt::TabFocus</enum>
        </property>
@@ -76,7 +96,7 @@
         </property>
         <layout class="QHBoxLayout" name="gridStatusInit">
          <property name="sizeConstraint">
-          <enum>QLayout::SetNoConstraint</enum>
+          <enum>QLayout::SetMaximumSize</enum>
          </property>
          <item>
           <widget class="QLabel" name="label_87">
@@ -131,7 +151,7 @@
          <item>
           <widget class="QLabel" name="lblInitStatus">
            <property name="sizePolicy">
-            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
@@ -175,7 +195,7 @@
          <item>
           <widget class="QLabel" name="lblInitUsername">
            <property name="sizePolicy">
-            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
@@ -196,8 +216,20 @@
           <height>41</height>
          </rect>
         </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>+ Região</string>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>12</width>
+          <height>12</height>
+         </size>
         </property>
        </widget>
        <widget class="QLabel" name="lblCam1">
@@ -211,8 +243,8 @@
         </property>
         <property name="sizePolicy">
          <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
+          <horstretch>2</horstretch>
+          <verstretch>2</verstretch>
          </sizepolicy>
         </property>
         <property name="frameShape">
@@ -224,6 +256,12 @@
        </widget>
       </widget>
       <widget class="QWidget" name="tabRegion">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <attribute name="title">
         <string>Adicionar Região</string>
        </attribute>
@@ -236,19 +274,40 @@
           <height>111</height>
          </rect>
         </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
         <layout class="QFormLayout" name="formRegion">
          <item row="0" column="0">
           <widget class="QLabel" name="label_90">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>Nome:</string>
            </property>
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QLineEdit" name="txtRegionName"/>
+          <widget class="QLineEdit" name="txtRegionName">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
+          </widget>
          </item>
          <item row="3" column="0">
           <widget class="QLabel" name="label_91">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>Tipo de reconhecimento</string>
            </property>
@@ -256,6 +315,11 @@
          </item>
          <item row="3" column="1">
           <widget class="QCheckBox" name="checkPerson">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>Pessoa</string>
            </property>
@@ -269,6 +333,11 @@
          </item>
          <item row="4" column="1">
           <widget class="QCheckBox" name="checkCar">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>Carro</string>
            </property>
@@ -287,13 +356,23 @@
          <rect>
           <x>10</x>
           <y>180</y>
-          <width>141</width>
+          <width>147</width>
           <height>41</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
         </property>
         <layout class="QFormLayout" name="formAccuracy">
          <item row="0" column="0">
           <widget class="QLabel" name="label_92">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>Acurácia (%)</string>
            </property>
@@ -301,6 +380,11 @@
          </item>
          <item row="0" column="1">
           <widget class="QLineEdit" name="txtThreshold">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>65</string>
            </property>
@@ -320,21 +404,42 @@
           <height>370</height>
          </rect>
         </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
         <layout class="QFormLayout" name="formAlarm">
          <item row="0" column="0" colspan="2">
           <layout class="QFormLayout" name="formTime">
            <item row="3" column="0">
             <widget class="QLabel" name="label_93">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
              <property name="text">
               <string>Nome:</string>
              </property>
             </widget>
            </item>
            <item row="3" column="1">
-            <widget class="QLineEdit" name="txtNameAlarm"/>
+            <widget class="QLineEdit" name="txtNameAlarm">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
+            </widget>
            </item>
            <item row="4" column="0">
             <widget class="QLabel" name="label_94">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
              <property name="text">
               <string>Dias</string>
              </property>
@@ -342,6 +447,11 @@
            </item>
            <item row="6" column="0">
             <widget class="QCheckBox" name="checkMon">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
              <property name="text">
               <string>Seg</string>
              </property>
@@ -355,6 +465,11 @@
            </item>
            <item row="6" column="1">
             <widget class="QCheckBox" name="checkFri">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
              <property name="text">
               <string>Sex</string>
              </property>
@@ -368,6 +483,11 @@
            </item>
            <item row="7" column="0">
             <widget class="QCheckBox" name="checkTue">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
              <property name="text">
               <string>Ter</string>
              </property>
@@ -381,6 +501,11 @@
            </item>
            <item row="7" column="1">
             <widget class="QCheckBox" name="checkSat">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
              <property name="text">
               <string>Sab</string>
              </property>
@@ -394,6 +519,11 @@
            </item>
            <item row="8" column="0">
             <widget class="QCheckBox" name="checkWed">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
              <property name="text">
               <string>Qua</string>
              </property>
@@ -407,6 +537,11 @@
            </item>
            <item row="8" column="1">
             <widget class="QCheckBox" name="checkSun">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
              <property name="text">
               <string>Dom</string>
              </property>
@@ -417,6 +552,11 @@
            </item>
            <item row="9" column="0">
             <widget class="QCheckBox" name="checkThur">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
              <property name="text">
               <string>Qui</string>
              </property>
@@ -430,6 +570,11 @@
            </item>
            <item row="5" column="0">
             <widget class="QCheckBox" name="checkTodosDias">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
              <property name="text">
               <string>Todos os dias</string>
              </property>
@@ -448,6 +593,11 @@
          </item>
          <item row="2" column="0">
           <widget class="QLabel" name="label_95">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>Horários</string>
            </property>
@@ -455,6 +605,11 @@
          </item>
          <item row="3" column="0">
           <widget class="QLabel" name="label_96">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>Início</string>
            </property>
@@ -462,6 +617,11 @@
          </item>
          <item row="3" column="1">
           <widget class="QTimeEdit" name="timeStart">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="buttonSymbols">
             <enum>QAbstractSpinBox::PlusMinus</enum>
            </property>
@@ -511,6 +671,11 @@
          </item>
          <item row="4" column="0">
           <widget class="QLabel" name="label_97">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>Fim</string>
            </property>
@@ -518,6 +683,11 @@
          </item>
          <item row="4" column="1">
           <widget class="QTimeEdit" name="timeEnd">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="buttonSymbols">
             <enum>QAbstractSpinBox::PlusMinus</enum>
            </property>
@@ -546,6 +716,11 @@
              <property name="enabled">
               <bool>true</bool>
              </property>
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
              <property name="text">
               <string>Salvar</string>
              </property>
@@ -553,6 +728,11 @@
            </item>
            <item>
             <widget class="QPushButton" name="btnDeleteAlarm">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
              <property name="text">
               <string>Deletar</string>
              </property>
@@ -560,6 +740,11 @@
            </item>
            <item>
             <widget class="QPushButton" name="btnCancelAlarm">
+             <property name="font">
+              <font>
+               <pointsize>10</pointsize>
+              </font>
+             </property>
              <property name="text">
               <string>Cancelar</string>
              </property>
@@ -569,6 +754,11 @@
          </item>
          <item row="1" column="0">
           <widget class="QCheckBox" name="checkEmailAlert">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>Alerta de Email</string>
            </property>
@@ -588,6 +778,11 @@
          </item>
          <item row="1" column="1">
           <widget class="QCheckBox" name="checkAlertSound">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>Alerta Sonoro</string>
            </property>
@@ -607,9 +802,19 @@
           <height>41</height>
          </rect>
         </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
         <layout class="QHBoxLayout" name="horizontalLayout_17">
          <item>
           <widget class="QLabel" name="label_98">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>Regiões:</string>
            </property>
@@ -623,10 +828,20 @@
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
           </widget>
          </item>
          <item>
           <widget class="QPushButton" name="btnNewRegion">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>+ Nova região</string>
            </property>
@@ -643,9 +858,19 @@
           <height>41</height>
          </rect>
         </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
           <widget class="QLabel" name="label_99">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>Alarmes</string>
            </property>
@@ -658,6 +883,11 @@
              <width>200</width>
              <height>0</height>
             </size>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
            </property>
            <property name="currentText">
             <string/>
@@ -675,6 +905,11 @@
              <height>16777215</height>
             </size>
            </property>
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>+ Novo Alarme</string>
            </property>
@@ -691,9 +926,19 @@
           <height>41</height>
          </rect>
         </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
         <layout class="QHBoxLayout" name="horizontalLayout_19">
          <item>
           <widget class="QPushButton" name="btnSaveRegion">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>Salvar Região</string>
            </property>
@@ -701,6 +946,11 @@
          </item>
          <item>
           <widget class="QPushButton" name="btnDeleteRegion">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>Deletar</string>
            </property>
@@ -708,6 +958,11 @@
          </item>
          <item>
           <widget class="QPushButton" name="btnCancelRegion">
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>Cancelar</string>
            </property>
@@ -724,6 +979,11 @@
           <height>41</height>
          </rect>
         </property>
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
         <layout class="QFormLayout" name="formAccuracy_2">
          <item row="0" column="0">
           <widget class="QLabel" name="label_100">
@@ -732,6 +992,11 @@
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
+           </property>
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
            </property>
            <property name="text">
             <string>Número de segundos para enviar alerta: </string>
@@ -758,6 +1023,11 @@
              <height>16777215</height>
             </size>
            </property>
+           <property name="font">
+            <font>
+             <pointsize>10</pointsize>
+            </font>
+           </property>
            <property name="text">
             <string>0</string>
            </property>
@@ -773,6 +1043,12 @@
        </widget>
       </widget>
       <widget class="QWidget" name="tabConfigGeneral">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <attribute name="title">
         <string>Configuração Geral</string>
        </attribute>
@@ -1045,6 +1321,12 @@
        </widget>
       </widget>
       <widget class="QWidget" name="tabAddCam">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <attribute name="title">
         <string>Configurar Câmera</string>
        </attribute>
@@ -1401,6 +1683,12 @@
        </widget>
       </widget>
       <widget class="QWidget" name="tabStorage_3">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <attribute name="title">
         <string>Armazenamento</string>
        </attribute>
