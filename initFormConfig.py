@@ -37,6 +37,8 @@ token = secrets.token_urlsafe(20)
 
 loginStatus = False
 
+cloudEnable = True
+
 
 log.root.setLevel(log.DEBUG)
 log.basicConfig()
@@ -255,7 +257,7 @@ class FormProc(QWidget):
                 self.threadStorage.warningHDCheio.connect(self.warningHDCheio)
                 self.threadStorage.start()
                                                             
-                utils.initWatchDog()                
+                #utils.initWatchDog()                
 
             else: 
                 
@@ -1807,59 +1809,7 @@ class FormProc(QWidget):
             log.info("Erro de conexao com a Internet")
             #uiLogin.lblStatus.setText("Cheque sua conexão com a Internet por favor e tente mais tarde")
 
-    # @pyqtSlot()
-    # def storageFull(self):
-        # log.info('storageFull')
-        # if not self.camRunTime.emailSentDiskFull:  
-            # if self.camRunTime.eraseOldestFiles:
-                # textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a deletar \
-                        # os videos mais antigos, recomendamos que aumente seu espaço em disco \
-                        # para não perder as gravações realizadas.'
-
-                # threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
-                # threadEmailDiskFull.start()
-                # self.camRunTime.emailSentDiskFull = True
-                # log.info('Email de disco cheio enviado - apagando videos antigos ')
-                # #avisar por email 1x a cada X tempo ? 
-            # else:
-                # textEmail = 'Seu HD está cheio, como você configurou o Portão Virtual a não \
-                        # gravar videos novos, recomendamos que aumente seu espaço em disco \
-                        # para poder novos videos quando ocorrer futuros alarmes.'
-
-                # threadEmailDiskFull = Thread(target=sendMail, args=('Portao Virtual - seu HD está cheio !', textEmail))
-                # threadEmailDiskFull.start()
-                # self.camRunTime.emailSentDiskFull = True
-                # log.info('Email de disco cheio enviado - interromper novos videos')
-
-
-            # # realmente apaga os videos mais antigos ? 
-            # if self.camRunTime.eraseOldestFiles:
-
-                # if utils.freeDiskSpace(self.camRunTime.statusConfig.getDirVideosAllTime()) == False:
-                
-                    # log.critical('Diretorios de "Videos 24hs" já está vazio')
-                    # if not self.camRunTime.emailSentdirVideosAllTimeEmpty:
-                        # textEmail = 'Mesmo apagando a pasta "Videos 24hs", seu HD continua cheio ! \n\n \ Nossa sugestão é que você libere mais espaço para pode gravar os "Videos 24hs"' 
-
-                        # threadEmailAllEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos 24hs" apagada - seu HD está cheio !',textEmail))
-                        # threadEmailAllEmpty.start()
-                        # self.camRunTime.emailSentdirVideosAllTimeEmpty = True
-
-            
-                # #se ainda não tiver sido suficiente
-                # if utils.isDiskFull(self.camRunTime.diskMinUsage):
-                    # log.info('Apagando diretórios de Alarmes')
-                    # #log.info('Dir: {}'.format(statusConfig.getDirVideosOnAlarmes()))
-                    # if utils.freeDiskSpace(statusConfig.getDirVideosOnAlarmes()) == False:
-                        # log.critical('Diretorios de "Vidos Alarme" já está vazio')
-
-                        # if not self.camRunTime.emailSentdirVideosOnAlarmesEmpty:
-                            # textEmail = 'Mesmo apagando a pasta "Videos Alarme", seu HD continua cheio ! \n\n  \
-                                     # Nossa sugestão é que você libere mais espaço para pode gravar os "Videos Alarme"' 
-                                    
-                            # threadEmailAlarmesEmpty = Thread(target=sendMail, args=('Portao Virtual - pasta "Videos Alarmes" apagada - seu HD está cheio !',textEmail))
-                            # threadEmailAlarmesEmpty.start()
-                            # self.camRunTime.emailSentdirVideosOnAlarmesEmpty = True
+    
     
     @pyqtSlot()
     def warningSessionLossFirst(self):
@@ -1915,7 +1865,8 @@ if __name__=="__main__":
     app = QApplication(sys.argv)                  
                  
     uiConfig = FormProc()
-    uiConfig.show() 
+    
+    uiConfig.show()    
  
     sys.exit(app.exec_())
             

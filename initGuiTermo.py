@@ -7,9 +7,14 @@ import logging as log
 import secrets
 import psutil
 from formTermos import *
+import sys
 
-import winshell
-from win32com.client import Dispatch
+if sys.platform == 'linux':
+    OS_PLATFORM = 'linux'
+else:
+    OS_PLATFORM = 'windows'
+    import winshell
+    from win32com.client import Dispatch
 
 
 class FormTermo(QDialog):

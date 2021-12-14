@@ -16,7 +16,7 @@ import secrets
 import psutil
 from pbkdf2 import PBKDF2
 
-import winsound
+
 import platform
 import locale
 
@@ -29,6 +29,9 @@ OS_PLATFORM = 'windows'
 
 if sys.platform == 'linux':
     OS_PLATFORM = 'linux'
+else:
+    import winsound
+
 
 
 #locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
@@ -1254,15 +1257,17 @@ class StatusConfig:
         #json.dump(self.dataLogin, open(file,'w'), indent=4)
 
 
-def playSound():
+def playSound():    
     
     log.info('utilsCore:: campainha tocada')
-    # winsound.PlaySound('filename', flag)
-    winsound.PlaySound('config/campainha.wav', winsound.SND_FILENAME)	
-
-    #pygame.init()
     
-    #pygame.mixer.music.load('config/campainha.mp3')
-    #pygame.mixer.init()
-    #pygame.mixer.music.play(0)
+    if OS_PLATFORM == 'linux':
+        import pygame
+        pygame.init()        
+        pygame.mixer.music.load('config/campainha.mp3')
+        pygame.mixer.init()
+        pygame.mixer.music.play(0)
+    else:
+        # winsound.PlaySound('filename', flag)
+        winsound.PlaySound('config/campainha.wav', winsound.SND_FILENAME)
 

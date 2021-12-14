@@ -8,12 +8,20 @@ from formLogin import *
 import logging as log
 import secrets
 import psutil
-#from inferenceCore import *
-import winshell
-from win32com.client import Dispatch
-import getpass
 import os
+import sys
+#from inferenceCore import *
 
+
+if sys.platform == 'linux':
+    OS_PLATFORM = 'linux'
+else:
+    OS_PLATFORM = 'windows'
+    import winsound    
+    import winshell    
+    from win32com.client import Dispatch
+    
+import getpass
 
 from checkLicence.sendingData import checkLoginPv 
 from checkLicence.sendingData import changePasswdPv 

@@ -33,10 +33,14 @@ local_sid = None
 @sio.event
 def connect():
     log.info('connect: conexao efetuada. sid: {}'.format(sio.get_sid()))
+    print('conectado')
+    
+    #sio.wait()
 
 @sio.event
 def checkLogin(login):
     #log.info('Login de: ' + login['user']) 
+    print('checkLogin...')
     sio.emit('checkLogin', login)
 
 
@@ -151,7 +155,8 @@ def checkLoginPv(login):
     try: 
         log.info("checkLoginPv:: conectando...")
         sio.connect(host)
-        #sio.wait()        
+        socketio.sleep(1)
+        #sio.wait()
 
     #except socketio.exceptions.ConnectionError as  err:
     except Exception as  err:
@@ -205,6 +210,7 @@ def replyLogin(status):
         error = 'login'
 
     #log.info('replyLogin:: loginStatus: ' + str(loginStatus))
+    print('replyLogin..')
     sio.disconnect()
     sio.wait()
 
