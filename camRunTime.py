@@ -280,10 +280,35 @@ class CamRunTime():
         self.login = {'user':utils.encrypt(email), 'passwd':utils.encrypt(passwd), 'token':utils.encrypt(self.token)}
         
         #log.info('camRunTime::init TOKEN: {}'.format(utils.decrypt(self.login.get('token').decode())))
+       
+        if self.statusConfig.isNuvemRunning() == "True":
+
+            if self.statusConfig.getStoragePlan() > 0:            
+            
+                if self.statusConfig.data["isRecordingOnAlarmes"] == 'True':
+                    self.gravandoOnAlarmes = True
+                
+                if self.statusConfig.data["isRecordingAllTime"] == 'True':                
+                    self.gravandoAllTime = True
+            else:
+                self.gravandoAllTime = False
+                self.gravandoOnAlarmes = False
+                log.info('camRunTime::init: Rodando na Nuvem sem plano de storage')
+                log.info('camRunTime::init: Desabilitando gravacao de videos')
+        
+        else:
+            if self.statusConfig.data["isRecordingOnAlarmes"] == 'True':
+                self.gravandoOnAlarmes = True
+            else:
+                self.gravandoOnAlarmes = False
+                
+            if self.statusConfig.data["isRecordingAllTime"] == 'True':                
+                self.gravandoAllTime = True
+            else:
+                self.gravandoAllTime = False        
         
         
-        self.gravandoAllTime = True if self.statusConfig.data["isRecordingAllTime"] == 'True' else False
-        self.gravandoOnAlarmes = True if self.statusConfig.data["isRecordingOnAlarmes"] == 'True' else False
+        
         self.diskMinUsage = int(float(self.statusConfig.data["storageConfig"]["diskMinUsage"]))
         
         self.isOpenVino = self.statusConfig.data["isOpenVino"] == 'True'

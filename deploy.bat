@@ -19,3 +19,7 @@ pyinstaller initFormConfig.py --noconsole --onefile --hidden-import="pkg_resourc
 
 echo "executavel done"
 
+pyinstaller initFormConfig.py --noconsole --onefile --hidden-import="pkg_resources.py2_warn" --hidden-import="googleapiclient" --hidden-import="apiclient" --onefile -n pv -y --distpath ../deploy-win --add-binary "..\deploy-win\config\openvino\opencv\lib;." --add-binary "..\deploy-win\config\openvino\opencv\bin;." --noconfirm 
+
+
+

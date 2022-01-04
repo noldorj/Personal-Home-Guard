@@ -34,6 +34,8 @@ from firebase_admin import credentials
 
 from shapely.geometry import Point, Polygon
 
+
+
 #import tensorflow as tf
 
 #cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
@@ -55,6 +57,7 @@ class InferenceCore(QThread):
     
     objectIdTimeList = {}
     
+    
     cred = {
       "type": "service_account",
       "project_id": "pvalarmes-3f7ee",
@@ -67,6 +70,8 @@ class InferenceCore(QThread):
       "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
       "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-slpxb%40pvalarmes-3f7ee.iam.gserviceaccount.com"
     }
+    
+    
 
 
 
@@ -74,6 +79,7 @@ class InferenceCore(QThread):
         super().__init__()
         self._run_flag = True
         log.info('InferenceCore:: __init__')              
+        
         
         log.info('InferenceCore:: carregando Certificado Firebase')
         try:
@@ -89,6 +95,7 @@ class InferenceCore(QThread):
                 log.critical('Erro ao inicializar o Firebase: {}'.format(err))            
             else:
                 log.info('Firebase inicializado com sucesso')
+        
         
         
     def setCamRunTime(self, camRunTime):
@@ -628,7 +635,9 @@ class InferenceCore(QThread):
                     
                     #end else disco cheio
                                 
-                    self.change_pixmap_signal.emit(frame_screen)                    
+                    #versao em nuvem não tem GUI
+                    if not self.camRunTime.statusConfig.isNuvemRunning():
+                        self.change_pixmap_signal.emit(frame_screen)                    
                     #self.change_pixmap_signal.emit(self.camRunTime.frame)
                     #print('emit')
 

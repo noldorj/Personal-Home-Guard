@@ -16,6 +16,12 @@ import secrets
 import psutil
 from pbkdf2 import PBKDF2
 
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import messaging
+from firebase_admin import storage
+from firebase_admin import db
+
 
 import platform
 import locale
@@ -31,6 +37,45 @@ if sys.platform == 'linux':
     OS_PLATFORM = 'linux'
 else:
     import winsound
+    
+log.root.setLevel(log.DEBUG)
+log.basicConfig()
+
+for handler in log.root.handlers[:]:
+    log.root.removeHandler(handler)
+
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, handlers=[log.FileHandler('config/pv.log', 'w', 'utf-8')])
+log.getLogger('socketio').setLevel(log.ERROR)
+log.getLogger('engineio').setLevel(log.ERROR)
+
+cred = {
+      "type": "service_account",
+      "project_id": "pvalarmes-3f7ee",
+      "private_key_id": "4563d30a50f6b0e7dcc46291396761e2a62b2198",
+      "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDD1w6dONroiO/4\nyK/4nRqkTFPOa1FnNzbHHkKv5QwHN2KxezVY4dB75LuKfwC2lTwbBB182kLYABDZ\nw/qAWV96j6qDKPVK5BBs75xJixeuMTY3Cz0ChA74wIp4eC2iXws91zvJiDIC3Ox/\nNdEKKIuYtOagh6o8P7UOE1S/k3ywNe2u5SN7e5CNnqHW2iGR4P+RocNuV3WfeTSV\n7OEVMlOomA8z6nvBMU36B+KQL/XSP5pPPXd3kHl38OG0EFGGUPzCBc8vSFSdabWk\nDAmgHlk1TYZjOeasMSNBhjZDbmadtRl3OAE2KrykQV4YXdcVuMOnh9O86sP/U83x\nTjof5CLdAgMBAAECggEAA/OBk7n7LrBemRghdsRirnhsw3AmXQz/4a4SXd6i6r1b\nFCYeeivaKzm+7+kmkEh8BTaEyslTimyb6mzaD79d3gjqgYlww4FM9Im0D0bLZEQR\najRjl3qnG600zf/succtoKKITgVdrvGaoulozYnqYRsbQRdjn6IQateIgPH+lMaE\ntveBBQqu+AELnYxr5sDgbtdCeFbXFL6sTjxssl3hNQPTCcJisuOnqxX/2RhJyR3Z\nVhtqSHQcuM5TtJkV0qjK0gjmTNGAZaCaNjj0oTWbBAvIlOzYzFYkUq8XUvO//Lra\nG61FmijqrpTQs/CVMRhoEM/OuXZCfR/Hnd4XeDWVKQKBgQDuLRuwEvr6OsIHIxUZ\n1ZJIXvjFBPBo69s0dnNM966ia6Jo9RewAyAc6uVcG8Pw8TSOb0OXz2gSNp5312Kn\nANc25OFSaGTt9kKG6omD/ILZ+TvhzORD+pgSybPLM5EPW69Bs+Rwrh6tHVnMc06w\nDGMJk4Xp1QvtKTEcdCHs2ai7iQKBgQDSfuOK03sE1pw0v6ti/RB7hipQJObMgPBr\nfzf1QDQ/8tl4DalSu1YnYWLpwhTSOGIhnbaE1MG1P0eRtjDNqZwkebrbaOGFHxgc\ntFjHh/j3fDFF9/nSSUEJubbTy9hRmUZk/tYNOqXp95X0uTAKZWztxytKao9S3aJh\nZyh2EVFztQKBgQDUNaytvLuRqDioU0HBuuCTSssr/7KUSVEN9VvV//jBDlWuXnG0\niZRbL48b+kEitEa3gbsfz9RSJggbjvR/B+i5KET6P7ltrDSqMN5Fkv6jZ8VK8luP\nlf9Y/g4Lxu5AWNhWGgo3u2vponUYDMTXZrH3HlH6fbAaptDzISX4+hW0wQKBgQCV\nrquJzca98wpTLDToiEIPRKGUKhmBNPNBzc5x9Lzy+HMSPsy4SwUBrevThDKgJn4J\nn4fpvw0cIKp5AFCF/uVMvs9UNKmhqzHPP6OeB5/QBR1YvvSER5kbHFfZFix2IgN/\n0ANQlvLihC+7PXDfA67JCwdKvKm8aGSO1PddtgTwvQKBgQC63E2CwORx9KtYeBgI\nRbWnCVUb67K3WCS9bu5Yd5Gfc5IXBQChUg19645wNW7Vqxo1YiAbDO0SobOOn7iL\nIlOy2xWj+klRFMk6MoZ5rNcUJD6xAcq7K8mOORk3uVQ2ccbuq8MTrx3BL7FV+UqO\niw54w17h/4bR1e96Y0eM5ojCWw==\n-----END PRIVATE KEY-----\n",
+      "client_email": "firebase-adminsdk-slpxb@pvalarmes-3f7ee.iam.gserviceaccount.com",
+      "client_id": "106587989855928727506",
+      "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+      "token_uri": "https://oauth2.googleapis.com/token",
+      "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+      "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-slpxb%40pvalarmes-3f7ee.iam.gserviceaccount.com"
+    }
+
+if not firebase_admin._apps:
+    log.info('initFormConfig:: carregando Certificado Firebase')
+    try:
+        credential = credentials.Certificate(cred)
+    except Exception as err:
+        log.critical('initFormConfig:: Certificado não encontrado - Erro: {} '.format(err))
+    else:        
+        log.info('initFormConfig:: Inicializando Firebase')
+
+        try:
+            firebase_app_pv = firebase_admin.initialize_app(credential, {'storageBucket': 'pvalarmes-3f7ee.appspot.com', 'databaseURL': 'https://pvalarmes-3f7ee-default-rtdb.firebaseio.com/'})
+        except Exception as err:
+            print('Erro ao inicializar o Firebase: {}'.format(err))            
+        else:
+            print('utilscore:: Firebase inicializado com sucesso')
 
 
 
@@ -76,8 +121,8 @@ def setLocaleWindows():
         
         
             
-
-setLocaleWindows()
+if OS_PLATFORM == 'windows':
+    setLocaleWindows()
 #locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
 
 
@@ -620,15 +665,17 @@ def createDirectory(dirVideos):
 
 
 class StatusConfig:
-
+    
+    firebase_app = None
     
     camListAtivas = list() 
     
     camListEncontradas = list() 
     
+    
     dataLogin = {
     
-        "user"             : "nome@email.com",
+        "user"             : "",
         "passwd"           : "senha",
         "loginAutomatico"  : "False",
         "autoStart"        : "False"
@@ -819,10 +866,14 @@ class StatusConfig:
         self.saveConfigLogin()
         
     def getUserLogin(self):
+        
         if len(self.dataLogin['user']) != 0:
             return self.dataLogin['user']
         else:
             return None
+    
+    def setFirebaseApp(self, firebaseApp):
+        self.firebase_app = firebaseApp
     
     def setPrimeiroUso(self, status):
         self.data['primeiroUso'] = status 
@@ -864,6 +915,29 @@ class StatusConfig:
         
         self.saveConfigFile()
     
+    def isNuvemRunning(self):
+        
+        log.info('isNuvemRunning::')
+        #TO-DO inicializar readConfigFile adequadamente
+        self.readConfigFile()
+        #self.data = json.load(open('config/config.json','r'))        
+        
+        #print('isNuvemRunning:: nuvemConfig: {}'.format(self.data["nuvemConfig"]["isRunning"]))
+        return (self.data["nuvemConfig"]["isRunning"] == "True")
+    
+    def getStoragePlan(self):
+        return self.data["nuvemConfig"]["storagePlan"]
+    
+    def setNuvemConfig(self, isRunning ):
+        log.info('setNuvemConfig::')
+        
+        nuvemConfig = {
+            "isRunning" : isRunning,
+            "storagePlan"   : 0
+        }        
+        self.data["nuvemConfig"] = nuvemConfig
+        self.saveConfigFile()
+
     def setRtspConfig(self, camSource):
         self.data["camSource"] = camSource
         
@@ -1006,6 +1080,7 @@ class StatusConfig:
 
     def addRegion(self, nameRegion, alarm, objectType, prob_threshold, pointsPolygon, timerAlerta):
 
+        log.info('addRegion:: salvando a regiao: {}'.format(nameRegion))
         region = {
             "nameRegion"     : nameRegion,
             "alarm"          : alarm,
@@ -1036,7 +1111,7 @@ class StatusConfig:
         
     def addAlarm(self, idRegion, alarm):
 
-        log.info('addAlarm::')
+        log.info('addAlarm:: salvando alarme')
         edit = False
         i = 0
         #print('addAlarm:: idRegion: {:d}'.format(idRegion))
@@ -1063,19 +1138,80 @@ class StatusConfig:
     def __init__(self, configFile='config/config.json', regionsFile='config/regions.json', configLogin='config/lconfig.json'):
 
         #configuracoes setadas pelo arquivo sobrescrevem as configuracoes padroes
+        log.info('utilsCore:: __init__ statusConfig')
         self.readConfigFile(configFile)
         self.readRegionsFile(regionsFile)
         self.readConfigLogin(configLogin)
+    
+    def initFirebaseAdmin(self):
+        if not firebase_admin._apps:            
+            print('initFirebaseAdmin:: firebase nao inicializado')
+            try:
+                credential = credentials.Certificate(cred)
+            except Exception as err:
+                log.critical('initFormConfig:: Certificado não encontrado - Erro: {} '.format(err))
+            else:        
+                log.info('initFirebaseAdmin:: Inicializando Firebase')
 
+            try:
+                firebase_app_pv = firebase_admin.initialize_app(credential, {'storageBucket': 'pvalarmes-3f7ee.appspot.com', 'databaseURL': 'https://pvalarmes-3f7ee-default-rtdb.firebaseio.com/'})
+            except Exception as err:
+                print('initFirebaseAdmin:: Erro ao inicializar o Firebase: {}'.format(err))            
+            else:
+                print('initFirebaseAdmin:: Firebase inicializado com sucesso')
+    
     def readConfigLogin(self, fileName = 'config/lconfig.json'):
         #log.info('readConfigLogin:: Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
         
         self.dataLogin = json.load(open(fileName,'r'))
+        #print('dataLogin local: {}'.format(self.dataLogin))
+        #print(' ')
+        #print(' ')
+        
+        user = self.getUserLogin()
+        userId = user.replace('.','_')
+        userId = userId.replace('@','_')
+        
+        if userId != '':
+        
+            self.initFirebaseAdmin()
+            
+            try:
+                ref = db.reference('/users/' + userId + '/configLogin')
+            except Exception as e:
+                print('readConfigLogin:: erro getting configLogin: {}'.format(e))
+            else:            
+                self.dataLogin = ref.get()
+                #print('dataLogin firebase: {}'.format(ref.get()))
+        
 
 
     def readConfigFile(self, fileName = 'config/config.json'):
         #log.info('Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
-        self.data = json.load(open(fileName,'r'))
+        
+        
+        log.info('readConfigFile::')
+        
+        self.data = json.load(open(fileName,'r'))        
+        
+        self.dataLogin = json.load(open('config/lconfig.json','r'))
+        
+        user = self.getUserLogin()
+        userId = user.replace('.','_')
+        userId = userId.replace('@','_')
+        
+        if userId != '':
+        
+            self.initFirebaseAdmin()
+            
+            try:
+                ref = db.reference('/users/' + userId + '/config')
+            except Exception as e:
+                log.error('readConfigFile:: erro getting config: {}'.format(e))
+            else:                            
+                self.data = ref.get()
+                self.saveConfigFile()
+                #print('dataLogin firebase: {}'.format(ref.get()))
 
     def readRegionsFile(self, fileName = 'config/regions.json'):
         #log.info('readRegionsFile:: Lendo arquivo de regiões: ' + os.getcwd() + '/' + fileName)
@@ -1086,6 +1222,30 @@ class StatusConfig:
             log.critical('readRegionsFile:: Arquivo de Regioes inexistente - será criado um novo arquivo') 
         else:
             log.info('readRegionsFile:: Arquivo de regiões lido com sucesso')
+            
+        self.dataLogin = json.load(open('config/lconfig.json','r'))
+        
+        user = self.getUserLogin()
+        userId = user.replace('.','_')
+        userId = userId.replace('@','_')
+        
+        if userId != '':
+        
+            self.initFirebaseAdmin()
+            
+            try:
+                ref = db.reference('/users/' + userId + '/regions')
+            except Exception as e:
+                log.error('readRegionsFile:: erro getting config: {}'.format(e))
+            else:            
+                if not ref.get():
+                    #print('region vazia firebase')
+                    self.regions = list()
+                else:
+                    self.regions = ref.get()
+                    self.saveRegionFile()
+                
+                #print('regions firebase: {}'.format(ref.get()))
 
 
     def deleteAlarm(self, regionName, alarmName):
@@ -1151,12 +1311,15 @@ class StatusConfig:
         return status
 
     def deleteRegion(self, nameRegion='regions1'):
+        log.info('deleteRegion:: pressed')
+        print('deleteRegion')
         i = 0
         for r in self.regions:
             if r.get("nameRegion") == nameRegion:
                 del self.regions[i]
                 self.saveRegionFile()
-                log.info("Regiao '{}' removido com sucesso".format(nameRegion))
+                print('regiao deletada')
+                log.info("deleteRegion:: Regiao '{}' removido com sucesso".format(nameRegion))
 
             i = i+1
         #return False
@@ -1213,8 +1376,38 @@ class StatusConfig:
                     print('             ')
 
     def saveRegionFile(self, file = 'config/regions.json'):
-        log.info('Salvando arquivo de regiones: ' + os.getcwd() + '/' + file)
+        
+        log.info('saveRegionFile:: Salvando arquivo de regioes: ' + os.getcwd() + '/' + file)
+        
+        #salvando na Nuvem Firebase
+        #Estrutura para salvar no Realtime DAtabase 
+        user = self.getUserLogin()
+        userId = user.replace('.','_')
+        userId = userId.replace('@','_')
+            
+        self.initFirebaseAdmin()
+        
+        ref = db.reference('/users/' + userId + '/regions')
+    
+        statusFirebase = False       
+       
+        
+        i = 1
+        while statusFirebase is False:
+            log.info('saveRegionFile:: Savando dataLogin no Firebase tentativa [{}]'.format(i))
+            try:
+                ref.set(self.regions)
+            except Exception as e:
+                log.critical('saveRegionFile:: Erro salvar Config status no Firebase DB')                
+                i = i + 1
+                time.sleep(0.5)
+            else:
+                statusFirebase = True
+                i = 0
+
+        
         try:
+            log.info('saveRegionFile:: salvando regiao localmente')
             json.dump(self.regions, open(file, 'w'), indent=4)
 
         except OSError as ex:
@@ -1226,9 +1419,34 @@ class StatusConfig:
 
 
     def saveConfigFile(self, fileName = 'config/config.json'):
-        log.info('Salvando arquivo de configuração: {}/{}'.format(os.getcwd(), fileName))
+        log.info('saveConfigFile:: Salvando arquivo de configuração: {}/{}'.format(os.getcwd(), fileName))
         #json.dump(self.data, open(file,'w'), indent=4)
         
+        #salvando na Nuvem Firebase
+        #Estrutura para salvar no Realtime DAtabase 
+        user = self.getUserLogin()
+        userId = user.replace('.','_')
+        userId = userId.replace('@','_')    
+        
+        
+        ref = db.reference('/users/' + userId + '/config')
+    
+        statusFirebase = False
+        
+        i = 1
+        while statusFirebase is False:
+            log.info('saveConfigFile:: Savando config status no Firebase tentativa [{}]'.format(i))
+            try:
+                ref.set(self.data)
+            except Exception as e:
+                log.critical('saveConfigFile:: Erro salvar Config status no Firebase DB')
+                i = i + 1
+                time.sleep(0.5)
+            else:
+                statusFirebase = True
+                i = 0
+        
+        #salvando configfile localmente
         try:
             fp = open(fileName,"w")
             fp.write(json.dumps(self.data, indent = 4))
@@ -1239,6 +1457,8 @@ class StatusConfig:
 
     def saveConfigLogin(self, fileName = 'config/lconfig.json'):
         
+        log.info('saveConfigLogin:: Salvando arquivo de configuração: {}/{}'.format(os.getcwd(), fileName))
+        
         #try:
         #    fp = open("passwords.json","r")
         #    obj = json.load(fp)
@@ -1247,6 +1467,31 @@ class StatusConfig:
         #    obj = json.load(fp)
         #finally:
         #    fp.close()
+        
+        #salvando na Nuvem Firebase
+        #Estrutura para salvar no Realtime DAtabase 
+        user = self.getUserLogin()
+        userId = user.replace('.','_')
+        userId = userId.replace('@','_')    
+        
+        ref = db.reference('/users/' + userId + '/configLogin')
+    
+        statusFirebase = False
+        
+        i = 1
+        while statusFirebase is False:
+            log.info('saveConfigLogin:: Savando dataLogin no Firebase tentativa [{}]'.format(i))
+            try:
+                ref.set(self.dataLogin)
+            except Exception as e:
+                log.critical('saveConfigLogin:: Erro salvar Config status no Firebase DB')
+                i = i + 1
+                time.sleep(0.5)
+            else:
+                statusFirebase = True
+                i = 0
+        
+        
         try:
             fp = open(fileName,"w")
             fp.write(json.dumps(self.dataLogin, indent = 4))

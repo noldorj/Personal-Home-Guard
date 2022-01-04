@@ -29,6 +29,10 @@ import time
 import logging as log
 import getpass
 
+import firebase_admin
+from firebase_admin import credentials
+
+firebase_app_pv = None
 
 
 from collections import deque
@@ -52,6 +56,8 @@ log.getLogger('socketio').setLevel(log.ERROR)
 log.getLogger('engineio').setLevel(log.ERROR)
 
 #print('camRunTime ID Global: {}'.format(camRunTimeGlobal.camRunTimeId))
+
+
 
 @QtCore.pyqtSlot(bool)
 def updateStatusLogin(status):
@@ -84,7 +90,6 @@ class MouseTracker(QtCore.QObject):
 
 
 class FormProc(QWidget):
-
        
     statusConfig = StatusConfig()
     
@@ -102,8 +107,13 @@ class FormProc(QWidget):
         
         #print('else iniciando formConfig')
         
-        self.camRunTime.token = token        
+        self.camRunTime.token = token 
+        print('initFormConfig __init__')
         self.statusConfig = utils.StatusConfig()
+        
+        self.statusConfig.readConfigLogin()
+        
+        self.statusConfig.setFirebaseApp(firebase_app_pv)
         
         if self.statusConfig.getPrimeiroUso() == 'True':        
             windowTermo = FormTermo()                                    
@@ -162,6 +172,8 @@ class FormProc(QWidget):
             
             self.uiConfig.btnSaveEmail.clicked.connect(self.btnSaveEmail)
             self.uiConfig.btnSaveConfigGravacao.clicked.connect(self.btnSaveConfigGravacao)            
+            self.uiConfig.btnRodarNuvem.clicked.connect(self.btnRodarNuvem)
+            
             self.uiConfig.btnSaveStorage.clicked.connect(self.btnSaveStorage)
             
 
@@ -413,13 +425,20 @@ class FormProc(QWidget):
         
 
     def btnDeleteRegion(self):
+        log.info('btnDeleteRegion:: pressed')
         self.statusConfig.deleteRegion(self.uiConfig.comboRegions.currentText())        
         self.camRunTime.regions = self.statusConfig.getRegions()
         self.refreshStatusConfig()
         self.comboRegionsUpdate(0)
         self.comboAlarmsUpdate(0)
         
+    def btnRodarNuvem(self):
+        print('btnRodarNuvem::')
+        self.statusConfig.setNuvemConfig("True")
         
+        self.refreshStatusConfig()
+    
+    
     def btnSaveConfigGravacao(self):
         log.info('btnSaveConfigGravacao::')
         #global self.uiConfig
@@ -1372,9 +1391,10 @@ class FormProc(QWidget):
                     "True" if self.uiConfig.radioButtonStopSaveNewVideos.isChecked() else "False"
                     )
         
+            
             self.checkStorage()            
-            self.refreshStatusConfig()             
-            self.camRunTime.init()             
+            self.refreshStatusConfig()
+            self.camRunTime.init()
             
     def checkBoxDesativarAlarmes(self, state):
         
@@ -1477,6 +1497,7 @@ class FormProc(QWidget):
         self.uiConfig.comboAlarms.setEnabled(False)
 
     def refreshStatusConfig(self):        
+        log.info('refreshStatusConfig::')
         self.statusConfig = utils.StatusConfig()
         self.camRunTime.regions = self.statusConfig.getRegions()
         self.camRunTime.emailConfig = self.statusConfig.getEmailConfig()
@@ -1853,20 +1874,17 @@ class FormProc(QWidget):
         if self.camRunTime.isDiskFull:
             self.uiConfig.lblInitStatus.setText('Seu HD está cheio, aumente seu espaço em disco !') 
             
-        
-                            
-   
-
-   
 
 
 if __name__=="__main__":
 
+    
+    
     app = QApplication(sys.argv)                  
                  
-    uiConfig = FormProc()
+    uiConfig = FormProc()    
     
-    uiConfig.show()    
+    #uiConfig.show()    
  
     sys.exit(app.exec_())
             

@@ -22,22 +22,35 @@ import datetime
 
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
 
-#cred = credentials.Certificate("pv-fb-cert.json")
-#firebase_admin.initialize_app(cred, {'storageBucket': 'pvalarmes-3f7ee.appspot.com'})
+cred = {
+      "type": "service_account",
+      "project_id": "pvalarmes-3f7ee",
+      "private_key_id": "4563d30a50f6b0e7dcc46291396761e2a62b2198",
+      "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDD1w6dONroiO/4\nyK/4nRqkTFPOa1FnNzbHHkKv5QwHN2KxezVY4dB75LuKfwC2lTwbBB182kLYABDZ\nw/qAWV96j6qDKPVK5BBs75xJixeuMTY3Cz0ChA74wIp4eC2iXws91zvJiDIC3Ox/\nNdEKKIuYtOagh6o8P7UOE1S/k3ywNe2u5SN7e5CNnqHW2iGR4P+RocNuV3WfeTSV\n7OEVMlOomA8z6nvBMU36B+KQL/XSP5pPPXd3kHl38OG0EFGGUPzCBc8vSFSdabWk\nDAmgHlk1TYZjOeasMSNBhjZDbmadtRl3OAE2KrykQV4YXdcVuMOnh9O86sP/U83x\nTjof5CLdAgMBAAECggEAA/OBk7n7LrBemRghdsRirnhsw3AmXQz/4a4SXd6i6r1b\nFCYeeivaKzm+7+kmkEh8BTaEyslTimyb6mzaD79d3gjqgYlww4FM9Im0D0bLZEQR\najRjl3qnG600zf/succtoKKITgVdrvGaoulozYnqYRsbQRdjn6IQateIgPH+lMaE\ntveBBQqu+AELnYxr5sDgbtdCeFbXFL6sTjxssl3hNQPTCcJisuOnqxX/2RhJyR3Z\nVhtqSHQcuM5TtJkV0qjK0gjmTNGAZaCaNjj0oTWbBAvIlOzYzFYkUq8XUvO//Lra\nG61FmijqrpTQs/CVMRhoEM/OuXZCfR/Hnd4XeDWVKQKBgQDuLRuwEvr6OsIHIxUZ\n1ZJIXvjFBPBo69s0dnNM966ia6Jo9RewAyAc6uVcG8Pw8TSOb0OXz2gSNp5312Kn\nANc25OFSaGTt9kKG6omD/ILZ+TvhzORD+pgSybPLM5EPW69Bs+Rwrh6tHVnMc06w\nDGMJk4Xp1QvtKTEcdCHs2ai7iQKBgQDSfuOK03sE1pw0v6ti/RB7hipQJObMgPBr\nfzf1QDQ/8tl4DalSu1YnYWLpwhTSOGIhnbaE1MG1P0eRtjDNqZwkebrbaOGFHxgc\ntFjHh/j3fDFF9/nSSUEJubbTy9hRmUZk/tYNOqXp95X0uTAKZWztxytKao9S3aJh\nZyh2EVFztQKBgQDUNaytvLuRqDioU0HBuuCTSssr/7KUSVEN9VvV//jBDlWuXnG0\niZRbL48b+kEitEa3gbsfz9RSJggbjvR/B+i5KET6P7ltrDSqMN5Fkv6jZ8VK8luP\nlf9Y/g4Lxu5AWNhWGgo3u2vponUYDMTXZrH3HlH6fbAaptDzISX4+hW0wQKBgQCV\nrquJzca98wpTLDToiEIPRKGUKhmBNPNBzc5x9Lzy+HMSPsy4SwUBrevThDKgJn4J\nn4fpvw0cIKp5AFCF/uVMvs9UNKmhqzHPP6OeB5/QBR1YvvSER5kbHFfZFix2IgN/\n0ANQlvLihC+7PXDfA67JCwdKvKm8aGSO1PddtgTwvQKBgQC63E2CwORx9KtYeBgI\nRbWnCVUb67K3WCS9bu5Yd5Gfc5IXBQChUg19645wNW7Vqxo1YiAbDO0SobOOn7iL\nIlOy2xWj+klRFMk6MoZ5rNcUJD6xAcq7K8mOORk3uVQ2ccbuq8MTrx3BL7FV+UqO\niw54w17h/4bR1e96Y0eM5ojCWw==\n-----END PRIVATE KEY-----\n",
+      "client_email": "firebase-adminsdk-slpxb@pvalarmes-3f7ee.iam.gserviceaccount.com",
+      "client_id": "106587989855928727506",
+      "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+      "token_uri": "https://oauth2.googleapis.com/token",
+      "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+      "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-slpxb%40pvalarmes-3f7ee.iam.gserviceaccount.com"
+    }
 
-# log.info('Utils_tracking:: carregando Certificado Firebase')
-# try:
-    # cred = credentials.Certificate("pv-fb-cert.json")
-# except Exception as err:
-    # log.critical('InferenceCore:: Certificado não encontrado - Erro: {} '.format(err))
-# else:        
-    # log.info('InferenceCore:: Certificado ok. Inicializando Firebase')
-    # try:
-        # firebase_admin.initialize_app(cred, {'storageBucket': 'pvalarmes-3f7ee.appspot.com'})
-    # except Exception as err:
-        # log.critical('Erro ao inicializar o Firebase: {}'.format(err))            
-    # else:
-        # log.info('Firebase inicializado com sucesso')
+'''
+log.info('initFormConfig:: carregando Certificado Firebase')
+try:
+    credential = credentials.Certificate(cred)
+except Exception as err:
+    log.critical('initFormConfig:: Certificado não encontrado - Erro: {} '.format(err))
+else:        
+    log.info('initFormConfig:: Inicializando Firebase')
+
+    try:
+        firebase_app_pv = firebase_admin.initialize_app(credential, {'storageBucket': 'pvalarmes-3f7ee.appspot.com', 'databaseURL': 'https://pvalarmes-3f7ee-default-rtdb.firebaseio.com/'})
+    except Exception as err:
+        print('utilsTracking:: Erro ao inicializar o Firebase: {}'.format(err))            
+    else:
+        print('utilsTracking:: Firebase inicializado com sucesso')
+'''
 
 
 def saveImageFirebase(frame, idImage, user):
@@ -61,7 +74,13 @@ def saveImageFirebase(frame, idImage, user):
     try:
         blob = bucket.blob(user + '/' + idImage + '.jpg')        
         blob.upload_from_filename(img_file)
-        blob.make_public() 
+        
+        try:
+            blob.make_public() 
+        except Exception as e:
+            log.critical('saveImageFirebase:: Erro blob.make_public()')
+        else:
+            log.info('saveImageFirebase:: Blob.make_public ok')
         
     except firebase_admin.exceptions.FirebaseError as err:
         
