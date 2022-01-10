@@ -43,7 +43,7 @@ class CheckStorage(QThread):
         self.statusConfig = camRunTime.statusConfig
         
         
-        '''
+        
         try:
             self.ipExterno = urllib.request.urlopen('http://ident.me').read().decode('utf8')
             
@@ -52,7 +52,7 @@ class CheckStorage(QThread):
             log.error('self.ipExterno error')
             
         else:
-            log.info('CheckStorage::__init__:: External IP: {}'.format(self.ipExterno)) '''
+            log.info('CheckStorage::__init__:: External IP: {}'.format(self.ipExterno)) 
         
             
 
@@ -101,6 +101,8 @@ class CheckStorage(QThread):
                 'lastCheckInternet' : lastCheckInternet,
                 'ip' : self.ipExterno
             }
+            
+            self.camRunTime.ipExterno = self.ipExterno
             
             savePvStatusDb(self.statusConfig.getUserLogin(), pvStatus)            
             

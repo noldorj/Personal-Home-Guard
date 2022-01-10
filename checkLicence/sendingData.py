@@ -7,10 +7,16 @@ import utilsCore as utils
 
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.CRITICAL, filename='pv.log')
 
+log.root.setLevel(log.DEBUG)
+log.basicConfig()
+
+for handler in log.root.handlers[:]:
+    log.root.removeHandler(handler)
+
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, handlers=[log.FileHandler('config/pv.log', 'w', 'utf-8')])
 log.getLogger('socketio').setLevel(log.ERROR)
 log.getLogger('engineio').setLevel(log.ERROR)
 
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.ERROR, handlers=[log.FileHandler('config/pv.log', 'w', 'utf-8')])
 
 
 sio = socketio.Client()
@@ -33,14 +39,14 @@ local_sid = None
 @sio.event
 def connect():
     log.info('connect: conexao efetuada. sid: {}'.format(sio.get_sid()))
-    print('conectado')
+    #print('conectado')
     
     #sio.wait()
 
 @sio.event
 def checkLogin(login):
     #log.info('Login de: ' + login['user']) 
-    print('checkLogin...')
+    #print('checkLogin...')
     sio.emit('checkLogin', login)
 
 

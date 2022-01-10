@@ -34,11 +34,23 @@ from firebase_admin import credentials
 
 from shapely.geometry import Point, Polygon
 
+import socket
+
 
 
 #import tensorflow as tf
 
 #cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
+
+log.root.setLevel(log.DEBUG)
+log.basicConfig()
+
+for handler in log.root.handlers[:]:
+    log.root.removeHandler(handler)
+
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, handlers=[log.FileHandler('config/pv.log', 'w', 'utf-8')])
+log.getLogger('socketio').setLevel(log.ERROR)
+log.getLogger('engineio').setLevel(log.ERROR)
 
 
 
@@ -92,9 +104,9 @@ class InferenceCore(QThread):
             try:
                 firebase_admin.initialize_app(credential, {'storageBucket': 'pvalarmes-3f7ee.appspot.com', 'databaseURL': 'https://pvalarmes-3f7ee-default-rtdb.firebaseio.com/'})
             except Exception as err:
-                log.critical('Erro ao inicializar o Firebase: {}'.format(err))            
+                log.critical('InferenceCore:: Erro ao inicializar o Firebase: {}'.format(err))            
             else:
-                log.info('Firebase inicializado com sucesso')
+                log.info('InferenceCore:: Firebase inicializado com sucesso')
         
         
         
@@ -826,18 +838,22 @@ class InferenceCore(QThread):
             
             
             if self.camRunTime.errorWebcam:
-                #log.info('inferenceCore:: webCamWarning.emit()')
+                log.info('inferenceCore:: webCamWarning.emit()')
                 self.webCamWarning.emit()
             
             if self.camRunTime.camEmpty:
-                #log.info('inferenceCore:: camEmptyWarning.emit()')
+                log.info('inferenceCore:: camEmptyWarning.emit()')
                 self.camEmptyWarning.emit()
             
-            #self.stop()
+            if self.camRunTime.statusConfig.isNuvemRunning() and socket.gethostname() != 'pv-server': 
+                print('inferenceCore:: rodando em Nuvem! desativando processamento local!')
+                self._run_flag = False
+                self.stop()
     
     def stop(self):
         #"""Sets run flag to False and waits for thread to finish"""
         #if self.camRunTime.out_video is not None:
+        print('self.stop')
         log.warning('Fim da captura de video out_video_all_time')
         if self.camRunTime.out_video is not None:
             self.camRunTime.out_video.release()

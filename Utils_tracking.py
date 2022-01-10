@@ -19,6 +19,16 @@ from firebase_admin import storage
 from firebase_admin import db
 import datetime
 
+log.root.setLevel(log.DEBUG)
+log.basicConfig()
+
+for handler in log.root.handlers[:]:
+    log.root.removeHandler(handler)
+
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, handlers=[log.FileHandler('config/pv.log', 'w', 'utf-8')])
+log.getLogger('socketio').setLevel(log.ERROR)
+log.getLogger('engineio').setLevel(log.ERROR)
+
 
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
 
@@ -55,7 +65,13 @@ else:
 
 def saveImageFirebase(frame, idImage, user):
     
-    bucket = storage.bucket()        
+    try:
+        bucket = storage.bucket()
+    except Exception as e:
+        log.error('saveImageFirebase:: storage.bucket() error: {}'.format(e))
+    else:
+        log.info('saveImageFirebase:: storage.bucket() ok')
+    
     img_file = os.getcwd() + '/config/alertas_app/' + idImage + '.jpg'
     
     log.info('saveImageFirebase:: Salvando foto local')
@@ -73,14 +89,7 @@ def saveImageFirebase(frame, idImage, user):
     log.info('saveImageFirebase:: Salvando imagem no Firebase')
     try:
         blob = bucket.blob(user + '/' + idImage + '.jpg')        
-        blob.upload_from_filename(img_file)
-        
-        try:
-            blob.make_public() 
-        except Exception as e:
-            log.critical('saveImageFirebase:: Erro blob.make_public()')
-        else:
-            log.info('saveImageFirebase:: Blob.make_public ok')
+        blob.upload_from_filename(img_file)        
         
     except firebase_admin.exceptions.FirebaseError as err:
         
@@ -89,6 +98,13 @@ def saveImageFirebase(frame, idImage, user):
         return None, None, False
     else:
         log.info('saveImageFirebase:: Imagem salva no Firebase')
+        
+    try:
+        blob.make_public() 
+    except Exception as e:
+        log.critical('saveImageFirebase:: Erro blob.make_public()')
+    else:
+        log.info('saveImageFirebase:: Blob.make_public ok')
     
     return blob.public_url, blob.name, True  
 
@@ -320,6 +336,7 @@ def sendAlertApp(user, frame, tipoObjetoDetectado, region, nameCam):
     
     
     log.info('sendAlertApp:: Salvando imagem Firebase')
+    
     urlImageDownload, urlImageFirebase, status = saveImageFirebase(frame, idImage, topic)
         
     

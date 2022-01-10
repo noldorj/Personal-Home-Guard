@@ -257,7 +257,7 @@
        <widget class="QPushButton" name="btnRodarNuvem">
         <property name="geometry">
          <rect>
-          <x>750</x>
+          <x>610</x>
           <y>20</y>
           <width>141</width>
           <height>41</height>
@@ -271,6 +271,31 @@
         </property>
         <property name="text">
          <string>Rodar na Nuvem</string>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>12</width>
+          <height>12</height>
+         </size>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="btnRodarPC">
+        <property name="geometry">
+         <rect>
+          <x>760</x>
+          <y>20</y>
+          <width>141</width>
+          <height>41</height>
+         </rect>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Rodar no PC</string>
         </property>
         <property name="iconSize">
          <size>
@@ -1520,7 +1545,7 @@
          <rect>
           <x>10</x>
           <y>250</y>
-          <width>811</width>
+          <width>891</width>
           <height>351</height>
          </rect>
         </property>

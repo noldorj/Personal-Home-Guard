@@ -14,6 +14,16 @@ import secrets
 
 from collections import deque
 
+log.root.setLevel(log.DEBUG)
+log.basicConfig()
+
+for handler in log.root.handlers[:]:
+    log.root.removeHandler(handler)
+
+log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, handlers=[log.FileHandler('config/pv.log', 'w', 'utf-8')])
+log.getLogger('socketio').setLevel(log.ERROR)
+log.getLogger('engineio').setLevel(log.ERROR)
+
 
 class CamRunTime():
 
@@ -199,6 +209,7 @@ class CamRunTime():
     diskUsageFreeGb = None    
     numDaysRecording = None
     errorRtsp = False
+    ipExterno = ''
     
     
     
@@ -414,8 +425,7 @@ class CamRunTime():
         
         #self.fourcc = cv.VideoWriter_fourcc(*'M','J','P','G')
         self.fourcc = cv.VideoWriter_fourcc(*'XVID') 
-        #self.fourcc = cv.VideoWriter_fourcc(*'MP4V') #nao funciona windows
-        
+        #self.fourcc = cv.VideoWriter_fourcc(*'MP4V') #nao funciona windows        
         
         
         self.dirVideosOnAlarmesUsedSpace = utils.getDirUsedSpace(self.statusConfig.data["dirVideosOnAlarmes"])

@@ -34,7 +34,6 @@ from firebase_admin import credentials
 
 firebase_app_pv = None
 
-
 from collections import deque
 
 token = secrets.token_urlsafe(20)
@@ -44,7 +43,7 @@ loginStatus = False
 cloudEnable = True
 
 
-log.root.setLevel(log.DEBUG)
+log.root.setLevel(log.INFO)
 log.basicConfig()
 
 for handler in log.root.handlers[:]:
@@ -172,6 +171,9 @@ class FormProc(QWidget):
             
             self.uiConfig.btnSaveEmail.clicked.connect(self.btnSaveEmail)
             self.uiConfig.btnSaveConfigGravacao.clicked.connect(self.btnSaveConfigGravacao)            
+            #self.uiConfig.btnNovaCamRemota.clicked.connect(self.btnNovaCamRemota)
+            
+            
             self.uiConfig.btnRodarNuvem.clicked.connect(self.btnRodarNuvem)
             
             self.uiConfig.btnSaveStorage.clicked.connect(self.btnSaveStorage)
@@ -433,11 +435,98 @@ class FormProc(QWidget):
         self.comboAlarmsUpdate(0)
         
     def btnRodarNuvem(self):
-        print('btnRodarNuvem::')
-        self.statusConfig.setNuvemConfig("True")
-        
-        self.refreshStatusConfig()
     
+        print('btnRodarNuvem::')
+        
+        camRemota = self.statusConfig.getCamEmUsoConfig()
+        #testando IP Cam Remota
+        
+        ipCam, error = utils.camSource(camRemota)
+        
+        msg = QMessageBox()        
+        
+        if error == 'rtsp':
+            msg.setIcon(QMessageBox.Critical)
+            msg.setWindowTitle("Câmera remota com problema!")
+            msg.setStandardButtons(QMessageBox.Ok)
+            text = "Cheque se a porta" + camRemota["port"] + 'do seu roteador está liberada!'
+            msg.setText(text)
+            msg.exec()
+            text = 'RTSP: ' + camRemota.source
+            self.uiConfig.lblStatusCamRemota.setText(text)
+            
+        else:
+            msg.setIcon(QMessageBox.Information)
+            msg.setWindowTitle("Rodando na Nuvem")
+            msg.setStandardButtons(QMessageBox.Ok)        
+            msg.setText("Portão Virtual rodando na Nuvem! Pode fechar este programa normalmente e desligar seu PC!")
+            msg.exec()       
+            self.statusConfig.setNuvemConfig("True")
+            self.camRunTime.init()
+            self.refreshStatusConfig()
+            
+            #desabilitar processamento local
+        
+        
+    
+    def btnNovaCamRemota(self):
+    
+        log.info('btnNovaCamRemota::')
+        
+        #pegar configuração da camera atual e colocar IP e preencher formulario
+        
+        camRemota = self.statusConfig.getCamEmUsoConfig()
+        if self.camRunTime.ipExterno != '':
+            camRemota["ip"] = self.camRunTime.ipExterno
+        
+        #initprint('ipExterno: {}'.format(self.camRunTime.ipExterno))
+        
+        #testando IP Externo 
+        
+        ipCam, error = utils.camSource(camRemota)
+        
+        msg = QMessageBox()        
+        
+        if error == 'rtsp':
+            msg.setIcon(QMessageBox.Critical)
+            msg.setWindowTitle("Câmera remota com problema!")
+            msg.setStandardButtons(QMessageBox.Ok)
+            text = "Cheque se a porta" + camRemota["port"] + 'do seu roteador está liberada!'
+            msg.setText(text)
+            msg.exec()
+            text = 'RTSP: ' + camRemota.source
+            self.uiConfig.lblStatusCamRemota.setText(text)
+            
+        else:
+            
+            #novo id 
+            idMaior = 0
+            for cam in self.camRunTime.listCamAtivas:
+                if int(cam.get('id')) > idMaior:
+                    idMaior = int(cam.get('id'))
+                    
+            for cam in self.camRunTime.listCamEncontradas:
+                if int(cam.get('id')) > idMaior:
+                    idMaior = int(cam.get('id'))
+            
+            idMaior = idMaior + 1
+            
+            nome = camRemota["nome"] + '_REMOTA'
+            camRemota["nome"] = nome
+            camRemota["emUso"] = "False"
+            
+            self.camRunTime.listCamAtivas.append(camRemota)
+            self.camRunTime.statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)
+            self.fillTabGeral()
+            
+            msg.setIcon(QMessageBox.Information)
+            msg.setWindowTitle("Câmera remota funcionando!")
+            msg.setStandardButtons(QMessageBox.Ok)        
+            msg.setText("Câmera remota funcionando corretamente! - Ative ela caso queira rodar o PV na Nuvem")
+            msg.exec()       
+            
+        
+        #endCamRemota = self.uiConfig.txtUrlRstp.text()
     
     def btnSaveConfigGravacao(self):
         log.info('btnSaveConfigGravacao::')
@@ -866,10 +955,12 @@ class FormProc(QWidget):
                     #self.camRunTime.listCamAtivas[i]['nome'] = self.uiConfig.txtNomeCamAtiva.text()                    
                     break
                 i = i + 1
-            self.camRunTime.listCamEncontradas.pop(i)            
-            self.camRunTime.statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
-            self.fillTabGeral()
-            self.infCam.setCamRunTime(self.camRunTime)
+            
+            if len(self.camRunTime.listCamEncontradas) > 0:
+                self.camRunTime.listCamEncontradas.pop(i)                    
+                self.camRunTime.statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
+                self.fillTabGeral()
+                self.infCam.setCamRunTime(self.camRunTime)
    
 
     def btnRemoverCamAtiva(self):        
@@ -891,7 +982,8 @@ class FormProc(QWidget):
             self.camRunTime.listCamAtivas.pop(i)            
             self.camRunTime.statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)
             self.fillTabGeral()
-            self.infCam.setCamRunTime(self.camRunTime)
+            #self.infCam.setCamRunTime(self.camRunTime)
+            self.camRunTime.init()
     
     
     def btnSalvarNomeCamAtiva(self):        
@@ -912,7 +1004,8 @@ class FormProc(QWidget):
             
             self.camRunTime.statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)
             self.fillTabGeral()
-            self.infCam.setCamRunTime(self.camRunTime)
+            #self.infCam.setCamRunTime(self.camRunTime)
+            self.camRunTime.init()
     
     def btnAtivarCam(self):
         #global listCamAtivas, self.uiConfig, statusConfig
@@ -922,7 +1015,8 @@ class FormProc(QWidget):
         if len(self.camRunTime.listCamAtivas) > 0 and self.camRunTime.listCamAtivas is not None: 
             idCombo = self.uiConfig.comboBoxCamAtivas.currentText().split(':')[0]
             idCombo = idCombo.replace('[','')
-            idCombo = idCombo.replace(']','')            
+            idCombo = idCombo.replace(']','')
+            print('idCombo: {}'.format(idCombo))
 
             i = 0 
             #zerando a camera ativada anteriormente 
@@ -932,13 +1026,15 @@ class FormProc(QWidget):
 
             i = 0 
             for cam in self.camRunTime.listCamAtivas:
+                print('cam.get(id): {}'.format(cam.get('id')))
                 if cam.get('id') == idCombo:
                     self.camRunTime.listCamAtivas[i]['emUso'] = 'True'
+                    print('cam source: ' + cam.get('source'))
                     log.info('cam source: ' + cam.get('source'))
                     self.uiConfig.txtUrlRstp.setText(cam.get('source'))
                     self.statusConfig.setRtspConfig(cam.get('source'))
                     self.camRunTime.nameCam = cam.get('nome')
-                    #print('btnAtivarCam:: novo nome cam: {}'.format(self.camRunTime.nameCam))
+                    print('btnAtivarCam:: novo nome cam: {}'.format(self.camRunTime.nameCam))
                     
                 i = i + 1
 
@@ -956,6 +1052,7 @@ class FormProc(QWidget):
             
         else:
             self.uiConfig.lblStatusProcurarCam.setText('Sem câmeras ativas. Clique em "Procurar Câmeras" para uma nova varredura')
+            
 
     
     
@@ -1009,6 +1106,7 @@ class FormProc(QWidget):
             self.fillTabGeral()
             self.uiConfig.lblStatusTestarCam.setText('Clique em "Testar Configuração" para checar se esta câmera está funcionando')
             self.comboBoxCamEncontradasStateChanged(len(self.camRunTime.listCamEncontradas)-1)
+            self.camRunTime.init()
    
         
     def clearFieldsCamConfig(self):
@@ -1876,15 +1974,17 @@ class FormProc(QWidget):
             
 
 
-if __name__=="__main__":
-
-    
+if __name__=="__main__":    
     
     app = QApplication(sys.argv)                  
                  
     uiConfig = FormProc()    
     
-    #uiConfig.show()    
+    if socket.gethostname() != 'pv-server':
+        print('main:: rodando local')
+        uiConfig.show()
+    
+        
  
     sys.exit(app.exec_())
             

@@ -1018,18 +1018,52 @@ class StatusConfig:
         self.saveConfigFile()
     
     def addListCamEncontradasConfig(self, listCam):
-        self.data["camListEncontradas"] = listCam 
+        if listCam:
+            self.data["camListEncontradas"] = listCam 
+        else:
+            self.data["camListEncontradas"] = []
+        
         self.saveConfigFile()
 
     def addListCamAtivasConfig(self, listCam):
-        self.data["camListAtivas"] = listCam
+        if len(listCam) > 0:
+            self.data["camListAtivas"] = listCam
+        else:
+            self.data["camListAtivas"] = []
+            
         self.saveConfigFile()
     
     def getListCamEncontradas(self):
-        return self.data["camListEncontradas"]
+        
+        #print('camListEncontradas: {}'.format(self.data["camListEncontradas"]))
+        listCam = []
+        try:
+            listCam = self.data["camListEncontradas"]
+        except:
+            log.info('getListCamEncontradas:: sem cameras encontradas')
+        else:
+        
+            if len(listCam) > 0:
+                return self.data["camListEncontradas"]
+            else:
+                self.data["camListEncontradas"] = []
+                self.saveConfigFile()
+           
     
     def getListCamAtivas(self):
-        return self.data["camListAtivas"]
+        
+        listCam = []
+        try:
+            listCam = self.data["camListAtivas"]
+        except:
+            log.info('getListCamAtivas:: sem cameras ativas')
+        else:
+        
+            if len(listCam) > 0:
+                return self.data["camListAtivas"]
+            else:
+                self.data["camListAtivas"] = []
+                self.saveConfigFile()
 
     
     def getCamEmUsoConfig(self):
@@ -1192,7 +1226,15 @@ class StatusConfig:
         
         log.info('readConfigFile::')
         
-        self.data = json.load(open(fileName,'r'))        
+        try:
+            self.data = json.load(open(fileName,'r'))        
+            
+        except Exception as e:            
+            print('readConfigFile:: error: {}'.format(e))
+            
+        else:
+            log.info('readConfigFile:: lendo config.json ok')
+        
         
         self.dataLogin = json.load(open('config/lconfig.json','r'))
         
