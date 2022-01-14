@@ -32,6 +32,14 @@ import getpass
 import firebase_admin
 from firebase_admin import credentials
 
+import boto3
+
+
+
+client = boto3.client('ecs', aws_access_key_id=AKIAZMQG67PR5NNIGNUQ,
+    aws_secret_access_key=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,
+    region_name=us-east-2)
+
 firebase_app_pv = None
 
 from collections import deque
@@ -456,16 +464,133 @@ class FormProc(QWidget):
             self.uiConfig.lblStatusCamRemota.setText(text)
             
         else:
-            msg.setIcon(QMessageBox.Information)
-            msg.setWindowTitle("Rodando na Nuvem")
-            msg.setStandardButtons(QMessageBox.Ok)        
-            msg.setText("Portão Virtual rodando na Nuvem! Pode fechar este programa normalmente e desligar seu PC!")
-            msg.exec()       
-            self.statusConfig.setNuvemConfig("True")
-            self.camRunTime.init()
-            self.refreshStatusConfig()
             
-            #desabilitar processamento local
+            
+            #ativar Docker na Nuvem AWS
+            print('Run task AWS...')
+
+            print('Checando se container já está rodando...')
+
+            responstListTasks = client.list_tasks(cluster='pv-cluster')
+            statusContainer = ''
+            print('responstListTasks: {}'.format(responstListTasks))
+
+            for task in responstListTasks['taskArns']:
+                taskId = task.split('/')[-1]
+                print('taskId: {}'.format(taskId))
+                print(' ')
+                taskDescription = client.describe_tasks(cluster='pv-cluster', tasks=[taskId], include=[
+                    'TAGS',
+                ])
+                
+                print('taskDescription: {}'.format(taskDescription))
+                print(' ')
+                
+                tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
+                lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
+                
+                print('tagContainer: {}'.format(tagContainer))
+                print('lastStatus: {}'.format(lastStatus))
+                print(' ')
+                if tagContainer == 'contato@portaovirtual.com.br' and lastStatus != 'STOPPED':
+                    statusContainer = 'started'
+
+
+
+            if statusContainer == 'started':
+                print('Container já em execução...')
+                print('Status: {}'.format(statusContainer))
+                print(' ')
+                
+            else:
+
+                print('Iniciando a task...')
+                
+                response = client.run_task(cluster='pv-cluster', taskDefinition='pvTask:7', networkConfiguration={
+                        'awsvpcConfiguration': {
+                            'subnets': [
+                                'subnet-0b94503ff80f53735',
+                                'subnet-0f1d7a5b3dc89da66',
+                                'subnet-07a09921b3d12c738'
+                            ],
+                            'securityGroups': [
+                                'sg-0a35823fd51e8d0a2',
+                            ],
+                            'assignPublicIp': 'ENABLED'
+                        }
+                        },         
+                        launchType='FARGATE',
+                        overrides={
+                        'containerOverrides': [
+                            {
+                                'name': 'pv-docker',
+                                'command': [
+                                    '/pv/deploy-linux/start.sh',
+                                ],
+                                'environment': [
+                                    {
+                                        'name': 'user',
+                                        'value': 'contato@portaovirtual.com.br'
+                                    },
+                                ],               
+                            },
+                            ]
+                        },
+                        tags=[
+                        {
+                            'key': 'user',
+                            'value': 'contato@portaovirtual.com.br'
+                        },
+                        ],
+                        enableECSManagedTags=True,
+                        enableExecuteCommand=True,
+                        )
+                            
+                print('Resposta:')
+                print(' ')
+                print(response)
+                print(' ')
+
+                taskId = response['tasks'][0]['taskArn']
+                print('Task id: {}'.format(taskId))
+                print(' ')
+
+                status = False
+                print('Checando status do Container...')
+                while not status:
+                    responseStatus = client.describe_tasks(cluster='pv-cluster', tasks=[taskId])    
+                    
+                    #print('responseStatus: {}'.format(responseStatus))
+                    print(' ')
+                    statusContainer = responseStatus['tasks'][0]['containers'][0]['lastStatus']
+                    print('statusContainer: {}'.format(statusContainer))
+                    
+                    if statusContainer == 'RUNNING':
+                        print('Container rodando!')
+                        status = True
+                        break
+                    elif statusContainer == 'PROVISIONING':
+                        print('Task em provisionamento... aguardando 10 segundos')
+                        time.sleep(10)
+                    elif statusContainer == 'PENDING':
+                        print('Task pending... aguardando 10 segundos')
+                        time.sleep(10)
+                    elif statusContainer == 'ACTIVATING':
+                        print('Task ACTIVATING... aguardando 10 segundos')
+                        time.sleep(10)
+                
+                if status:
+                    msg.setIcon(QMessageBox.Information)
+                    msg.setWindowTitle("Rodando na Nuvem")
+                    msg.setStandardButtons(QMessageBox.Ok)        
+                    msg.setText("Portão Virtual rodando na Nuvem! Pode fechar este programa normalmente e desligar seu PC!")
+                    msg.exec()       
+                    self.statusConfig.setNuvemConfig("True")
+                    self.camRunTime.init()
+                    self.refreshStatusConfig()
+                    self.uiConfig.lblCam1.clear()
+                    self.uiConfig.lblCam1.setText('Portão Virtual rodando na Nuvem... pode desligar o seu PC se necessário!")
+            
         
         
     
