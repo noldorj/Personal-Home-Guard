@@ -36,9 +36,9 @@ import boto3
 
 
 
-client = boto3.client('ecs', aws_access_key_id=AKIAZMQG67PR5NNIGNUQ,
-    aws_secret_access_key=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,
-    region_name=us-east-2)
+client = boto3.client('ecs', aws_access_key_id='AKIAZMQG67PR5NNIGNUQ',
+    aws_secret_access_key='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',
+    region_name='us-east-2',)
 
 firebase_app_pv = None
 
@@ -51,13 +51,12 @@ loginStatus = False
 cloudEnable = True
 
 
-log.root.setLevel(log.INFO)
+log.root.setLevel(log.DEBUG)
 log.basicConfig()
 
 for handler in log.root.handlers[:]:
     log.root.removeHandler(handler)
 
-#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.DEBUG, stream=sys.stdout)
 log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, handlers=[log.FileHandler('config/pv.log', 'w', 'utf-8')])
 log.getLogger('socketio').setLevel(log.ERROR)
 log.getLogger('engineio').setLevel(log.ERROR)
@@ -183,6 +182,7 @@ class FormProc(QWidget):
             
             
             self.uiConfig.btnRodarNuvem.clicked.connect(self.btnRodarNuvem)
+            self.uiConfig.btnRodarPc.clicked.connect(self.btnRodarPc)
             
             self.uiConfig.btnSaveStorage.clicked.connect(self.btnSaveStorage)
             
@@ -441,7 +441,72 @@ class FormProc(QWidget):
         self.refreshStatusConfig()
         self.comboRegionsUpdate(0)
         self.comboAlarmsUpdate(0)
-        
+    
+    def btnRodarPc(self):
+    
+        print('btnRodarPc::')        
+
+        print('btnRodarPc::: Checando se container já está rodando...')
+        responstListTasks = client.list_tasks(cluster='pv-cluster')
+        statusContainer = ''
+        print('btnRodarPc:: responstListTasks: {}'.format(responstListTasks))
+        for task in responstListTasks['taskArns']:
+            taskId = task.split('/')[-1]
+            print('taskId: {}'.format(taskId))
+            print(' ')
+            taskDescription = client.describe_tasks(cluster='pv-cluster', tasks=[taskId], include=[
+                'TAGS',
+            ])
+            
+            print('taskDescription: {}'.format(taskDescription))
+            print(' ')
+            
+            tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
+            lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
+            
+            print('tagContainer: {}'.format(tagContainer))
+            print('lastStatus: {}'.format(lastStatus))
+            print(' ')
+            if tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'RUNNING':
+                
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setWindowTitle("Interromper PV na Nuvem?")
+                text = "Deseja mesmo interromper o PV na Nuvem?"
+                ret = msg.question(self,'', text, msg.Yes | msg.No)
+                msg.exec()
+                
+                if ret == msg.Yes:
+                    print('yes')
+                    response = client.stop_task(cluster='pv-cluster',task=taskId, reason='stoppedByUser')
+                    print('response: {}'.format(response))
+                else:
+                    print('no')
+                    break                    
+               
+                status = False
+                
+                while not status:                
+
+                    taskDescription = client.describe_tasks(cluster='pv-cluster', tasks=[taskId], include=[
+                'TAGS',])
+                
+                    tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
+                    lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
+                    if tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'RUNNING':
+                        print('Task ainda não finalizada.. aguarde 10 segundos')
+                        time.sleep(10)
+                        print('Tentando finalizar a task novamente')
+                        response = client.stop_task(cluster='pv-cluster',task=taskId, reason='stoppedByUser')
+                        status = True
+                        
+                    elif tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'STOPPED':
+                        self.statusConfig.setNuvemConfig('False')
+                        print('Task finalizada com sucesso!')
+                        
+                
+                
+    
     def btnRodarNuvem(self):
     
         print('btnRodarNuvem::')
@@ -557,6 +622,7 @@ class FormProc(QWidget):
 
                 status = False
                 print('Checando status do Container...')
+                self.uiConfig.lblInitStatus.setText('PV indo para a Nuvem... por favor aguarde alguns minutos!')
                 while not status:
                     responseStatus = client.describe_tasks(cluster='pv-cluster', tasks=[taskId])    
                     
@@ -589,7 +655,9 @@ class FormProc(QWidget):
                     self.camRunTime.init()
                     self.refreshStatusConfig()
                     self.uiConfig.lblCam1.clear()
-                    self.uiConfig.lblCam1.setText('Portão Virtual rodando na Nuvem... pode desligar o seu PC se necessário!")
+                    self.uiConfig.lblCam1.setText('Portão Virtual rodando na Nuvem... pode desligar o seu PC se necessário!')
+                    self.uiConfig.lblInitStatus.setText('Portão Virtual rodando na Nuvem')
+                    
             
         
         

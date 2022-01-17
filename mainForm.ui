@@ -279,7 +279,7 @@
          </size>
         </property>
        </widget>
-       <widget class="QPushButton" name="btnRodarPC">
+       <widget class="QPushButton" name="btnRodarPc">
         <property name="geometry">
          <rect>
           <x>760</x>
