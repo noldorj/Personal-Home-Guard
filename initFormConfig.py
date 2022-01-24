@@ -4,6 +4,7 @@ from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QTime, QThread
 from PyQt5.QtWidgets import QWidget
+from PyQt5 import QtTest
 
 #from initFormConfig import FormProc
 from mainForm import *
@@ -495,14 +496,17 @@ class FormProc(QWidget):
                     lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
                     if tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'RUNNING':
                         print('Task ainda não finalizada.. aguarde 10 segundos')
-                        time.sleep(10)
+                        QtTest.QTest.qWait(10000)
+                        #time.sleep(10)
                         print('Tentando finalizar a task novamente')
                         response = client.stop_task(cluster='pv-cluster',task=taskId, reason='stoppedByUser')
-                        status = True
+                        
                         
                     elif tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'STOPPED':
                         self.statusConfig.setNuvemConfig('False')
+                        status = True
                         print('Task finalizada com sucesso!')
+                        
                         
                 
                 
@@ -528,17 +532,16 @@ class FormProc(QWidget):
             text = 'RTSP: ' + camRemota.source
             self.uiConfig.lblStatusCamRemota.setText(text)
             
-        else:
-            
+        else:            
             
             #ativar Docker na Nuvem AWS
-            print('Run task AWS...')
+            print('btnRodarNuvem:: Run task AWS...')
 
-            print('Checando se container já está rodando...')
+            print('btnRodarNuvem:: Checando se container já está rodando...')
 
             responstListTasks = client.list_tasks(cluster='pv-cluster')
             statusContainer = ''
-            print('responstListTasks: {}'.format(responstListTasks))
+            #print('responstListTasks: {}'.format(responstListTasks))
 
             for task in responstListTasks['taskArns']:
                 taskId = task.split('/')[-1]
@@ -548,7 +551,7 @@ class FormProc(QWidget):
                     'TAGS',
                 ])
                 
-                print('taskDescription: {}'.format(taskDescription))
+                #print('taskDescription: {}'.format(taskDescription))
                 print(' ')
                 
                 tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
@@ -563,13 +566,13 @@ class FormProc(QWidget):
 
 
             if statusContainer == 'started':
-                print('Container já em execução...')
-                print('Status: {}'.format(statusContainer))
+                print('btnRodarNuvem:: Container já em execução...')
+                print('btnRodarNuvem:: Status: {}'.format(statusContainer))
                 print(' ')
                 
             else:
 
-                print('Iniciando a task...')
+                print('btnRodarNuvem:: Iniciando a task...')
                 
                 response = client.run_task(cluster='pv-cluster', taskDefinition='pvTask:7', networkConfiguration={
                         'awsvpcConfiguration': {
@@ -611,9 +614,9 @@ class FormProc(QWidget):
                         enableExecuteCommand=True,
                         )
                             
-                print('Resposta:')
-                print(' ')
-                print(response)
+                #print('Resposta:')
+                #print(' ')
+                #print(response)
                 print(' ')
 
                 taskId = response['tasks'][0]['taskArn']
@@ -621,7 +624,7 @@ class FormProc(QWidget):
                 print(' ')
 
                 status = False
-                print('Checando status do Container...')
+                print('btnRodarNuvem:: Checando status do Container...')
                 self.uiConfig.lblInitStatus.setText('PV indo para a Nuvem... por favor aguarde alguns minutos!')
                 while not status:
                     responseStatus = client.describe_tasks(cluster='pv-cluster', tasks=[taskId])    
@@ -636,14 +639,17 @@ class FormProc(QWidget):
                         status = True
                         break
                     elif statusContainer == 'PROVISIONING':
-                        print('Task em provisionamento... aguardando 10 segundos')
-                        time.sleep(10)
+                        print('btnRodarNuvem:: Task em provisionamento... aguardando 10 segundos')
+                        QtTest.QTest.qWait(10000)
+                        #time.sleep(10)
                     elif statusContainer == 'PENDING':
-                        print('Task pending... aguardando 10 segundos')
-                        time.sleep(10)
+                        print('btnRodarNuvem:: Task pending... aguardando 10 segundos')
+                        QtTest.QTest.qWait(10000)
+                        #time.sleep(10)
                     elif statusContainer == 'ACTIVATING':
-                        print('Task ACTIVATING... aguardando 10 segundos')
-                        time.sleep(10)
+                        print('btnRodarNuvem:: Task ACTIVATING... aguardando 10 segundos')
+                        QtTest.QTest.qWait(10000)
+                        #time.sleep(10)
                 
                 if status:
                     msg.setIcon(QMessageBox.Information)
@@ -1789,6 +1795,7 @@ class FormProc(QWidget):
 
     def refreshStatusConfig(self):        
         log.info('refreshStatusConfig::')
+        print('refreshStatusConfig::')
         self.statusConfig = utils.StatusConfig()
         self.camRunTime.regions = self.statusConfig.getRegions()
         self.camRunTime.emailConfig = self.statusConfig.getEmailConfig()
@@ -1918,7 +1925,9 @@ class FormProc(QWidget):
 
     def fillTabGeral(self):
         
-
+        log.info('fillTabGeral:: ')
+        print('fillTabGeral:: ')
+        
         self.uiConfig.txtEmailName.clear()
         #self.uiConfig.txtEmailPort.clear()
         #self.uiConfig.txtEmailSmtp.clear()

@@ -27,6 +27,7 @@ from utilsCore import checkInternetAccess
 #from matplotlib.path import Path
 from PyQt5.QtCore import QThread
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
+from PyQt5 import QtTest
 from checkLicence.sendingData import checkSessionPv
 
 import firebase_admin
@@ -800,7 +801,8 @@ class InferenceCore(QThread):
                         
                         self.source = self.camRunTime.statusConfig.data["camSource"]
                         #init_video = False
-                        time.sleep(5)
+                        QtTest.QTest.qWait(5000)
+                        #time.sleep(5)
                         if self.camRunTime.ipCam is not None:
                             self.camRunTime.ipCam, self.camRunTime.error = utils.camSource(self.camRunTime.source)
                             self.camRunTime.ipCam.set(3, self.camRunTime.RES_X)
@@ -833,7 +835,8 @@ class InferenceCore(QThread):
                         self.source = self.camRunTime.statusConfig.data["camSource"]
                         #print('Reconectando em 5 segundos... Iniciando OpenVino novamente')
                         self.initOpenVino() 
-                        time.sleep(5)
+                        QtTest.QTest.qWait(5000)
+                        #time.sleep(5)
 
             
             

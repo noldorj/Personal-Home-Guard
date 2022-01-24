@@ -15,6 +15,7 @@ import simplejson as json
 import secrets
 import psutil
 from pbkdf2 import PBKDF2
+from PyQt5 import QtTest
 
 import firebase_admin
 from firebase_admin import credentials
@@ -832,6 +833,7 @@ class StatusConfig:
             self.data.get('openVinoModels').append(model)
 
         self.saveConfigFile()
+        self.updateConfigFileNuvem()
 
 
     def addStorageConfig(self, diskMaxUsage, diskMinUsage, spaceMaxDirVideosOnAlarme, spaceMaxDirVideosAllTime, eraseOldestFiles, stopSaveNewVideos):
@@ -848,6 +850,7 @@ class StatusConfig:
         self.data["storageConfig"] = storageConfig
 
         self.saveConfigFile()
+        self.updateConfigFileNuvem()
 
     def setUserNameLoginConfig(self, userName):
     
@@ -878,6 +881,7 @@ class StatusConfig:
     def setPrimeiroUso(self, status):
         self.data['primeiroUso'] = status 
         self.saveConfigFile()
+        self.updateConfigFileNuvem()
 
 
     def setLoginAutomatico(self, status):
@@ -898,6 +902,7 @@ class StatusConfig:
 
         self.data['desativarAlarmes'] = status 
         self.saveConfigFile()
+        self.updateConfigFileNuvem()
     
     
     def setLoginAutomatico(self, status):
@@ -914,6 +919,7 @@ class StatusConfig:
         self.data["diskMinUsage"] = diskMinUsage
         
         self.saveConfigFile()
+        self.updateConfigFileNuvem()
     
     def isNuvemRunning(self):
         
@@ -930,6 +936,7 @@ class StatusConfig:
     
     def setNuvemConfig(self, isRunning ):
         log.info('setNuvemConfig::')
+        print('setNuvemConfig::')
         
         nuvemConfig = {
             "isRunning" : isRunning,
@@ -937,9 +944,12 @@ class StatusConfig:
         }        
         self.data["nuvemConfig"] = nuvemConfig
         self.saveConfigFile()
+        self.updateConfigFileNuvem()
 
     def setRtspConfig(self, camSource):
         self.data["camSource"] = camSource
+        self.saveConfigFile()
+        self.updateConfigFileNuvem()
         
     def setDateSessionInit(self):
         date = getDate()
@@ -947,6 +957,7 @@ class StatusConfig:
         print('date: {}'.format(date))
         self.data["dateSessionInit"] = date
         self.saveConfigFile()
+        self.updateConfigFileNuvem()
 
     def addConfigGeral(self, name, servidorEmail, user, password, subject, to, isRecordingAllTime, isRecordingOnAlarmes, dirVideosAllTime, dirVideosOnAlarmes, camSource, diskMinUsage):
         
@@ -983,6 +994,7 @@ class StatusConfig:
         self.data["diskMinUsage"] = diskMinUsage
 
         self.saveConfigFile()
+        self.updateConfigFileNuvem()
 
     def setConfig(self, isRecordingAllTime, isRecordingOnAlarmes, isOpenVino,
                       dnnModel, openVinoModel, emailConfig, dirVideos, camSource, openVinoDevice, prob_threshold, timerAlerta):
@@ -1016,6 +1028,7 @@ class StatusConfig:
     def zerarListCamAtivasConfig(self):
         self.data["camListAtivas"] = [] 
         self.saveConfigFile()
+        self.updateConfigFileNuvem()
     
     def addListCamEncontradasConfig(self, listCam):
         if listCam:
@@ -1024,6 +1037,7 @@ class StatusConfig:
             self.data["camListEncontradas"] = []
         
         self.saveConfigFile()
+        self.updateConfigFileNuvem()
 
     def addListCamAtivasConfig(self, listCam):
         if len(listCam) > 0:
@@ -1032,6 +1046,7 @@ class StatusConfig:
             self.data["camListAtivas"] = []
             
         self.saveConfigFile()
+        self.updateConfigFileNuvem()
     
     def getListCamEncontradas(self):
         
@@ -1048,6 +1063,7 @@ class StatusConfig:
             else:
                 self.data["camListEncontradas"] = []
                 self.saveConfigFile()
+        self.updateConfigFileNuvem()
            
     
     def getListCamAtivas(self):
@@ -1064,6 +1080,7 @@ class StatusConfig:
             else:
                 self.data["camListAtivas"] = []
                 self.saveConfigFile()
+        self.updateConfigFileNuvem()
 
     
     def getCamEmUsoConfig(self):
@@ -1093,6 +1110,7 @@ class StatusConfig:
         #self.dataCam.append(cam)
         self.data["camListAtivas"] = self.dataCam 
         self.saveConfigFile()
+        self.updateConfigFileNuvem()
 
     def addCamEncontradaConfig(self, nome, idCam, ip, mac, port, user, passwd, channel, source):
 
@@ -1111,6 +1129,7 @@ class StatusConfig:
         
         self.data["camListAtivas"].append(cam)
         self.saveConfigFile()
+        self.updateConfigFileNuvem()
 
     def addRegion(self, nameRegion, alarm, objectType, prob_threshold, pointsPolygon, timerAlerta):
 
@@ -1225,6 +1244,7 @@ class StatusConfig:
         
         
         log.info('readConfigFile::')
+        #print('readConfigFile::')
         
         try:
             self.data = json.load(open(fileName,'r'))        
@@ -1308,6 +1328,7 @@ class StatusConfig:
 
         #self.saveConfigFile()
         self.saveRegionFile()
+        self.updateConfigFileNuvem()
 
     def checkDuplicatedActiveModels(self):
         i = 0
@@ -1350,6 +1371,7 @@ class StatusConfig:
                     i = i+1
 
         self.saveConfigFile()
+        self.updateConfigFileNuvem()
         return status
 
     def deleteRegion(self, nameRegion='regions1'):
@@ -1365,6 +1387,8 @@ class StatusConfig:
 
             i = i+1
         #return False
+        self.saveRegionFile()
+        
 
 
     def printConfig(self):
@@ -1442,7 +1466,8 @@ class StatusConfig:
             except Exception as e:
                 log.critical('saveRegionFile:: Erro salvar Config status no Firebase DB')                
                 i = i + 1
-                time.sleep(0.5)
+                QtTest.QTest.qWait(5000)
+                #time.sleep(0.5)
             else:
                 statusFirebase = True
                 i = 0
@@ -1460,34 +1485,44 @@ class StatusConfig:
             log.info('Arquivo {} salvo'.format(file))
 
 
-    def saveConfigFile(self, fileName = 'config/config.json'):
-        log.info('saveConfigFile:: Salvando arquivo de configuração: {}/{}'.format(os.getcwd(), fileName))
+    def updateConfigFileNuvem(self):
+    
+        
+        print('updateConfigFileNuvem:: ')
+        log.info('updateConfigFileNuvem::')
+        
         #json.dump(self.data, open(file,'w'), indent=4)
         
         #salvando na Nuvem Firebase
         #Estrutura para salvar no Realtime DAtabase 
         user = self.getUserLogin()
         userId = user.replace('.','_')
-        userId = userId.replace('@','_')    
-        
+        userId = userId.replace('@','_')        
         
         ref = db.reference('/users/' + userId + '/config')
     
         statusFirebase = False
         
         i = 1
-        while statusFirebase is False:
-            log.info('saveConfigFile:: Savando config status no Firebase tentativa [{}]'.format(i))
+        while not statusFirebase:
+            log.info('updateConfigFileNuvem:: Savando config status no Firebase tentativa [{}]'.format(i))
+            print('updateConfigFileNuvem:: Savando config status no Firebase tentativa [{}]'.format(i))
             try:
                 ref.set(self.data)
             except Exception as e:
-                log.critical('saveConfigFile:: Erro salvar Config status no Firebase DB')
+                log.critical('updateConfigFileNuvem:: Erro salvar Config status no Firebase DB')
                 i = i + 1
-                time.sleep(0.5)
+                #time.sleep(0.5)
+                QtTest.QTest.qWait(5000)
             else:
                 statusFirebase = True
+                print('updateConfigFileNuvem:: statusFirebase true')
                 i = 0
+    
+    
+    def saveConfigFile(self, fileName = 'config/config.json'):
         
+        #print('saveConfigFile:: ')
         #salvando configfile localmente
         try:
             fp = open(fileName,"w")
@@ -1495,7 +1530,7 @@ class StatusConfig:
         finally:
             fp.close()
 
-        log.info('Salvando arquivo de configuração: {}/{}'.format(os.getcwd(), fileName))
+        log.info('saveConfigFile:: Salvando arquivo de configuração: {}/{}'.format(os.getcwd(), fileName))
 
     def saveConfigLogin(self, fileName = 'config/lconfig.json'):
         
@@ -1528,7 +1563,8 @@ class StatusConfig:
             except Exception as e:
                 log.critical('saveConfigLogin:: Erro salvar Config status no Firebase DB')
                 i = i + 1
-                time.sleep(0.5)
+                QtTest.QTest.qWait(5000)
+                #time.sleep(0.5)
             else:
                 statusFirebase = True
                 i = 0
