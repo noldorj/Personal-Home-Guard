@@ -509,7 +509,75 @@ class FormProc(QWidget):
                         
                         
                 
+    def stopAllInstances(self):
+        print('stopAllInstances:: Finalizando isntancias/tasks ativas')
+        
+        responstListTasks = client.list_tasks(cluster='pv-cluster')
+        statusContainer = ''
+        i = 0
+        
+        while isCloudInstanceRunning():
+            
+            print('stopAllInstances:: {} tentativa de finalizar as tasks'.format(i))
+        
+            for task in responstListTasks['taskArns']:
+                taskId = task.split('/')[-1]
+                print('taskId: {}'.format(taskId))
+                print(' ')
+                taskDescription = client.describe_tasks(cluster='pv-cluster', tasks=[taskId], include=[
+                    'TAGS',
+                ])            
                 
+                tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
+                lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
+                
+                print('tagContainer: {}'.format(tagContainer))
+                print('lastStatus: {}'.format(lastStatus))
+                print(' ')
+                
+                if tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'RUNNING':
+                
+                    response = client.stop_task(cluster='pv-cluster',task=taskId, reason='stoppedByUser')
+                    print('response: {}'.format(response))            
+            
+            i+=1
+                
+        
+    
+    
+    def isCloudInstanceRunning(self):
+        print('checkarInstanciaNuvem:: Checando se container já está rodando...')
+        
+        responstListTasks = client.list_tasks(cluster='pv-cluster')
+        statusContainer = ''
+        #print('responstListTasks: {}'.format(responstListTasks))
+
+        for task in responstListTasks['taskArns']:
+            taskId = task.split('/')[-1]
+            #print('taskId: {}'.format(taskId))
+            #print(' ')
+            taskDescription = client.describe_tasks(cluster='pv-cluster', tasks=[taskId], include=[
+                'TAGS',
+            ])
+            
+            #print('taskDescription: {}'.format(taskDescription))
+            #print(' ')
+            
+            tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
+            lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
+            
+            print('checkarInstanciaNuvem tagContainer: {}'.format(tagContainer))
+            print('checkarInstanciaNuvem lastStatus: {}'.format(lastStatus))
+            print(' ')
+            
+            if tagContainer == 'contato@portaovirtual.com.br' and lastStatus != 'STOPPED':
+                return False
+            elif tagContainer == 'contato@portaovirtual.com.br' and lastStatus != 'RUNNING':
+                return True
+
+            
+        
+    
     
     def btnRodarNuvem(self):
     
@@ -2184,6 +2252,27 @@ if __name__=="__main__":
     
     if socket.gethostname() != 'pv-server':
         print('main:: rodando local')
+        # se está rodando local por algum erro na Nuvem
+        # atualiza o Firebase e checa se realmente tem alguma instancia rodando
+        
+        # Checando se a instancia está rodando por algum motivo
+        if not uiConfig.isCloudInstanceRunning():
+            #se não estiver rodando, tudo certo... chama a GUI e atualiza o Firebase
+            uiConfig.statusConfig.setNuvemConfig('False')            
+            
+        #se tem instancia rodando... mas o PV iniciou local, termina as instancias que estão rodando, avisa o usuário para começar uma Nova Instancia na Nuvem        
+        else:
+            uiConfig.stopAllInstances()
+            
+            uiConfig.statusConfig.setNuvemConfig('False')
+            
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setWindowTitle("Reinicia sua instância na Nuvem")
+            text = "Houve um erro com o processamento na Nuvem, reinicie o PV na Nuvem ou localmente por favor!"            
+            msg.exec()
+            
+        
         uiConfig.show()
     
         
