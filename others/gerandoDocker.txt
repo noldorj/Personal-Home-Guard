@@ -1,0 +1,36 @@
+# 1. Executando docker modo iterativo para copiar o codigo fonte para a nova imagem a ser gerada:
+
+
+docker run -it pv/ubuntu-pv:1.2 /bin/bash
+
+# 2. Copiando arquivos para o Docker recem criado a partir da bash do Host
+
+docker cp ../portao-virtual 707d6211d4ef:/pv/portao-virtual
+
+# 3. Gerando a nova imagem
+
+docker commit -m "atualizacao codigo pv 1.3" 707d6211d4ef pv/ubuntu-pv:1.3
+
+# criando a imagem para AWS
+
+docker tag pv/ubuntu-pv:1.3 645333449699.dkr.ecr.us-east-2.amazonaws.com/pv:1.3
+
+
+# 4. Gerando imagem para a AWS
+
+ 4.1 Primeiro login na ECS - Elastic Container Service
+
+conda activate pv-nuvem
+
+aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 645333449699.dkr.ecr.us-east-2.amazonaws.com
+
+
+docker run -td -e user='contato@portaovirtual.com.br' 22d75ee8f7a3 /pv/deploy-linux/start.sh
+
+# 5. enviando a imagem para o repositorio da AWS
+
+docker push 645333449699.dkr.ecr.us-east-2.amazonaws.com/pv:1.3
+
+# 6. Depois cria uma nova Task Definition apontando para a nova Imagem criada
+
+
