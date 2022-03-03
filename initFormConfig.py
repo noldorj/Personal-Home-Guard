@@ -451,61 +451,68 @@ class FormProc(QWidget):
         responstListTasks = client.list_tasks(cluster='pv-cluster')
         statusContainer = ''
         print('btnRodarPc:: responstListTasks: {}'.format(responstListTasks))
-        for task in responstListTasks['taskArns']:
-            taskId = task.split('/')[-1]
-            print('taskId: {}'.format(taskId))
-            print(' ')
-            taskDescription = client.describe_tasks(cluster='pv-cluster', tasks=[taskId], include=[
-                'TAGS',
-            ])
+        if len(responstListTasks['taskArns']) == 0:
+            print('btnRodarPc:: Sem task rodando na Nuvem..')
+            print('btnRodarPc:: ativando processamento local')
+            self.statusConfig.setNuvemConfig('False')
             
-            print('taskDescription: {}'.format(taskDescription))
-            print(' ')
+        else:
             
-            tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
-            lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
-            
-            print('tagContainer: {}'.format(tagContainer))
-            print('lastStatus: {}'.format(lastStatus))
-            print(' ')
-            if tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'RUNNING':
+            for task in responstListTasks['taskArns']:
+                taskId = task.split('/')[-1]
+                print('taskId: {}'.format(taskId))
+                print(' ')
+                taskDescription = client.describe_tasks(cluster='pv-cluster', tasks=[taskId], include=[
+                    'TAGS',
+                ])
                 
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Critical)
-                msg.setWindowTitle("Interromper PV na Nuvem?")
-                text = "Deseja mesmo interromper o PV na Nuvem?"
-                ret = msg.question(self,'', text, msg.Yes | msg.No)
-                msg.exec()
+                print('taskDescription: {}'.format(taskDescription))
+                print(' ')
                 
-                if ret == msg.Yes:
-                    print('yes')
-                    response = client.stop_task(cluster='pv-cluster',task=taskId, reason='stoppedByUser')
-                    print('response: {}'.format(response))
-                else:
-                    print('no')
-                    break                    
-               
-                status = False
+                tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
+                lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
                 
-                while not status:                
-
-                    taskDescription = client.describe_tasks(cluster='pv-cluster', tasks=[taskId], include=[
-                'TAGS',])
-                
-                    tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
-                    lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
-                    if tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'RUNNING':
-                        print('Task ainda não finalizada.. aguarde 10 segundos')
-                        QtTest.QTest.qWait(10000)
-                        #time.sleep(10)
-                        print('Tentando finalizar a task novamente')
+                print('tagContainer: {}'.format(tagContainer))
+                print('lastStatus: {}'.format(lastStatus))
+                print(' ')
+                if tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'RUNNING':
+                    
+                    msg = QMessageBox()
+                    msg.setIcon(QMessageBox.Critical)
+                    msg.setWindowTitle("Interromper PV na Nuvem?")
+                    text = "Deseja mesmo interromper o PV na Nuvem?"
+                    ret = msg.question(self,'', text, msg.Yes | msg.No)
+                    msg.exec()
+                    
+                    if ret == msg.Yes:
+                        print('yes')
                         response = client.stop_task(cluster='pv-cluster',task=taskId, reason='stoppedByUser')
-                        
-                        
-                    elif tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'STOPPED':
-                        self.statusConfig.setNuvemConfig('False')
-                        status = True
-                        print('Task finalizada com sucesso!')
+                        print('response: {}'.format(response))
+                    else:
+                        print('no')
+                        break                    
+                   
+                    status = False
+                    
+                    while not status:                
+
+                        taskDescription = client.describe_tasks(cluster='pv-cluster', tasks=[taskId], include=[
+                    'TAGS',])
+                    
+                        tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
+                        lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
+                        if tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'RUNNING':
+                            print('Task ainda não finalizada.. aguarde 10 segundos')
+                            QtTest.QTest.qWait(10000)
+                            #time.sleep(10)
+                            print('Tentando finalizar a task novamente')
+                            response = client.stop_task(cluster='pv-cluster',task=taskId, reason='stoppedByUser')
+                            
+                            
+                        elif tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'STOPPED':
+                            self.statusConfig.setNuvemConfig('False')
+                            status = True
+                            print('Task finalizada com sucesso!')
                         
                         
                 
@@ -546,8 +553,8 @@ class FormProc(QWidget):
     
     
     def isCloudInstanceRunning(self):
-        print('checkarInstanciaNuvem:: Checando se container já está rodando...')
-        
+    
+        #print('checkarInstanciaNuvem:: Checando se container já está rodando...')        
         responstListTasks = client.list_tasks(cluster='pv-cluster')
         statusContainer = ''
         #print('responstListTasks: {}'.format(responstListTasks))
@@ -642,7 +649,7 @@ class FormProc(QWidget):
 
                 print('btnRodarNuvem:: Iniciando a task...')
                 
-                response = client.run_task(cluster='pv-cluster', taskDefinition='pvTask:7', networkConfiguration={
+                response = client.run_task(cluster='pv-cluster', taskDefinition='pvTask:12', networkConfiguration={
                         'awsvpcConfiguration': {
                             'subnets': [
                                 'subnet-0b94503ff80f53735',
@@ -2274,6 +2281,8 @@ if __name__=="__main__":
             
         
         uiConfig.show()
+    else:
+        print('main:: rodando Nuvem')
     
         
  

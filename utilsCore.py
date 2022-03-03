@@ -1086,9 +1086,10 @@ class StatusConfig:
     def getCamEmUsoConfig(self):
         camEmuso = None
         for cam in self.data['camListAtivas']:
-            if cam['emUso'] == 'True':
-                camEmuso = cam                
-                break
+            if cam is not None:
+                if cam['emUso'] == 'True':
+                    camEmuso = cam                
+                    break
         
         return camEmuso 
 
@@ -1262,18 +1263,23 @@ class StatusConfig:
         userId = user.replace('.','_')
         userId = userId.replace('@','_')
         
-        if userId != '':
+        if checkInternetAccess():
         
-            self.initFirebaseAdmin()
+            if userId != '':
             
-            try:
-                ref = db.reference('/users/' + userId + '/config')
-            except Exception as e:
-                log.error('readConfigFile:: erro getting config: {}'.format(e))
-            else:                            
-                self.data = ref.get()
-                self.saveConfigFile()
-                #print('dataLogin firebase: {}'.format(ref.get()))
+                self.initFirebaseAdmin()
+                
+                try:
+                    ref = db.reference('/users/' + userId + '/config')
+                except Exception as e:
+                    log.error('readConfigFile:: error getting config: {}'.format(e))
+                else:                            
+                    self.data = ref.get()
+                    self.saveConfigFile()
+                    #print('dataLogin firebase: {}'.format(ref.get()))
+        else:
+            log.error('readConfigFile:: Sem internet! impossivel sincronizar dados de config com Firebase ')
+            print('readConfigFile:: Sem conexao com a internet - impossivel sincronizar dados de Config com o Firebase')
 
     def readRegionsFile(self, fileName = 'config/regions.json'):
         #log.info('readRegionsFile:: Lendo arquivo de regiões: ' + os.getcwd() + '/' + fileName)
