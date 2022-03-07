@@ -263,6 +263,8 @@ def camSource(source = 'webcam'):
     status = True
     error = ''
     ipCam = None
+    
+    log.info('camSource:: source: {}'.format(source))
 
     if source == 'webcam':        
         source = 0

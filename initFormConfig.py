@@ -678,7 +678,9 @@ class FormProc(QWidget):
         camRemota = self.statusConfig.getCamEmUsoConfig()
         #testando IP Cam Remota
         
-        ipCam, error = utils.camSource(camRemota)
+        log.info('btnRodarNuvem:: source: {}'.format(camRemota['source']))
+        
+        ipCam, error = utils.camSource(camRemota['source'])
         
         msg = QMessageBox()        
         
@@ -799,7 +801,7 @@ class FormProc(QWidget):
 
                 status = False
                 log.info('btnRodarNuvem:: Checando status do Container...')
-                self.uiConfig.lblInitStatus.setText(' PV indo para a Nuvem... por favor aguarde alguns minutos! ')
+                self.uiConfig.lblInitStatus.setText(' PV indo para a Nuvem... por favor aguarde +- 5 minutos! ')
                 while not status:
                     responseStatus = client.describe_tasks(cluster='pv-cluster', tasks=[taskId])    
                     
@@ -810,6 +812,12 @@ class FormProc(QWidget):
                     
                     if statusContainer == 'RUNNING':
                         log.info('Container rodando!')
+                        msg.setIcon(QMessageBox.Information)
+                        msg.setWindowTitle("PV já na Nuvem")
+                        msg.setStandardButtons(QMessageBox.Ok)        
+                        msg.setText("PV já está rodando na Nuvem!")
+                        msg.exec()
+                        self.uiConfig.lblInitStatus.setText('Portão Virtual já está rodando na Nuvem')
                         status = True
                         break
                     elif statusContainer == 'PROVISIONING':

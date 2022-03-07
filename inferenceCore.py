@@ -25,7 +25,9 @@ import secrets
 import psutil
 #import pluginOpenVino as pOpenVino
 from utilsCore import checkInternetAccess
-#from matplotlib.path import Path
+
+from matplotlib.path import Path
+
 from PyQt5.QtCore import QThread
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
 from PyQt5 import QtTest
@@ -34,7 +36,10 @@ from checkLicence.sendingData import checkSessionPv
 import firebase_admin
 from firebase_admin import credentials
 
-from shapely.geometry import Point, Polygon
+#from shapely import geos
+#from shapely.geometry import Point, Polygon
+
+#shapely.geos.dlls(sys._MEIPASS)
 
 import socket
 
@@ -138,12 +143,12 @@ class InferenceCore(QThread):
 
     
     def isIdInsideRegion(self, centroid, ref_point_polygon):
-        #path = Path(ref_point_polygon)
-        poly = Polygon(ref_point_polygon)
-        p1 = Point((centroid[0], centroid[1]))
-        return p1.within(poly)
-        #mask = path.contains_points([(centroid[0], centroid[1])])
-        #return mask
+        path = Path(ref_point_polygon)
+        #poly = Polygon(ref_point_polygon)
+        #p1 = Point((centroid[0], centroid[1]))
+        #return p1.within(poly)
+        mask = path.contains_points([(centroid[0], centroid[1])])
+        return mask
 
     def setPointSelection(self, x, y):
         self.camRunTime.ref_point_polygon.append([x, y])
