@@ -6,7 +6,9 @@ from email.mime.multipart import MIMEMultipart
 import smtplib
 from smtplib import SMTPException
 import utilsCore as utils
-import logging as log
+#import logging as log
+import logging
+
 import sys
 import urllib.request
 import time
@@ -19,8 +21,10 @@ from firebase_admin import storage
 from firebase_admin import db
 import datetime
 
+'''
 log.root.setLevel(log.DEBUG)
 log.basicConfig()
+
 
 for handler in log.root.handlers[:]:
     log.root.removeHandler(handler)
@@ -31,6 +35,23 @@ log.getLogger('engineio').setLevel(log.ERROR)
 
 
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', filename='pv.log')
+'''
+
+log = logging.getLogger('pv-log')
+log.setLevel(logging.DEBUG)
+# create file handler which logs even debug messages
+fh = logging.FileHandler('config/pv.log', 'w', 'utf-8')
+fh.setLevel(logging.DEBUG)
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+# create formatter and add it to the handlers
+formatter = logging.Formatter("[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
+ch.setFormatter(formatter)
+fh.setFormatter(formatter)
+# add the handlers to logger
+log.addHandler(ch)
+log.addHandler(fh)
 
 cred = {
       "type": "service_account",

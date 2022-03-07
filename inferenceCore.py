@@ -8,7 +8,8 @@ from Utils_tracking import sendAlertApp
 
 from Utils_tracking import saveImageBox
 import utilsCore as utils
-import logging as log
+#import logging as log
+import logging
 import sys
 from collections import deque
 import os
@@ -43,6 +44,7 @@ import socket
 
 #cv.VideoWriter(dir_video_trigger + '/' + hora + '.avi', fourcc, FPS, (1280,720))
 
+'''
 log.root.setLevel(log.DEBUG)
 log.basicConfig()
 
@@ -52,6 +54,24 @@ for handler in log.root.handlers[:]:
 log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, handlers=[log.FileHandler('config/pv.log', 'w', 'utf-8')])
 log.getLogger('socketio').setLevel(log.ERROR)
 log.getLogger('engineio').setLevel(log.ERROR)
+
+'''
+
+log = logging.getLogger('pv-log')
+log.setLevel(logging.DEBUG)
+# create file handler which logs even debug messages
+fh = logging.FileHandler('config/pv.log', 'w', 'utf-8')
+fh.setLevel(logging.DEBUG)
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+# create formatter and add it to the handlers
+formatter = logging.Formatter("[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
+ch.setFormatter(formatter)
+fh.setFormatter(formatter)
+# add the handlers to logger
+log.addHandler(ch)
+log.addHandler(fh)
 
 
 

@@ -3,7 +3,8 @@ import cv2 as cv
 import json
 import os
 import time
-import logging as log
+#import logging as log
+import logging
 import sys
 import shutil
 from glob import glob
@@ -39,15 +40,32 @@ if sys.platform == 'linux':
 else:
     import winsound
     
-log.root.setLevel(log.DEBUG)
-log.basicConfig()
+#log.root.setLevel(log.INFO)
+#log.basicConfig()
 
-for handler in log.root.handlers[:]:
-    log.root.removeHandler(handler)
+#for handler in log.root.handlers[:]:
+#    log.root.removeHandler(handler)
 
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, handlers=[log.FileHandler('config/pv.log', 'w', 'utf-8')])
-log.getLogger('socketio').setLevel(log.ERROR)
-log.getLogger('engineio').setLevel(log.ERROR)
+#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, handlers=[log.FileHandler('config/pv.log', 'w', 'utf-8')])
+#log.getLogger('socketio').setLevel(log.ERROR)
+#log.getLogger('engineio').setLevel(log.ERROR)
+
+log = logging.getLogger('pv-log')
+log.setLevel(logging.DEBUG)
+# create file handler which logs even debug messages
+fh = logging.FileHandler('config/pv.log', 'w', 'utf-8')
+fh.setLevel(logging.DEBUG)
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+# create formatter and add it to the handlers
+formatter = logging.Formatter("[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
+ch.setFormatter(formatter)
+fh.setFormatter(formatter)
+# add the handlers to logger
+log.addHandler(ch)
+log.addHandler(fh)
+
 
 cred = {
       "type": "service_account",
@@ -413,11 +431,11 @@ def isDiskFull(diskMinUsage):
     #garantir um minimo de disco para funcionamento do sistema
     if float((free / total)*100) < 5.0:
         diskMinUsage = 5        
-        logger = log.getLogger()
+        logger = logging.getLogger()
         logger.disabled = True
         log.critical('isDiskFull:: desabilitando log')
     else:
-        logger = log.getLogger()
+        logger = logging.getLogger()
         logger.disabled = True
         log.critical('isDiskFull:: reabilitando log')
     
