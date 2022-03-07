@@ -723,7 +723,7 @@ class FormProc(QWidget):
 
                 print('btnRodarNuvem:: Iniciando a task...')
                 
-                response = client.run_task(cluster='pv-cluster', taskDefinition='pvTask:20', networkConfiguration={
+                response = client.run_task(cluster='pv-cluster', taskDefinition='pvTask:21', networkConfiguration={
                         'awsvpcConfiguration': {
                             'subnets': [
                                 'subnet-0b94503ff80f53735',
