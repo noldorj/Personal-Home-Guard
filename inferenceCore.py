@@ -849,14 +849,14 @@ class InferenceCore(QThread):
                 self.camEmptyWarning.emit()
             
             if self.camRunTime.statusConfig.isNuvemRunning() and socket.gethostname() != 'pv-server': 
-                print('inferenceCore:: rodando em Nuvem! desativando processamento local!')
+                #print('inferenceCore:: rodando em Nuvem! desativando processamento local!')
                 self._run_flag = False
                 self.stop()
     
     def stop(self):
         #"""Sets run flag to False and waits for thread to finish"""
         #if self.camRunTime.out_video is not None:
-        print('self.stop')
+        #print('self.stop')
         log.warning('Fim da captura de video out_video_all_time')
         if self.camRunTime.out_video is not None:
             self.camRunTime.out_video.release()

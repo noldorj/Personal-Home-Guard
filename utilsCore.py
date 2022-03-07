@@ -936,7 +936,7 @@ class StatusConfig:
     
     def setNuvemConfig(self, isRunning ):
         log.info('setNuvemConfig::')
-        print('setNuvemConfig::')
+        log.info('setNuvemConfig: {}'.format(isRunning))
         
         nuvemConfig = {
             "isRunning" : isRunning,
@@ -1274,8 +1274,12 @@ class StatusConfig:
                 except Exception as e:
                     log.error('readConfigFile:: error getting config: {}'.format(e))
                 else:                            
-                    self.data = ref.get()
-                    self.saveConfigFile()
+                    try:
+                        self.data = ref.get()
+                    except Exception as e:
+                        log.error('readConfigFile:: erro sync com Firebase config-  ref.get() error: {}'.format(e))
+                    else:
+                        self.saveConfigFile()
                     #print('dataLogin firebase: {}'.format(ref.get()))
         else:
             log.error('readConfigFile:: Sem internet! impossivel sincronizar dados de config com Firebase ')
@@ -1491,8 +1495,7 @@ class StatusConfig:
             log.info('Arquivo {} salvo'.format(file))
 
 
-    def updateConfigFileNuvem(self):
-    
+    def updateConfigFileNuvem(self):    
         
         print('updateConfigFileNuvem:: ')
         log.info('updateConfigFileNuvem::')
@@ -1522,7 +1525,7 @@ class StatusConfig:
                 QtTest.QTest.qWait(5000)
             else:
                 statusFirebase = True
-                print('updateConfigFileNuvem:: statusFirebase true')
+                log.info('updateConfigFileNuvem:: statusFirebase true')
                 i = 0
     
     

@@ -451,13 +451,50 @@ class FormProc(QWidget):
         responstListTasks = client.list_tasks(cluster='pv-cluster')
         statusContainer = ''
         print('btnRodarPc:: responstListTasks: {}'.format(responstListTasks))
+        
         if len(responstListTasks['taskArns']) == 0:
+            
+            print(' ')
             print('btnRodarPc:: Sem task rodando na Nuvem..')
             print('btnRodarPc:: ativando processamento local')
             self.statusConfig.setNuvemConfig('False')
             
-        else:
+            msg.setWindowTitle("PV rodando no seu PC!")
+            text = "Seu PV já está rodando no seu PC - reinicie o PV caso necessário!"
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.setText(text)
+            msg.exec()
             
+        else:           
+            
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)            
+            text = "Deseja mesmo interromper o PV na Nuvem?"
+            msg.setText(text)
+            msg.setWindowTitle('Rodar PV no seu PC?')
+            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            ret = msg.exec_()
+            #ret = msg.question(self,'Interromper PV na Nuvem?', text, msg.Yes | msg.No)
+            
+            print('ret: {}'.format(ret))
+            
+            if msg.clickedButton() is msg.button(QMessageBox.Yes):
+            
+                while self.isCloudInstanceRunning():
+                    self.stopAllInstances()
+                
+                uiConfig.statusConfig.setNuvemConfig('False')
+                self.uiConfig.lblInitStatus.setText('PV rodando Localmente')
+                
+                
+            else:
+                print('btnRodarPc:: rodando no Nuvem entao')
+                uiConfig.statusConfig.setNuvemConfig('True')
+                self.uiConfig.lblInitStatus.setText('PV rodando na Nuvem')
+                self.uiConfig.lblCam1.setText('PV rodando na Nuvem')
+                
+            
+            '''
             for task in responstListTasks['taskArns']:
                 taskId = task.split('/')[-1]
                 print('taskId: {}'.format(taskId))
@@ -466,7 +503,7 @@ class FormProc(QWidget):
                     'TAGS',
                 ])
                 
-                print('taskDescription: {}'.format(taskDescription))
+                #print('taskDescription: {}'.format(taskDescription))
                 print(' ')
                 
                 tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
@@ -478,7 +515,7 @@ class FormProc(QWidget):
                 if tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'RUNNING':
                     
                     msg = QMessageBox()
-                    msg.setIcon(QMessageBox.Critical)
+                    #msg.setIcon(QMessageBox.Critical)
                     msg.setWindowTitle("Interromper PV na Nuvem?")
                     text = "Deseja mesmo interromper o PV na Nuvem?"
                     ret = msg.question(self,'', text, msg.Yes | msg.No)
@@ -513,6 +550,7 @@ class FormProc(QWidget):
                             self.statusConfig.setNuvemConfig('False')
                             status = True
                             print('Task finalizada com sucesso!')
+                '''
                         
                         
                 
@@ -523,7 +561,7 @@ class FormProc(QWidget):
         statusContainer = ''
         i = 0
         
-        while isCloudInstanceRunning():
+        while self.isCloudInstanceRunning():
             
             print('stopAllInstances:: {} tentativa de finalizar as tasks'.format(i))
         
@@ -545,42 +583,65 @@ class FormProc(QWidget):
                 if tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'RUNNING':
                 
                     response = client.stop_task(cluster='pv-cluster',task=taskId, reason='stoppedByUser')
-                    print('response: {}'.format(response))            
+                    #print('response: {}'.format(response))            
             
-            i+=1
+            i+=1            
+        
                 
         
     
     
     def isCloudInstanceRunning(self):
     
-        #print('checkarInstanciaNuvem:: Checando se container já está rodando...')        
+        #print('checkarInstanciaNuvem:: Checando se container já está rodando...')
+        print('isCloudInstanceRunning...')
+        lenTask = 0  
+        status = False        
+
         responstListTasks = client.list_tasks(cluster='pv-cluster')
         statusContainer = ''
         #print('responstListTasks: {}'.format(responstListTasks))
 
-        for task in responstListTasks['taskArns']:
-            taskId = task.split('/')[-1]
-            #print('taskId: {}'.format(taskId))
-            #print(' ')
-            taskDescription = client.describe_tasks(cluster='pv-cluster', tasks=[taskId], include=[
-                'TAGS',
-            ])
+        if len(responstListTasks) == 0:
+            print('isCloudInstanceRunning:: responstListTasks == 0 .. sem instancias')
+            return False            
+        else:
+        
+            print('task lengh: {}'.format(len(responstListTasks)))                
+            lenTask = len(responstListTasks)            
+            i = 0
             
-            #print('taskDescription: {}'.format(taskDescription))
-            #print(' ')
-            
-            tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
-            lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
-            
-            print('checkarInstanciaNuvem tagContainer: {}'.format(tagContainer))
-            print('checkarInstanciaNuvem lastStatus: {}'.format(lastStatus))
-            print(' ')
-            
-            if tagContainer == 'contato@portaovirtual.com.br' and lastStatus != 'STOPPED':
-                return False
-            elif tagContainer == 'contato@portaovirtual.com.br' and lastStatus != 'RUNNING':
-                return True
+            for task in responstListTasks['taskArns']:
+                print('i: {}'.format(i))
+                taskId = task.split('/')[-1]
+                #print('taskId: {}'.format(taskId))
+                #print(' ')
+                taskDescription = client.describe_tasks(cluster='pv-cluster', tasks=[taskId], include=[
+                    'TAGS',
+                ])
+                
+                #print('taskDescription: {}'.format(taskDescription))
+                #print(' ')
+                
+                tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
+                lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
+                
+                print(' ')
+                print('checkarInstanciaNuvem tagContainer: {}'.format(tagContainer))
+                print('checkarInstanciaNuvem lastStatus: {}'.format(lastStatus))
+                print(' ')
+                
+                if tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'STOPPED':
+                    print('taskId: {} STOPPED'.format(taskId))
+                    #status =  False
+                elif tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'RUNNING':
+                    print('taskId: {} RUNNING'.format(taskId))
+                    print('retornando true...')
+                    status = True                
+                
+                i = i+1
+                
+        return status
 
             
         
@@ -608,6 +669,13 @@ class FormProc(QWidget):
             self.uiConfig.lblStatusCamRemota.setText(text)
             
         else:            
+            
+            msg.setIcon(QMessageBox.Critical)
+            msg.setWindowTitle("PV indo para a Nuvem - Aguarde por favor!")
+            text = "PV indo para a Nuvem - Aguarde alguns minutos por favor!"
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.setText(text)
+            msg.exec()
             
             #ativar Docker na Nuvem AWS
             print('btnRodarNuvem:: Run task AWS...')
@@ -644,12 +712,18 @@ class FormProc(QWidget):
                 print('btnRodarNuvem:: Container já em execução...')
                 print('btnRodarNuvem:: Status: {}'.format(statusContainer))
                 print(' ')
+                self.statusConfig.setNuvemConfig('True')
+                msg.setWindowTitle("PV indo para a Nuvem - Aguarde por favor!")
+                text = "PV já iniciou instancia na Nuvem - aguarde por favor!"
+                msg.setStandardButtons(QMessageBox.Ok)
+                msg.setText(text)
+                msg.exec()
                 
             else:
 
                 print('btnRodarNuvem:: Iniciando a task...')
                 
-                response = client.run_task(cluster='pv-cluster', taskDefinition='pvTask:12', networkConfiguration={
+                response = client.run_task(cluster='pv-cluster', taskDefinition='pvTask:20', networkConfiguration={
                         'awsvpcConfiguration': {
                             'subnets': [
                                 'subnet-0b94503ff80f53735',
@@ -692,7 +766,7 @@ class FormProc(QWidget):
                 #print('Resposta:')
                 #print(' ')
                 #print(response)
-                print(' ')
+                #print(' ')
 
                 taskId = response['tasks'][0]['taskArn']
                 print('Task id: {}'.format(taskId))
@@ -700,7 +774,7 @@ class FormProc(QWidget):
 
                 status = False
                 print('btnRodarNuvem:: Checando status do Container...')
-                self.uiConfig.lblInitStatus.setText('PV indo para a Nuvem... por favor aguarde alguns minutos!')
+                self.uiConfig.lblInitStatus.setText(' PV indo para a Nuvem... por favor aguarde alguns minutos! ')
                 while not status:
                     responseStatus = client.describe_tasks(cluster='pv-cluster', tasks=[taskId])    
                     
@@ -725,6 +799,16 @@ class FormProc(QWidget):
                         print('btnRodarNuvem:: Task ACTIVATING... aguardando 10 segundos')
                         QtTest.QTest.qWait(10000)
                         #time.sleep(10)
+                    elif statusContainer == 'STOPPED':
+                        print('btnRodarNuvem:: Erro para criar instancia .. tente novamente')
+                        msg.setIcon(QMessageBox.Information)
+                        msg.setWindowTitle("Erro no envio do PV para a Nuvem")
+                        msg.setStandardButtons(QMessageBox.Ok)        
+                        msg.setText("Houve um erro para enviar o PV à Nuvem - Tente novamente por favor!")
+                        msg.exec()       
+                        break
+                        #QtTest.QTest.qWait(10000)
+                        #time.sleep(10)
                 
                 if status:
                     msg.setIcon(QMessageBox.Information)
@@ -733,8 +817,9 @@ class FormProc(QWidget):
                     msg.setText("Portão Virtual rodando na Nuvem! Pode fechar este programa normalmente e desligar seu PC!")
                     msg.exec()       
                     self.statusConfig.setNuvemConfig("True")
-                    self.camRunTime.init()
+                    print('btnRodarNuvem:: setNuvemConfig True')
                     self.refreshStatusConfig()
+                    self.camRunTime.init()                    
                     self.uiConfig.lblCam1.clear()
                     self.uiConfig.lblCam1.setText('Portão Virtual rodando na Nuvem... pode desligar o seu PC se necessário!')
                     self.uiConfig.lblInitStatus.setText('Portão Virtual rodando na Nuvem')
@@ -2255,34 +2340,52 @@ if __name__=="__main__":
     
     app = QApplication(sys.argv)                  
                  
-    uiConfig = FormProc()    
+    uiConfig = FormProc()
     
-    if socket.gethostname() != 'pv-server':
-        print('main:: rodando local')
-        # se está rodando local por algum erro na Nuvem
-        # atualiza o Firebase e checa se realmente tem alguma instancia rodando
+    log.info('main:: hostname: {}'.format(socket.gethostname()))    
+    print('main:: hostname: {}'.format(socket.gethostname()))    
+    
+    
+    if 'compute.internal' in socket.gethostname():
+    
+        if uiConfig.isCloudInstanceRunning():
         
-        # Checando se a instancia está rodando por algum motivo
-        if not uiConfig.isCloudInstanceRunning():
-            #se não estiver rodando, tudo certo... chama a GUI e atualiza o Firebase
-            uiConfig.statusConfig.setNuvemConfig('False')            
-            
-        #se tem instancia rodando... mas o PV iniciou local, termina as instancias que estão rodando, avisa o usuário para começar uma Nova Instancia na Nuvem        
+            print('main:: rodando Nuvem')
+            log.info('main:: rodando Nuvem')
         else:
-            uiConfig.stopAllInstances()
-            
-            uiConfig.statusConfig.setNuvemConfig('False')
-            
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Critical)
             msg.setWindowTitle("Reinicia sua instância na Nuvem")
             text = "Houve um erro com o processamento na Nuvem, reinicie o PV na Nuvem ou localmente por favor!"            
             msg.exec()
+    else:
+        
+        log.info('main:: rodando local')        
+        print('main:: rodando local')        
+        
+        # se está rodando local por algum erro na Nuvem
+        # atualiza o Firebase e checa se realmente tem alguma instancia rodando
+        
+        # Checando se a instancia está rodando por algum motivo
+        if uiConfig.isCloudInstanceRunning() == False:
+            #se não estiver rodando, tudo certo... chama a GUI e atualiza o Firebase
+            log.info('main:: sem instancia na Nuvem .. rodando local')
+            print('main:: sem instancia na Nuvem .. rodando local')
+            uiConfig.statusConfig.setNuvemConfig('False')
             
+        # se tem instancia rodando... mas o PV iniciou local,checa se o usuári o
+        # quer que rode localmente ou continue na Nuvem        
+        else:
+            log.info('main:: tem instancia na Nuvem, checando se deseja rodar localmente')
+            print('main:: tem instancia na Nuvem, checando se deseja rodar localmente')
+            uiConfig.btnRodarPc()
+            
+            #print('main:: parando todas instancias na Nuvem')            
+            #uiConfig.stopAllInstances()            
+            #uiConfig.statusConfig.setNuvemConfig('False')            
         
         uiConfig.show()
-    else:
-        print('main:: rodando Nuvem')
+            
     
         
  
