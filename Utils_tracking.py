@@ -17,7 +17,7 @@ import time
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import messaging
-from firebase_admin import storage
+#from firebase_admin import storage
 from firebase_admin import db
 import datetime
 
@@ -86,6 +86,8 @@ else:
 
 def saveImageFirebase(frame, idImage, user):
     
+    bucket = None
+    
     try:
         bucket = storage.bucket()
     except Exception as e:
@@ -108,17 +110,18 @@ def saveImageFirebase(frame, idImage, user):
 
        
     log.info('saveImageFirebase:: Salvando imagem no Firebase')
-    try:
-        blob = bucket.blob(user + '/' + idImage + '.jpg')        
-        blob.upload_from_filename(img_file)        
-        
-    except firebase_admin.exceptions.FirebaseError as err:
-        
-        log.critical('saveImageFirebase:: Erro ao salvar imagem no Firebase')
-        log.critical('saveImageFirebase:: Erro: {}'.formar(err))        
-        return None, None, False
-    else:
-        log.info('saveImageFirebase:: Imagem salva no Firebase')
+    if bucket is not None:
+        try:
+            blob = bucket.blob(user + '/' + idImage + '.jpg')        
+            blob.upload_from_filename(img_file)        
+            
+        except firebase_admin.exceptions.FirebaseError as err:
+            
+            log.critical('saveImageFirebase:: Erro ao salvar imagem no Firebase')
+            log.critical('saveImageFirebase:: Erro: {}'.formar(err))        
+            return None, None, False
+        else:
+            log.info('saveImageFirebase:: Imagem salva no Firebase')
         
     try:
         blob.make_public() 

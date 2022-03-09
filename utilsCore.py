@@ -21,7 +21,7 @@ from PyQt5 import QtTest
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import messaging
-from firebase_admin import storage
+#from firebase_admin import storage
 from firebase_admin import db
 
 
@@ -92,9 +92,9 @@ if not firebase_admin._apps:
         try:
             firebase_app_pv = firebase_admin.initialize_app(credential, {'storageBucket': 'pvalarmes-3f7ee.appspot.com', 'databaseURL': 'https://pvalarmes-3f7ee-default-rtdb.firebaseio.com/'})
         except Exception as err:
-            print('Erro ao inicializar o Firebase: {}'.format(err))            
+            log.error('Erro ao inicializar o Firebase: {}'.format(err))            
         else:
-            print('utilscore:: Firebase inicializado com sucesso')
+            log.info('utilscore:: Firebase inicializado com sucesso')
 
 
 
@@ -701,31 +701,112 @@ class StatusConfig:
         "loginAutomatico"  : "False",
         "autoStart"        : "False"
     }
+    
+    dataBkp = {
+        "camListAtivas": "",
+        "camListEncontradas": "",
+        "camSource": "",
+        "dateSessionInit": "2022-01-01 00:00:00",
+        "desativarAlarmes": "False",
+        "dirVideosAllTime": "videos_24h",
+        "dirVideosOnAlarmes": "videos_alarmes",
+        "diskMaxUsage": "85",
+        "diskMinUsage": "5",
+        "dnnModelPb": "config/dlModels/yolov4-tiny/yolov4",
+        "dnnModelPbTxt": "",
+        "emailConfig": {
+            "name": "",
+            "password": "",
+            "port": "",
+            "servidorEmail": "Outlook",
+            "smtp": "smtp.office365.com",
+            "subject": "PV",
+            "to": "",
+            "user": ""
+        },
+        "isOpenVino": "False",
+        "isRecordingAllTime": "False",
+        "isRecordingOnAlarmes": "False",
+        "nuvemConfig": {
+            "isRunning": "False",
+            "storagePlan": 0
+        },
+        "openVinoCpuExtension": "MKLDNNPlugin.dll",
+        "openVinoModels": [
+            {
+                "architecture_type": "yolo",
+                "isActive": "False",
+                "name": "person-vehicle-bike-detection-crossroad-yolov3-1020-FP16-INT8",
+                "openVinoDevice": "CPU",
+                "openVinoModelBin": "config/dlModels/intel/person-vehicle-bike-detection-crossroad-yolov3-1020/FP16-INT8/person-vehicle-bike-detection-crossroad-yolov3-1020.bin",
+                "openVinoModelXml": "config/dlModels/intel/person-vehicle-bike-detection-crossroad-yolov3-1020/FP16-INT8/person-vehicle-bike-detection-crossroad-yolov3-1020.xml"
+            }
+        ],
+        "openVinoPluginDir": "config/openvino/deployment_tools/inference_engine/bin/intel64/Release",
+        "primeiroUso": "False",
+        "prob_threshold": 0.65,
+        "storageConfig": {
+            "diskMaxUsage": 50,
+            "diskMinUsage": "10",
+            "eraseOldestFiles": "True",
+            "spaceMaxDirVideosAllTime": "1",
+            "spaceMaxDirVideosOnAlarme": "10",
+            "stopSaveNewVideos": "False"
+        }
+    }
 
 
     data = {
-            "isRecordingAllTime"    : "False",
-            "isRecordingOnAlarmes"  : "True",
-            "isOpenVino"            : "True",
-            "camSource"             : "webcam",
-            "prob_threshold"        : 0.60,
-            # aponta para pastas dentro de dlModels
-            "dnnModelPb"        : "./dlModels/ssd-mobilenet/frozen_inference_graph_v1_coco_2017_11_17.pb",
-            "dnnModelPbTxt"     : "./dlModels/ssd-mobilenet/ssd_mobilenet_v1_coco_2017_11_17.pbtxt",
-            "openVinoModelXml"  : "./computer_vision_sdk/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP32/person-vehicle-bike-detection-crossroad-0078.xml",
-            "openVinoCpuExtension" : "/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_avx2.so",
-            "openVinoPluginDir" : "/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64",
-            "openVinoModelBin"  : "./computer_vision_sdk/deployment_tools/intel_models/person-vehicle-bike-detection-crossroad-0078/FP32/person-vehicle-bike-detection-crossroad-0078.bin",
-            "openVinoDevice"    : "CPU",
-            "desativarAlarmes"  : "False",
-            "emailConfig"    : [ {'port':'587', 
-                              'smtp':'smtp.gmail.com',
-                              'user':'user@user.com', 
-                              'password':'password', 
-                              'subject':'Alarme PV',
-                              'to':'destiny@server.com'}],
-            "dirVideos"      : "/home/igor/videos_alarmes",
-            "camListAtivas" : []
+        "camListAtivas": "",
+        "camListEncontradas": "",
+        "camSource": "",
+        "dateSessionInit": "2022-01-01 00:00:00",
+        "desativarAlarmes": "False",
+        "dirVideosAllTime": "videos_24h",
+        "dirVideosOnAlarmes": "videos_alarmes",
+        "diskMaxUsage": "85",
+        "diskMinUsage": "5",
+        "dnnModelPb": "config/dlModels/yolov4-tiny/yolov4",
+        "dnnModelPbTxt": "",
+        "emailConfig": {
+            "name": "",
+            "password": "",
+            "port": "",
+            "servidorEmail": "Outlook",
+            "smtp": "smtp.office365.com",
+            "subject": "PV",
+            "to": "",
+            "user": ""
+        },
+        "isOpenVino": "False",
+        "isRecordingAllTime": "False",
+        "isRecordingOnAlarmes": "False",
+        "nuvemConfig": {
+            "isRunning": "False",
+            "storagePlan": 0
+        },
+        "openVinoCpuExtension": "MKLDNNPlugin.dll",
+        "openVinoModels": [
+            {
+                "architecture_type": "yolo",
+                "isActive": "False",
+                "name": "person-vehicle-bike-detection-crossroad-yolov3-1020-FP16-INT8",
+                "openVinoDevice": "CPU",
+                "openVinoModelBin": "config/dlModels/intel/person-vehicle-bike-detection-crossroad-yolov3-1020/FP16-INT8/person-vehicle-bike-detection-crossroad-yolov3-1020.bin",
+                "openVinoModelXml": "config/dlModels/intel/person-vehicle-bike-detection-crossroad-yolov3-1020/FP16-INT8/person-vehicle-bike-detection-crossroad-yolov3-1020.xml"
+            }
+        ],
+        "openVinoPluginDir": "config/openvino/deployment_tools/inference_engine/bin/intel64/Release",
+        "primeiroUso": "False",
+        "prob_threshold": 0.65,
+        "storageConfig": {
+            "diskMaxUsage": 50,
+            "diskMinUsage": "10",
+            "eraseOldestFiles": "True",
+            "spaceMaxDirVideosAllTime": "1",
+            "spaceMaxDirVideosOnAlarme": "10",
+            "stopSaveNewVideos": "False"
+        }
     }
 
     region = {
@@ -1042,74 +1123,63 @@ class StatusConfig:
         #self.data["emailConfig"]["to"]        = emailConfig["to"]
 
     def zerarListCamEncontradasConfig(self):
-        self.data["camListEncontradas"] = [] 
+        self.data["camListEncontradas"] = []
         self.saveConfigFile()
     
     def zerarListCamAtivasConfig(self):
-        self.data["camListAtivas"] = [] 
+        self.data["camListAtivas"] = []
         self.saveConfigFile()
         self.updateConfigFileNuvem()
     
     def addListCamEncontradasConfig(self, listCam):
-        if listCam:
+        if len(listCam) > 0:
             self.data["camListEncontradas"] = listCam 
         else:
             self.data["camListEncontradas"] = []
         
         self.saveConfigFile()
         self.updateConfigFileNuvem()
+        
+        
 
     def addListCamAtivasConfig(self, listCam):
+        log.info('addListCamAtivasConfig::')
+        
         if len(listCam) > 0:
-            self.data["camListAtivas"] = listCam
+            self.data["camListAtivas"] = listCam            
         else:
             self.data["camListAtivas"] = []
             
         self.saveConfigFile()
         self.updateConfigFileNuvem()
+        
     
     def getListCamEncontradas(self):
         
-        #print('camListEncontradas: {}'.format(self.data["camListEncontradas"]))
         listCam = []
-        try:
-            listCam = self.data["camListEncontradas"]
-        except:
-            log.info('getListCamEncontradas:: sem cameras encontradas')
-        else:
+        if 'camListEncontradas' in self.data:        
+            listCam = self.data["camListEncontradas"]        
         
-            if len(listCam) > 0:
-                return self.data["camListEncontradas"]
-            else:
-                self.data["camListEncontradas"] = []
-                self.saveConfigFile()
-        self.updateConfigFileNuvem()
+        return listCam
            
     
     def getListCamAtivas(self):
         
-        listCam = []
-        try:
+        listCam = []        
+        if 'camListAtivas' in self.data:
             listCam = self.data["camListAtivas"]
-        except:
-            log.info('getListCamAtivas:: sem cameras ativas')
-        else:
         
-            if len(listCam) > 0:
-                return self.data["camListAtivas"]
-            else:
-                self.data["camListAtivas"] = []
-                self.saveConfigFile()
-        self.updateConfigFileNuvem()
+        return listCam
 
     
     def getCamEmUsoConfig(self):
         camEmuso = None
-        for cam in self.data['camListAtivas']:
-            if cam is not None:
-                if cam['emUso'] == 'True':
-                    camEmuso = cam                
-                    break
+        if 'camListAtivas' in self.data:
+            for cam in self.data['camListAtivas']:
+                if cam is not None:
+                    if cam['emUso'] == 'True':
+                        camEmuso = cam                
+                        break
         
         return camEmuso 
 
@@ -1208,14 +1278,23 @@ class StatusConfig:
             self.saveRegionFile()
         #TO-DO try catch toleranca a falhas
 
-
+    def updateLocalConfig(self, configFile='config/config.json', regionsFile='config/regions.json', configLogin='config/lconfig.json'):
+        self.readConfigFile(configFile)
+        self.readRegionsFile(regionsFile)
+        self.readConfigLogin(configLogin)
+    
     def __init__(self, configFile='config/config.json', regionsFile='config/regions.json', configLogin='config/lconfig.json'):
 
         #configuracoes setadas pelo arquivo sobrescrevem as configuracoes padroes
         log.info('utilsCore:: __init__ statusConfig')
+        #log.info('utilsCore:: __init__ self.data: {}'.format(self.data))
+        #log.info('utilsCore:: __init__ primeiroUso: {}'.format(self.data['primeiroUso']))
+        
         self.readConfigFile(configFile)
         self.readRegionsFile(regionsFile)
         self.readConfigLogin(configLogin)
+        
+        #log.info('utilsCore:: __init__ primeiroUso: after {}'.format(self.data['primeiroUso']))
     
     def initFirebaseAdmin(self):
         if not firebase_admin._apps:            
@@ -1253,7 +1332,7 @@ class StatusConfig:
             try:
                 ref = db.reference('/users/' + userId + '/configLogin')
             except Exception as e:
-                print('readConfigLogin:: erro getting configLogin: {}'.format(e))
+                log.error('readConfigLogin:: erro getting configLogin: {}'.format(e))
             else:            
                 self.dataLogin = ref.get()
                 #print('dataLogin firebase: {}'.format(ref.get()))
@@ -1270,10 +1349,15 @@ class StatusConfig:
         try:
             self.data = json.load(open(fileName,'r'))        
             
-        except Exception as e:            
-            print('readConfigFile:: error: {}'.format(e))
+        except Exception as e:
+        
+            log.error('readConfigFile:: error: {}'.format(e))
+            log.error('readConfigFile:: Carregando config de bkp')
+            self.data = self.dataBkp            
             
         else:
+            if self.data == None:
+                self.data = self.dataBkp                
             log.info('readConfigFile:: lendo config.json ok')
         
         
@@ -1283,6 +1367,9 @@ class StatusConfig:
         userId = user.replace('.','_')
         userId = userId.replace('@','_')
         
+        log.info('readConfigFile:: userId: {}'.format(userId))
+        #print('readConfigFile:: userId: {}'.format(userId))
+        
         if checkInternetAccess():
         
             if userId != '':
@@ -1290,20 +1377,29 @@ class StatusConfig:
                 self.initFirebaseAdmin()
                 
                 try:
-                    ref = db.reference('/users/' + userId + '/config')
-                except Exception as e:
-                    log.error('readConfigFile:: error getting config: {}'.format(e))
-                else:                            
+                    ref = db.reference('/users/' + userId + '/config')                    
+                except Exception as e:                
+                    log.error('readConfigFile:: error getting config from Firebase: {}'.format(e))
+                    log.error('readConfigFile:: salvando arquivo local sem sincronizar')
+                    #print('readConfigFile:: salvando arquivo local sem sincronizar')   
+                else:
+                    
                     try:
-                        self.data = ref.get()
+                        #print('readConfigFile:: ref.get(): {}'.format(ref.get()))
+                        if ref.get() != None:
+                            self.data = ref.get()
                     except Exception as e:
                         log.error('readConfigFile:: erro sync com Firebase config-  ref.get() error: {}'.format(e))
-                    else:
-                        self.saveConfigFile()
-                    #print('dataLogin firebase: {}'.format(ref.get()))
+                        log.error('readConfigFile:: salvando arquivo local sem sincronizar')
+                    else:                                                
+                        log.info('readConfigFile:: Config sincronizado com Firebase ok')
+                        #print('dataLogin firebase: {}'.format(ref.get()))                
+                
         else:
             log.error('readConfigFile:: Sem internet! impossivel sincronizar dados de config com Firebase ')
-            print('readConfigFile:: Sem conexao com a internet - impossivel sincronizar dados de Config com o Firebase')
+            #print('readConfigFile:: Sem conexao com a internet - impossivel sincronizar dados de Config com o Firebase')
+        
+        self.saveConfigFile()
 
     def readRegionsFile(self, fileName = 'config/regions.json'):
         #log.info('readRegionsFile:: Lendo arquivo de regiões: ' + os.getcwd() + '/' + fileName)
@@ -1406,13 +1502,13 @@ class StatusConfig:
 
     def deleteRegion(self, nameRegion='regions1'):
         log.info('deleteRegion:: pressed')
-        print('deleteRegion')
+        #print('deleteRegion')
         i = 0
         for r in self.regions:
             if r.get("nameRegion") == nameRegion:
                 del self.regions[i]
                 self.saveRegionFile()
-                print('regiao deletada')
+                #print('regiao deletada')
                 log.info("deleteRegion:: Regiao '{}' removido com sucesso".format(nameRegion))
 
             i = i+1
@@ -1517,7 +1613,7 @@ class StatusConfig:
 
     def updateConfigFileNuvem(self):    
         
-        print('updateConfigFileNuvem:: ')
+        #print('updateConfigFileNuvem:: ')
         log.info('updateConfigFileNuvem::')
         
         #json.dump(self.data, open(file,'w'), indent=4)
@@ -1535,7 +1631,7 @@ class StatusConfig:
         i = 1
         while not statusFirebase:
             log.info('updateConfigFileNuvem:: Savando config status no Firebase tentativa [{}]'.format(i))
-            print('updateConfigFileNuvem:: Savando config status no Firebase tentativa [{}]'.format(i))
+            #print('updateConfigFileNuvem:: Savando config status no Firebase tentativa [{}]'.format(i))
             try:
                 ref.set(self.data)
             except Exception as e:
@@ -1544,8 +1640,7 @@ class StatusConfig:
                 #time.sleep(0.5)
                 QtTest.QTest.qWait(5000)
             else:
-                statusFirebase = True
-                log.info('updateConfigFileNuvem:: statusFirebase true')
+                statusFirebase = True                
                 i = 0
     
     
@@ -1565,6 +1660,14 @@ class StatusConfig:
         
         log.info('saveConfigLogin:: Salvando arquivo de configuração: {}/{}'.format(os.getcwd(), fileName))
         
+        try:
+            fp = open(fileName,"w")
+            fp.write(json.dumps(self.dataLogin, indent = 4))
+        finally:
+            fp.close()
+
+        log.info('saveConfigLogin:: Salvando arquivo de configuração: {}/{}'.format(os.getcwd(), fileName))
+        
         #try:
         #    fp = open("passwords.json","r")
         #    obj = json.load(fp)
@@ -1579,6 +1682,9 @@ class StatusConfig:
         user = self.getUserLogin()
         userId = user.replace('.','_')
         userId = userId.replace('@','_')    
+        
+        #print('saveConfigLogin:: userId: {}'.format(userId))
+        log.info('saveConfigLogin:: userId: {}'.format(userId))        
         
         ref = db.reference('/users/' + userId + '/configLogin')
     
@@ -1599,13 +1705,7 @@ class StatusConfig:
                 i = 0
         
         
-        try:
-            fp = open(fileName,"w")
-            fp.write(json.dumps(self.dataLogin, indent = 4))
-        finally:
-            fp.close()
-
-        log.info('Salvando arquivo de configuração: {}/{}'.format(os.getcwd(), fileName))
+       
         #json.dump(self.dataLogin, open(file,'w'), indent=4)
 
 

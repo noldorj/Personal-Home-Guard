@@ -134,7 +134,7 @@ class FormProc(QWidget):
         #print('else iniciando formConfig')
         
         self.camRunTime.token = token 
-        print('initFormConfig __init__')
+        log.info('initFormConfig __init__')
         self.statusConfig = utils.StatusConfig()
         
         self.statusConfig.readConfigLogin()
@@ -464,18 +464,19 @@ class FormProc(QWidget):
     
     def btnRodarPc(self):
     
-        print('btnRodarPc::')        
+        log.info('btnRodarPc::')
 
-        print('btnRodarPc::: Checando se container já está rodando...')
+        log.info('btnRodarPc::: Checando se container já está rodando...')
         responstListTasks = client.list_tasks(cluster='pv-cluster')
         statusContainer = ''
-        print('btnRodarPc:: responstListTasks: {}'.format(responstListTasks))
+        msg = QMessageBox()
+        #print('btnRodarPc:: responstListTasks: {}'.format(responstListTasks))
         
         if len(responstListTasks['taskArns']) == 0:
             
-            print(' ')
-            print('btnRodarPc:: Sem task rodando na Nuvem..')
-            print('btnRodarPc:: ativando processamento local')
+            #print(' ')
+            log.info('btnRodarPc:: Sem task rodando na Nuvem..')
+            log.info('btnRodarPc:: ativando processamento local')
             self.statusConfig.setNuvemConfig('False')
             
             msg.setWindowTitle("PV rodando no seu PC!")
@@ -486,7 +487,7 @@ class FormProc(QWidget):
             
         else:           
             
-            msg = QMessageBox()
+            
             msg.setIcon(QMessageBox.Critical)            
             text = "Deseja mesmo interromper o PV na Nuvem?"
             msg.setText(text)
@@ -495,7 +496,7 @@ class FormProc(QWidget):
             ret = msg.exec_()
             #ret = msg.question(self,'Interromper PV na Nuvem?', text, msg.Yes | msg.No)
             
-            print('ret: {}'.format(ret))
+            
             
             if msg.clickedButton() is msg.button(QMessageBox.Yes):
             
@@ -507,74 +508,20 @@ class FormProc(QWidget):
                 
                 
             else:
-                print('btnRodarPc:: rodando no Nuvem entao')
+                log.info('btnRodarPc:: rodando no Nuvem entao')
                 uiConfig.statusConfig.setNuvemConfig('True')
                 self.uiConfig.lblInitStatus.setText('PV rodando na Nuvem')
                 self.uiConfig.lblCam1.setText('PV rodando na Nuvem')
                 
             
-            '''
-            for task in responstListTasks['taskArns']:
-                taskId = task.split('/')[-1]
-                print('taskId: {}'.format(taskId))
-                print(' ')
-                taskDescription = client.describe_tasks(cluster='pv-cluster', tasks=[taskId], include=[
-                    'TAGS',
-                ])
-                
-                #print('taskDescription: {}'.format(taskDescription))
-                print(' ')
-                
-                tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
-                lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
-                
-                print('tagContainer: {}'.format(tagContainer))
-                print('lastStatus: {}'.format(lastStatus))
-                print(' ')
-                if tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'RUNNING':
-                    
-                    msg = QMessageBox()
-                    #msg.setIcon(QMessageBox.Critical)
-                    msg.setWindowTitle("Interromper PV na Nuvem?")
-                    text = "Deseja mesmo interromper o PV na Nuvem?"
-                    ret = msg.question(self,'', text, msg.Yes | msg.No)
-                    msg.exec()
-                    
-                    if ret == msg.Yes:
-                        print('yes')
-                        response = client.stop_task(cluster='pv-cluster',task=taskId, reason='stoppedByUser')
-                        print('response: {}'.format(response))
-                    else:
-                        print('no')
-                        break                    
-                   
-                    status = False
-                    
-                    while not status:                
-
-                        taskDescription = client.describe_tasks(cluster='pv-cluster', tasks=[taskId], include=[
-                    'TAGS',])
-                    
-                        tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
-                        lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
-                        if tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'RUNNING':
-                            print('Task ainda não finalizada.. aguarde 10 segundos')
-                            QtTest.QTest.qWait(10000)
-                            #time.sleep(10)
-                            print('Tentando finalizar a task novamente')
-                            response = client.stop_task(cluster='pv-cluster',task=taskId, reason='stoppedByUser')
-                            
-                            
-                        elif tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'STOPPED':
-                            self.statusConfig.setNuvemConfig('False')
-                            status = True
-                            print('Task finalizada com sucesso!')
-                '''
+            
                         
                         
                 
     def stopAllInstances(self):
-        print('stopAllInstances:: Finalizando isntancias/tasks ativas')
+        log.info('stopAllInstances:: Finalizando isntancias/tasks ativas')
+        
+        user = self.statusConfig.getUserLogin()
         
         responstListTasks = client.list_tasks(cluster='pv-cluster')
         statusContainer = ''
@@ -582,12 +529,11 @@ class FormProc(QWidget):
         
         while self.isCloudInstanceRunning():
             
-            print('stopAllInstances:: {} tentativa de finalizar as tasks'.format(i))
+            log.info('stopAllInstances:: {} tentativa de finalizar as tasks'.format(i))
         
             for task in responstListTasks['taskArns']:
                 taskId = task.split('/')[-1]
-                print('taskId: {}'.format(taskId))
-                print(' ')
+                
                 taskDescription = client.describe_tasks(cluster='pv-cluster', tasks=[taskId], include=[
                     'TAGS',
                 ])            
@@ -595,11 +541,7 @@ class FormProc(QWidget):
                 tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
                 lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
                 
-                print('tagContainer: {}'.format(tagContainer))
-                print('lastStatus: {}'.format(lastStatus))
-                print(' ')
-                
-                if tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'RUNNING':
+                if tagContainer == user and (lastStatus == 'RUNNING' or lastStatus == 'PENDING' or lastStatus == 'PROVISIONING'):
                 
                     response = client.stop_task(cluster='pv-cluster',task=taskId, reason='stoppedByUser')
                     #print('response: {}'.format(response))            
@@ -612,8 +554,9 @@ class FormProc(QWidget):
     
     def isCloudInstanceRunning(self):
     
-        #print('checkarInstanciaNuvem:: Checando se container já está rodando...')
-        print('isCloudInstanceRunning...')
+        user = self.statusConfig.getUserLogin()
+        
+        #print('checkarInstanciaNuvem:: Checando se container já está rodando...')        
         log.info('isCloudInstanceRunning...')
         lenTask = 0  
         status = False        
@@ -622,13 +565,13 @@ class FormProc(QWidget):
         statusContainer = ''
         #print('responstListTasks: {}'.format(responstListTasks))
 
-        if len(responstListTasks) == 0:
-            print('isCloudInstanceRunning:: responstListTasks == 0 .. sem instancias')
+        if len(responstListTasks) == 0:            
             log.info('isCloudInstanceRunning:: responstListTasks == 0 .. sem instancias')
             return False            
         else:
         
-            print('task lengh: {}'.format(len(responstListTasks)))                
+            #print('task lengh: {}'.format(len(responstListTasks)))
+            
             lenTask = len(responstListTasks)            
             i = 0
             
@@ -645,22 +588,23 @@ class FormProc(QWidget):
                 #print(' ')
                 
                 tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
-                lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
+                lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']               
                 
-                #print(' ')
-                #print('checkarInstanciaNuvem tagContainer: {}'.format(tagContainer))
-                #print('checkarInstanciaNuvem lastStatus: {}'.format(lastStatus))
-                #print(' ')
-                
-                if tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'STOPPED':
-                    #print('taskId: {} STOPPED'.format(taskId))
+                if tagContainer == user and lastStatus == 'STOPPED':
                     log.info('taskId: {} STOPPED'.format(taskId))
-                    #status =  False
-                elif tagContainer == 'contato@portaovirtual.com.br' and lastStatus == 'RUNNING':
-                    #print('taskId: {} RUNNING'.format(taskId))
+                    
+                elif tagContainer == user and lastStatus == 'RUNNING':
                     log.info('taskId: {} RUNNING'.format(taskId))
-                    #print('retornando true...')
-                    status = True                
+                    status = True
+                
+                elif tagContainer == user and lastStatus == 'PENDING':
+                    log.info('taskId: {} PENDING'.format(taskId))
+                    status = True 
+
+                elif tagContainer == user and lastStatus == 'PROVISIONING':
+                    log.info('taskId: {} PROVISIONING'.format(taskId))
+                    status = True   
+                        
                 
                 i = i+1
                 
@@ -678,188 +622,197 @@ class FormProc(QWidget):
         camRemota = self.statusConfig.getCamEmUsoConfig()
         #testando IP Cam Remota
         
-        log.info('btnRodarNuvem:: source: {}'.format(camRemota['source']))
+        user = self.statusConfig.getUserLogin()
         
-        ipCam, error = utils.camSource(camRemota['source'])
+        msg = QMessageBox()
         
-        msg = QMessageBox()        
-        
-        if error == 'rtsp':
-            msg.setIcon(QMessageBox.Critical)
-            msg.setWindowTitle("Câmera remota com problema!")
-            msg.setStandardButtons(QMessageBox.Ok)
-            text = "Cheque se a porta" + camRemota["port"] + 'do seu roteador está liberada!'
-            msg.setText(text)
-            msg.exec()
-            text = 'RTSP: ' + camRemota.source
-            self.uiConfig.lblStatusCamRemota.setText(text)
+        if camRemota is not None:
+         
+            log.info('btnRodarNuvem:: source: {}'.format(camRemota['source']))
             
-        else:            
+            ipCam, error = utils.camSource(camRemota['source'])
             
-            msg.setIcon(QMessageBox.Critical)
-            msg.setWindowTitle("PV indo para a Nuvem - Aguarde por favor!")
-            text = "PV indo para a Nuvem - Aguarde alguns uns 5 minutos por favor!"
-            msg.setStandardButtons(QMessageBox.Ok)
-            msg.setText(text)
-            msg.exec()
             
-            #ativar Docker na Nuvem AWS
-            #print('btnRodarNuvem:: Run task AWS...')
-
-            #print('btnRodarNuvem:: Checando se container já está rodando...')
-            log.info('btnRodarNuvem:: Checando se container já está rodando...')
-
-            responstListTasks = client.list_tasks(cluster='pv-cluster')
-            statusContainer = ''
-            #print('responstListTasks: {}'.format(responstListTasks))
-
-            for task in responstListTasks['taskArns']:
-                taskId = task.split('/')[-1]
-                #print('taskId: {}'.format(taskId))
-                #print(' ')
-                taskDescription = client.describe_tasks(cluster='pv-cluster', tasks=[taskId], include=[
-                    'TAGS',
-                ])
+            
+            if error == 'rtsp':
+                msg.setIcon(QMessageBox.Critical)
+                msg.setWindowTitle("Câmera remota com problema!")
+                msg.setStandardButtons(QMessageBox.Ok)
+                text = "Cheque se a porta" + camRemota["port"] + 'do seu roteador está liberada!'
+                msg.setText(text)
+                msg.exec()
+                text = 'RTSP: ' + camRemota.source
+                self.uiConfig.lblStatusCamRemota.setText(text)
                 
-                #print('taskDescription: {}'.format(taskDescription))
+            else:            
                 
-                
-                tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
-                lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
-                
-                #print('tagContainer: {}'.format(tagContainer))
-                #print('lastStatus: {}'.format(lastStatus))
-                #print(' ')
-                if tagContainer == 'contato@portaovirtual.com.br' and lastStatus != 'STOPPED':
-                    statusContainer = 'started'
-
-
-
-            if statusContainer == 'started':
-                log.info('btnRodarNuvem:: Container já em execução...')
-                #print('btnRodarNuvem:: Status: {}'.format(statusContainer))
-                
-                self.statusConfig.setNuvemConfig('True')
+                msg.setIcon(QMessageBox.Critical)
                 msg.setWindowTitle("PV indo para a Nuvem - Aguarde por favor!")
-                text = "PV já iniciou instancia na Nuvem - aguarde por favor!"
+                text = "PV indo para a Nuvem - Aguarde alguns uns 5 minutos por favor!"
                 msg.setStandardButtons(QMessageBox.Ok)
                 msg.setText(text)
                 msg.exec()
                 
-            else:
+                #ativar Docker na Nuvem AWS
+                #print('btnRodarNuvem:: Run task AWS...')
 
-                log.info('btnRodarNuvem:: Iniciando a task...')
-                
-                response = client.run_task(cluster='pv-cluster', taskDefinition='pvTask:21', networkConfiguration={
-                        'awsvpcConfiguration': {
-                            'subnets': [
-                                'subnet-0b94503ff80f53735',
-                                'subnet-0f1d7a5b3dc89da66',
-                                'subnet-07a09921b3d12c738'
-                            ],
-                            'securityGroups': [
-                                'sg-0a35823fd51e8d0a2',
-                            ],
-                            'assignPublicIp': 'ENABLED'
-                        }
-                        },         
-                        launchType='FARGATE',
-                        overrides={
-                        'containerOverrides': [
-                            {
-                                'name': 'pv-docker',
-                                'command': [
-                                    '/pv/deploy-linux/start.sh',
-                                ],
-                                'environment': [
-                                    {
-                                        'name': 'user',
-                                        'value': 'contato@portaovirtual.com.br'
-                                    },
-                                ],               
-                            },
-                            ]
-                        },
-                        tags=[
-                        {
-                            'key': 'user',
-                            'value': 'contato@portaovirtual.com.br'
-                        },
-                        ],
-                        enableECSManagedTags=True,
-                        enableExecuteCommand=True,
-                        )
-                            
-                #print('Resposta:')
-                #print(' ')
-                #print(response)
-                #print(' ')
+                #print('btnRodarNuvem:: Checando se container já está rodando...')
+                log.info('btnRodarNuvem:: Checando se container já está rodando...')
 
-                taskId = response['tasks'][0]['taskArn']
-                #print('Task id: {}'.format(taskId))
-                #print(' ')
+                responstListTasks = client.list_tasks(cluster='pv-cluster')
+                statusContainer = ''
+                #print('responstListTasks: {}'.format(responstListTasks))
 
-                status = False
-                log.info('btnRodarNuvem:: Checando status do Container...')
-                self.uiConfig.lblInitStatus.setText(' PV indo para a Nuvem... por favor aguarde +- 5 minutos! ')
-                while not status:
-                    responseStatus = client.describe_tasks(cluster='pv-cluster', tasks=[taskId])    
-                    
-                    #print('responseStatus: {}'.format(responseStatus))
+                for task in responstListTasks['taskArns']:
+                    taskId = task.split('/')[-1]
+                    #print('taskId: {}'.format(taskId))
                     #print(' ')
-                    statusContainer = responseStatus['tasks'][0]['containers'][0]['lastStatus']
-                    #print('statusContainer: {}'.format(statusContainer))
+                    taskDescription = client.describe_tasks(cluster='pv-cluster', tasks=[taskId], include=[
+                        'TAGS',
+                    ])
                     
-                    if statusContainer == 'RUNNING':
-                        log.info('Container rodando!')
+                                       
+                    
+                    tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
+                    lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
+                    
+                    #print('tagContainer: {}'.format(tagContainer))
+                    #print('lastStatus: {}'.format(lastStatus))
+                    #print(' ')
+                    if tagContainer == user and lastStatus != 'STOPPED':
+                        statusContainer = 'started'
+
+
+
+                if statusContainer == 'started':
+                    log.info('btnRodarNuvem:: Container já em execução...')
+                    #print('btnRodarNuvem:: Status: {}'.format(statusContainer))
+                    
+                    self.statusConfig.setNuvemConfig('True')
+                    msg.setWindowTitle("PV indo para a Nuvem - Aguarde por favor!")
+                    text = "PV já iniciou instancia na Nuvem - aguarde por favor!"
+                    msg.setStandardButtons(QMessageBox.Ok)
+                    msg.setText(text)
+                    msg.exec()
+                    
+                else:
+
+                    log.info('btnRodarNuvem:: Iniciando a task...')
+                    
+                    response = client.run_task(cluster='pv-cluster', taskDefinition='pvTask:21', networkConfiguration={
+                            'awsvpcConfiguration': {
+                                'subnets': [
+                                    'subnet-0b94503ff80f53735',
+                                    'subnet-0f1d7a5b3dc89da66',
+                                    'subnet-07a09921b3d12c738'
+                                ],
+                                'securityGroups': [
+                                    'sg-0a35823fd51e8d0a2',
+                                ],
+                                'assignPublicIp': 'ENABLED'
+                            }
+                            },         
+                            launchType='FARGATE',
+                            overrides={
+                            'containerOverrides': [
+                                {
+                                    'name': 'pv-docker',
+                                    'command': [
+                                        '/pv/deploy-linux/start.sh',
+                                    ],
+                                    'environment': [
+                                        {
+                                            'name': 'user',
+                                            'value': user
+                                        },
+                                    ],               
+                                },
+                                ]
+                            },
+                            tags=[
+                            {
+                                'key': 'user',
+                                'value': user
+                            },
+                            ],
+                            enableECSManagedTags=True,
+                            enableExecuteCommand=True,
+                            )
+                                
+                    #print('Resposta:')
+                    #print(' ')
+                    #print(response)
+                    #print(' ')
+
+                    taskId = response['tasks'][0]['taskArn']
+                    #print('Task id: {}'.format(taskId))
+                    #print(' ')
+
+                    status = False
+                    log.info('btnRodarNuvem:: Checando status do Container...')
+                    self.uiConfig.lblInitStatus.setText(' PV indo para a Nuvem... por favor aguarde +- 5 minutos! ')
+                    while not status:
+                        responseStatus = client.describe_tasks(cluster='pv-cluster', tasks=[taskId])    
+                        
+                        #print('responseStatus: {}'.format(responseStatus))
+                        #print(' ')
+                        statusContainer = responseStatus['tasks'][0]['containers'][0]['lastStatus']
+                        #print('statusContainer: {}'.format(statusContainer))
+                        
+                        if statusContainer == 'RUNNING':
+                            log.info('Container rodando!')
+                            msg.setIcon(QMessageBox.Information)
+                            msg.setWindowTitle("PV já na Nuvem")
+                            msg.setStandardButtons(QMessageBox.Ok)        
+                            msg.setText("PV já está rodando na Nuvem!")
+                            msg.exec()
+                            self.uiConfig.lblInitStatus.setText('Portão Virtual já está rodando na Nuvem')
+                            status = True
+                            break
+                        elif statusContainer == 'PROVISIONING':
+                            #log.info('btnRodarNuvem:: Task em provisionamento... aguardando 10 segundos')
+                            QtTest.QTest.qWait(10000)
+                            #time.sleep(10)
+                        elif statusContainer == 'PENDING':
+                            #log.info('btnRodarNuvem:: Task pending... aguardando 10 segundos')
+                            QtTest.QTest.qWait(10000)
+                            #time.sleep(10)
+                        elif statusContainer == 'ACTIVATING':
+                            #log.info('btnRodarNuvem:: Task ACTIVATING... aguardando 10 segundos')
+                            QtTest.QTest.qWait(10000)
+                            #time.sleep(10)
+                        elif statusContainer == 'STOPPED':
+                            log.info('btnRodarNuvem:: Erro para criar instancia .. tente novamente')
+                            msg.setIcon(QMessageBox.Information)
+                            msg.setWindowTitle("Erro no envio do PV para a Nuvem")
+                            msg.setStandardButtons(QMessageBox.Ok)        
+                            msg.setText("Houve um erro para enviar o PV à Nuvem - Tente novamente por favor!")
+                            msg.exec()       
+                            break
+                            #QtTest.QTest.qWait(10000)
+                            #time.sleep(10)
+                    
+                    if status:
                         msg.setIcon(QMessageBox.Information)
-                        msg.setWindowTitle("PV já na Nuvem")
+                        msg.setWindowTitle("Rodando na Nuvem")
                         msg.setStandardButtons(QMessageBox.Ok)        
-                        msg.setText("PV já está rodando na Nuvem!")
-                        msg.exec()
-                        self.uiConfig.lblInitStatus.setText('Portão Virtual já está rodando na Nuvem')
-                        status = True
-                        break
-                    elif statusContainer == 'PROVISIONING':
-                        #log.info('btnRodarNuvem:: Task em provisionamento... aguardando 10 segundos')
-                        QtTest.QTest.qWait(10000)
-                        #time.sleep(10)
-                    elif statusContainer == 'PENDING':
-                        #log.info('btnRodarNuvem:: Task pending... aguardando 10 segundos')
-                        QtTest.QTest.qWait(10000)
-                        #time.sleep(10)
-                    elif statusContainer == 'ACTIVATING':
-                        #log.info('btnRodarNuvem:: Task ACTIVATING... aguardando 10 segundos')
-                        QtTest.QTest.qWait(10000)
-                        #time.sleep(10)
-                    elif statusContainer == 'STOPPED':
-                        log.info('btnRodarNuvem:: Erro para criar instancia .. tente novamente')
-                        msg.setIcon(QMessageBox.Information)
-                        msg.setWindowTitle("Erro no envio do PV para a Nuvem")
-                        msg.setStandardButtons(QMessageBox.Ok)        
-                        msg.setText("Houve um erro para enviar o PV à Nuvem - Tente novamente por favor!")
+                        msg.setText("Portão Virtual rodando na Nuvem! Pode fechar este programa normalmente e desligar seu PC!")
                         msg.exec()       
-                        break
-                        #QtTest.QTest.qWait(10000)
-                        #time.sleep(10)
-                
-                if status:
-                    msg.setIcon(QMessageBox.Information)
-                    msg.setWindowTitle("Rodando na Nuvem")
-                    msg.setStandardButtons(QMessageBox.Ok)        
-                    msg.setText("Portão Virtual rodando na Nuvem! Pode fechar este programa normalmente e desligar seu PC!")
-                    msg.exec()       
-                    self.statusConfig.setNuvemConfig("True")
-                    #print('btnRodarNuvem:: setNuvemConfig True')
-                    self.refreshStatusConfig()
-                    self.camRunTime.init()                    
-                    self.uiConfig.lblCam1.clear()
-                    self.uiConfig.lblCam1.setText('Portão Virtual rodando na Nuvem... pode desligar o seu PC se necessário!')
-                    self.uiConfig.lblInitStatus.setText('Portão Virtual rodando na Nuvem')
-                    
+                        self.statusConfig.setNuvemConfig("True")
+                        #print('btnRodarNuvem:: setNuvemConfig True')
+                        self.refreshStatusConfig()
+                        self.camRunTime.init()                    
+                        self.uiConfig.lblCam1.clear()
+                        self.uiConfig.lblCam1.setText('Portão Virtual rodando na Nuvem... pode desligar o seu PC se necessário!')
+                        self.uiConfig.lblInitStatus.setText('Portão Virtual rodando na Nuvem')
+                        
+        else:
+            msg.setIcon(QMessageBox.Critical)
+            msg.setWindowTitle("Câmera ainda não definida!")
+            msg.setStandardButtons(QMessageBox.Ok)        
+            msg.setText("Por favor, configure uma câmera primeiro!")
+            msg.exec()       
             
-        
-        
     
     def btnNovaCamRemota(self):
     
@@ -1305,10 +1258,10 @@ class FormProc(QWidget):
     def clearListCameras(self):
         
 
-        self.uiConfig.comboBoxCamAtivas.clear()
+        #self.uiConfig.comboBoxCamAtivas.clear()
         self.uiConfig.comboBoxCamEncontradas.clear()
         
-        self.uiConfig.txtNomeCamAtiva.clear()
+        #self.uiConfig.txtNomeCamAtiva.clear()
         self.uiConfig.txtNomeCamDisponivel.clear()
         self.uiConfig.txtUserCamDisponivel.clear()
         self.uiConfig.txtIpCamDisponivel.clear()
@@ -1561,7 +1514,7 @@ class FormProc(QWidget):
                     self.uiConfig.txtCanalCamDisponivel.setText(cam.get('channel'))
                     break
            
-            #self.uiConfig.txtNomeCamAtiva.setText(nome)   
+            self.uiConfig.txtNomeCamAtiva.setText(nome)   
     
     
     def comboBoxCamAtivasStateChanged(self, i):
@@ -1610,8 +1563,8 @@ class FormProc(QWidget):
             camConfigurada = None
             source = None
            
-            if self.uiConfig.comboBoxCamEncontradas.currentIndex() != -1: 
-
+            if self.uiConfig.comboBoxCamEncontradas.currentIndex() != -1:                
+                
                 idCombo = self.uiConfig.comboBoxCamEncontradas.currentText().split(':')[0]
                 idCombo = idCombo.replace('[','')
                 idCombo = idCombo.replace(']','')
@@ -1645,7 +1598,7 @@ class FormProc(QWidget):
                 else:                                    
                     log.info('btnTestarConfigCam:: Cam ativa encontrada')
                     self.uiConfig.lblStatusTestarCam.setText('Câmera configurada corretamente. Pronto para uso')
-                    self.camRunTime.listCamEncontradas.pop(i)
+                    self.camRunTime.listCamEncontradas.pop()
 
                     camConfigurada['user'] = self.uiConfig.txtUserCamDisponivel.text()
                     camConfigurada['passwd'] = self.uiConfig.txtPasswdCamDisponivel.text()
@@ -1658,6 +1611,7 @@ class FormProc(QWidget):
                     self.camRunTime.statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)
                     self.camRunTime.statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
                     
+                    
                     self.refreshStatusConfig()
                     self.camRunTime.__init__() 
                     self.fillTabGeral()
@@ -1665,13 +1619,13 @@ class FormProc(QWidget):
 
     def btnProcurarCam(self):
         
-        log.info('Procurando cameras na rede')                
+        log.info('btnProcurarCam:: Procurando cameras na rede')                
         self.uiConfig.lblStatusProcurarCam.setText('Procurando câmeras na rede local. Aguarde por favor...')
 
         self.clearListCameras() 
         
         self.camRunTime.listCamEncontradas.clear()
-        self.camRunTime.listCamAtivas.clear()
+        #self.camRunTime.listCamAtivas.clear()
 
         
         self.uiConfig.progressBarProcurarCam.show()
@@ -1683,7 +1637,7 @@ class FormProc(QWidget):
         self.threadProcurarCam = CamFinder(False)
         self.threadProcurarCam.updateProgress.connect(self.updateProcurarCam)
         self.threadProcurarCam.start()        
-        log.info('self.threadProcurarCam.start()')
+        log.info('btnProcurarCam:: self.threadProcurarCam.start()')
 
         
 
@@ -1696,8 +1650,8 @@ class FormProc(QWidget):
         self.uiConfig.progressBarProcurarCam.show()
         self.uiConfig.progressBarProcurarCam.setValue(progress)
         
-        self.camRunTime.listCamAtivas = listCamAtivas
-        self.camRunTime.listCamEncontradas = listCamEncontradas
+        #self.camRunTime.listCamAtivas = listCamAtivas        
+        #self.camRunTime.listCamEncontradas = listCamEncontradas
         
         if not rtspError:
             if progress == 100:    
@@ -1710,18 +1664,19 @@ class FormProc(QWidget):
                 for cam2 in self.camRunTime.listCamEncontradas:
                     self.uiConfig.comboBoxCamEncontradas.addItem('[' + cam2.get('id') + ']: ' + cam2.get('ip') + ' : ' + cam2.get('port'))
 
-                self.statusConfig.zerarListCamAtivasConfig() 
+                #self.statusConfig.zerarListCamAtivasConfig() 
                 self.statusConfig.zerarListCamEncontradasConfig()
 
                 self.statusConfig.addListCamAtivasConfig(self.camRunTime.listCamAtivas)
                 self.statusConfig.addListCamEncontradasConfig(self.camRunTime.listCamEncontradas)
                 
-                self.uiConfig.lblStatusProcurarCam.setText('Busca por novas câmeras terminado')
+                
                 self.uiConfig.progressBarProcurarCam.hide()
                 
                 self.camRunTime.init() 
                 self.fillTabGeral()
                 self.infCam.setCamRunTime(self.camRunTime)
+                self.uiConfig.lblStatusProcurarCam.setText('Busca por novas câmeras terminado')
                 
         elif rtspError == 'webcam':
             log.info('initFormConfig::updateProcurarCam:: Erro na Webcam')
@@ -1989,7 +1944,8 @@ class FormProc(QWidget):
     def refreshStatusConfig(self):        
         log.info('refreshStatusConfig::')
         #print('refreshStatusConfig::')
-        self.statusConfig = utils.StatusConfig()
+        #self.statusConfig = utils.StatusConfig()
+        self.statusConfig.updateLocalConfig()        
         self.camRunTime.regions = self.statusConfig.getRegions()
         self.camRunTime.emailConfig = self.statusConfig.getEmailConfig()
         self.camRunTime.init()
@@ -2191,13 +2147,17 @@ class FormProc(QWidget):
 
 
         #carregar cams previamente escaneadas na rede
-        for cam in self.camRunTime.listCamAtivas:
+        
+        
+        #for cam in self.camRunTime.listCamAtivas:
+        for cam in self.statusConfig.getListCamAtivas():
             if cam.get('emUso') == 'True':
                 self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']: ' + '[' + cam.get('nome') + '] ' + cam.get('ip') + ' : ' + cam.get('port') + ' [em uso]')
             else:
                 self.uiConfig.comboBoxCamAtivas.addItem('[' + cam.get('id') + ']: ' + '[' + cam.get('nome') + '] ' + cam.get('ip') + ' : ' + cam.get('port'))
 
-        for cam in self.camRunTime.listCamEncontradas:
+        #for cam in self.camRunTime.listCamEncontradas:
+        for cam in self.statusConfig.getListCamEncontradas():
             self.uiConfig.comboBoxCamEncontradas.addItem('[' + cam.get('id') + ']: ' + cam.get('ip') + ' : ' + cam.get('port'))
                          
 

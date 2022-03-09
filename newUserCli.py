@@ -18,10 +18,10 @@ from firebase_admin import auth
 
 import datetime
 
-emailCliente = 'wagner@dextak.com.br'
+emailCliente = 'igorddf@gmail.com'
 numCameras = '1'
-diasLicenca = '30'
-frase_teste = True
+diasLicenca = '0'
+frase_teste = False
 
 cred = {
       "type": "service_account",
@@ -52,6 +52,7 @@ def newUserFirebase(email, passwd):
     password=passwd,
     display_name=name,    
     disabled=False)
+    
     print('Sucessfully created new user: {0}'.format(user.uid))
     
 
@@ -155,7 +156,7 @@ def main():
     print('numCameras  : ' + numCameras)
     print('diasLicenca : ' + diasLicenca)
     
-    newUserFirebase(emailCliente, passwd)
+    
     
     login = {'user':emailCliente, 'passwd':passwd, 'userEmail':emailCliente, 'numCameras':numCameras, 'diasLicenca':diasLicenca} 
     
@@ -164,25 +165,29 @@ def main():
 
     except socketio.exceptions.ConnectionError as  err:
 
-        log.info('Erro na conexao: ' + str(err))
+        log.info('main:: Erro na conexao: ' + str(err))
       
 
     else:
-        log.info('Conexao efetuada')
+        log.info('main:: Conexao efetuada...')
         
         newUser(login)  
         
         sio.wait()
         
-        log.info('statusNewuser: {}'.format(statusNewUser))
+        log.info('main:: statusNewuser: {}'.format(statusNewUser))
     
     if statusNewUser:
-        log.info('Usuario cadastrado com sucesso')
+        log.info('main:: Usuario cadastrado com sucesso')
+        log.info('main:: Enviando email')
 
         sendMailnewUser(     emailCliente,                            
                             '465',
                             'smtp.gmail.com', 
                             passwd)
+        
+        newUserFirebase(emailCliente, passwd)
+        
 
 
 if __name__ == "__main__":
