@@ -123,6 +123,9 @@ class FormProc(QWidget):
 
     infCam = InferenceCore()
     
+    threadProcurarCam = None
+    
+    
         
 
     def __init__(self, parent=None):
@@ -208,6 +211,7 @@ class FormProc(QWidget):
             
 
             self.uiConfig.btnAtivarCam.clicked.connect(self.btnAtivarCam)
+            self.uiConfig.btnProcurarCamStop.clicked.connect(self.btnProcurarCamStop)
             self.uiConfig.btnProcurarCam.clicked.connect(self.btnProcurarCam)
             self.uiConfig.btnTestarConfigCam.clicked.connect(self.btnTestarConfigCam)
 
@@ -1617,6 +1621,19 @@ class FormProc(QWidget):
                     self.fillTabGeral()
                     self.infCam.setCamRunTime(self.camRunTime)
 
+    def btnProcurarCamStop(self):
+        
+        log.info('btnProcurarCamStop:: ')        
+        
+        if self.threadProcurarCam is not None:
+            self.threadProcurarCam.stop()
+            self.uiConfig.lblStatusProcurarCam.setText('Busca interrompida')
+        else:        
+            self.uiConfig.lblStatusProcurarCam.setText('Sem busca de câmeras para interromper')
+        
+        #self.uiConfig.btnProcurarCamStop.setEnabled(False)
+    
+    
     def btnProcurarCam(self):
         
         log.info('btnProcurarCam:: Procurando cameras na rede')                
@@ -1637,6 +1654,8 @@ class FormProc(QWidget):
         self.threadProcurarCam = CamFinder(False)
         self.threadProcurarCam.updateProgress.connect(self.updateProcurarCam)
         self.threadProcurarCam.start()        
+        
+        #self.uiConfig.btnProcurarCamStop.setEnabled(True)
         log.info('btnProcurarCam:: self.threadProcurarCam.start()')
 
         
@@ -2095,6 +2114,8 @@ class FormProc(QWidget):
         
         self.clearListCameras()        
         self.clearFieldsCamConfig()
+        
+        #self.uiConfig.btnProcurarCamStop.setEnabled(False)
 
         self.refreshStatusConfig()
 

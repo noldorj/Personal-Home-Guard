@@ -67,7 +67,7 @@
        </font>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>3</number>
       </property>
       <property name="tabsClosable">
        <bool>false</bool>
@@ -1538,6 +1538,19 @@
            </widget>
           </item>
          </layout>
+        </widget>
+        <widget class="QPushButton" name="btnProcurarCamStop">
+         <property name="geometry">
+          <rect>
+           <x>190</x>
+           <y>40</y>
+           <width>141</width>
+           <height>25</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Interromper busca</string>
+         </property>
         </widget>
        </widget>
        <widget class="QGroupBox" name="groupBox_8">
