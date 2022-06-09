@@ -1,32 +1,41 @@
 conda install python - instalou 3.73
 Usar pip3 e python3
 
+apt-get update
 apt-get install python3-pip
 pip install --upgrade pip
 
 pip3 install --user pyqt5  
-sudo apt-get install python3-pyqt5  
-sudo apt-get install pyqt5-dev-tools
-sudo apt-get install qttools5-dev-tools
+apt-get install python3-pyqt5  
+apt-get install pyqt5-dev-tools
+apt-get install qttools5-dev-tools
 
-pip install python-socketio
-pip instll socketio
+apt-get install xvfb 
+
+pip3 install python-socketio
+pip3 install socketio
+pip3 install matplotlib
+
 conda install matplotlib - installou 3.1.0
 conda install opencv - instalou 3.4.2 - erro de GTK 
 conda install -c loopbio -c conda-forge -c pkgw-forge ffmpeg gtk2 opencv -
-pip install websocket-client
+pip3 install websocket-client
+
 conda install scipy - instalou 1.2.1
-pip install pygame - instalou 1.9.6
-pip install pyqt5
-pip install cryptography
-pip install pbkdf2
-pip install simplejson
-pip install psutil
-pip install pbkdf2
-pip install firebase_admin
-pip install cryptography
-pip install getmac
-pip install python-socketio
+
+pip3 install scipy
+
+#pip3 install pygame - instalou 1.9.6
+
+pip3 install cryptography
+pip3 install pbkdf2
+pip3 install simplejson
+pip3 install psutil
+pip3 install pbkdf2
+pip3 install firebase_admin
+pip3 install cryptography
+pip3 install getmac
+pip3 install boto3 
 
 Pacotes GSTreamer
 

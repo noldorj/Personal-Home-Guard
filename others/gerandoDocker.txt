@@ -1,5 +1,11 @@
 # 1. Executando docker modo iterativo para copiar o codigo fonte para a nova imagem a ser gerada:
 
+#criando imagem base no Ubuntu 18.04
+
+docker pull ubuntu:18.04
+docker run -it ubuntu:18.04
+
+#instalacao de pacotes atraves do setup_pv_linux.txt 
 
 docker run -it pv/ubuntu-pv:1.2 /bin/bash
 

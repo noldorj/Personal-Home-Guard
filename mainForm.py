@@ -963,7 +963,7 @@ class Ui_formConfig(object):
         self.layoutForm.addWidget(self.tabConfig)
 
         self.retranslateUi(formConfig)
-        self.tabConfig.setCurrentIndex(3)
+        self.tabConfig.setCurrentIndex(0)
         self.comboAlarms.setCurrentIndex(-1)
         QtCore.QMetaObject.connectSlotsByName(formConfig)
         formConfig.setTabOrder(self.btnInitAddRegiao, self.btnNewRegion)
@@ -1038,7 +1038,7 @@ class Ui_formConfig(object):
     def retranslateUi(self, formConfig):
         _translate = QtCore.QCoreApplication.translate
         formConfig.setWindowTitle(_translate("formConfig", "Configurações"))
-        self.label_87.setText(_translate("formConfig", "Versão 1.0"))
+        self.label_87.setText(_translate("formConfig", "Versão 1.1"))
         self.label_88.setText(_translate("formConfig", "Status:"))
         self.label_89.setText(_translate("formConfig", "Usuário:"))
         self.btnInitAddRegiao.setText(_translate("formConfig", "+ Região"))

@@ -229,6 +229,7 @@ class CamRunTime():
     numDaysRecording = None
     errorRtsp = False
     ipExterno = ''
+    isNuvemRunning = False
     
     
     
@@ -296,6 +297,8 @@ class CamRunTime():
         self.hora = utils.getDate()['hour'].replace(':','-')
         
         self.statusConfig = utils.StatusConfig()
+        
+        isNuvemRunning = self.statusConfig.isNuvemRunning()
 
         self.LOGIN_AUTOMATICO = True if self.statusConfig.getLoginAutomatico() == 'True' else False
         
@@ -343,20 +346,21 @@ class CamRunTime():
         
         self.isOpenVino = self.statusConfig.data["isOpenVino"] == 'True'
 
-        self.listCamAtivas = self.statusConfig.getListCamAtivas()
+        if self.statusConfig.getListCamAtivas() == '':
+            self.listCamAtivas = list()
+        else:
+            self.listCamAtivas = self.statusConfig.getListCamAtivas()
 
-        self.listCamEncontradas = self.statusConfig.getListCamEncontradas()
+        if self.statusConfig.getListCamEncontradas() == '':
+            self.listCamEncontradas = list()
+        else:
+            self.listCamEncontradas = self.statusConfig.getListCamEncontradas()
 
         self.spaceMaxDirVideosOnAlarme = float(self.statusConfig.data["storageConfig"]["spaceMaxDirVideosOnAlarme"])  
         self.spaceMaxDirVideosAllTime = float(self.statusConfig.data["storageConfig"]["spaceMaxDirVideosAllTime"])  
         self.eraseOldestFiles = True if self.statusConfig.data["storageConfig"]["eraseOldestFiles"] == 'True' else False 
-        self.stopSaveNewVideos = True if self.statusConfig.data["storageConfig"]["stopSaveNewVideos"] == 'True' else False 
+        self.stopSaveNewVideos = True if self.statusConfig.data["storageConfig"]["stopSaveNewVideos"] == 'True' else False       
         
-        #if isOpenVino:
-        #    import pluginOpenVino as pOpenVino
-
-        #device = statusConfig.data["openVinoDevice"]
-        #self.device, self.openVinoModelXml, self.openVinoModelBin, self.openVinoCpuExtension, self.openVinoPluginDir, self.openVinoModelName  = self.statusConfig.getActiveDevice()
         
         cam = self.statusConfig.getCamEmUsoConfig()        
         if cam is not None:

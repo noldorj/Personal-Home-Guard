@@ -36,7 +36,7 @@ fh = logging.FileHandler('config/pv.log', 'w', 'utf-8')
 fh.setLevel(logging.DEBUG)
 # create console handler with a higher log level
 ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
+#ch.setLevel(logging.ERROR)
 # create formatter and add it to the handlers
 formatter = logging.Formatter("[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
 ch.setFormatter(formatter)
@@ -378,7 +378,7 @@ class FormLogin(QDialog):
 
         else:
 
-            log.info("Erro de conexao com a Internet")
+            log.info("btnLogin:: Erro de conexao com a Internet")
             self.uiLogin.lblStatus.setText("Cheque sua conexão com a Internet por favor e tente mais tarde")
 
         #self.setBackStatusConfigCamRunTime.emit(self.statusConfig, self.camRunTime)

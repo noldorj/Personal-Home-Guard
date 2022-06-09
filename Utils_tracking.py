@@ -17,7 +17,7 @@ import time
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import messaging
-#from firebase_admin import storage
+from firebase_admin import storage
 from firebase_admin import db
 import datetime
 
@@ -87,6 +87,7 @@ else:
 def saveImageFirebase(frame, idImage, user):
     
     bucket = None
+    blob = None
     
     try:
         bucket = storage.bucket()

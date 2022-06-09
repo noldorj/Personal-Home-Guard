@@ -674,8 +674,11 @@ class InferenceCore(QThread):
                     #end else disco cheio
                                 
                     #versao em nuvem não tem GUI
-                    if not self.camRunTime.statusConfig.isNuvemRunning():
-                        self.change_pixmap_signal.emit(frame_screen)                    
+                    #if not self.camRunTime.statusConfig.isNuvemRunning():
+                    #    self.change_pixmap_signal.emit(frame_screen)                    
+                    
+                    self.change_pixmap_signal.emit(frame_screen)
+                    
                     #self.change_pixmap_signal.emit(self.camRunTime.frame)
                     #print('emit')
 
@@ -873,8 +876,11 @@ class InferenceCore(QThread):
                 log.info('inferenceCore:: camEmptyWarning.emit()')
                 self.camEmptyWarning.emit()
             
-            if self.camRunTime.statusConfig.isNuvemRunning() and socket.gethostname() != 'pv-server': 
-                #print('inferenceCore:: rodando em Nuvem! desativando processamento local!')
+            
+            #if self.camRunTime.statusConfig.isNuvemRunning() and socket.gethostname() != 
+            #'pv-server':
+            if self.camRunTime.isNuvemRunning and socket.gethostname() != 'pv-server':
+                print('inferenceCore:: rodando em Nuvem! desativando processamento local!')
                 self._run_flag = False
                 self.stop()
     

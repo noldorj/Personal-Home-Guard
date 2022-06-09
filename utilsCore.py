@@ -57,7 +57,8 @@ fh = logging.FileHandler('config/pv.log', 'w', 'utf-8')
 fh.setLevel(logging.DEBUG)
 # create console handler with a higher log level
 ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
+#ch.setLevel(logging.ERROR)
+#ch.setLevel(logging.INFO)
 # create formatter and add it to the handlers
 formatter = logging.Formatter("[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
 ch.setFormatter(formatter)
@@ -180,7 +181,7 @@ def initWatchDog():
         app = os.getcwd() + '/' + 'config/wd'
     else:
         log.info('Windows WatchDog')
-        app = 'config/wd.exe'
+        app = os.getcwd() + '/' 'config/wd.exe'
 
     listP = getProcessId('wd.exe', os.getcwd())
     
@@ -190,7 +191,13 @@ def initWatchDog():
             #cmd = "<full filepath plus arguments of child process>"
             #cmds = shlex.split(app)
             #log.info('cmds: {}'.format(cmds))
-            subprocess.Popen(app.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, start_new_session=True, close_fds=True)
+            
+            #subprocess.Popen(app.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, start_new_session=True, close_fds=True)            
+            
+            #TO-DO evitar o erro "close_fds is not supported on Windows platforms if you redirect stdin/stdout/stderr"
+            
+            subprocess.Popen(app.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, start_new_session=True)
+            
             #p = subprocess.Popen(app.split(), shell=False)
             #(output, err) = p.communicate()
             #log.info("Command output: {}".format(output))
@@ -249,12 +256,12 @@ def checkInternetAccess():
 
     conn = httplib.HTTPConnection("www.google.com", timeout=5)
     try:
-        log.info('Checando conexao...')
+        log.info('checkInternetAccess:: Checando conexao...')
         conn.request("HEAD", "/")
         conn.close()
         return True
     except:
-        log.warning('Falha na conexao')
+        log.warning('checkInternetAccess:: Falha na conexao')
         conn.close()
         return False
 
@@ -273,9 +280,8 @@ def camSource(source = 'webcam'):
         #log.info('capturando da webcam')    
 
     try:
-        
-        ipCam = cv.VideoCapture(source)        
-        
+
+        ipCam = cv.VideoCapture(source)
         
     except cv.error as e:
         status = False            
@@ -435,11 +441,11 @@ def isDiskFull(diskMinUsage):
         diskMinUsage = 5        
         logger = logging.getLogger()
         logger.disabled = True
-        log.critical('isDiskFull:: desabilitando log')
+        #log.critical('isDiskFull:: desabilitando log')
     else:
         logger = logging.getLogger()
         logger.disabled = True
-        log.critical('isDiskFull:: reabilitando log')
+        #log.critical('isDiskFull:: reabilitando log')
     
     if ((free / total)*100) <= float(diskMinUsage):       
         isFull = True 
@@ -571,7 +577,7 @@ def freeDiskSpace(dirVideo):
                     except OSError as e:
                         
                         log.critical('Diretorio nao encontrado')
-                        log.crtical("Error 2: %s : %s" % (oldestDir, e.strerror))
+                        log.critical("Error 2: %s : %s" % (oldestDir, e.strerror))
                         break
                         
                     else:
@@ -969,6 +975,7 @@ class StatusConfig:
 
         self.saveConfigLogin()
         
+    
     def getUserLogin(self):
         
         if len(self.dataLogin['user']) != 0:
@@ -1055,7 +1062,7 @@ class StatusConfig:
     def setDateSessionInit(self):
         date = getDate()
         date = date['year'] + '-' + getMonthDigit(date['month']) + '-' + date['day'] + ' ' + date['hour']
-        print('date: {}'.format(date))
+        #print('date: {}'.format(date))
         self.data["dateSessionInit"] = date
         self.saveConfigFile()
         self.updateConfigFileNuvem()
@@ -1290,7 +1297,7 @@ class StatusConfig:
         #log.info('utilsCore:: __init__ self.data: {}'.format(self.data))
         #log.info('utilsCore:: __init__ primeiroUso: {}'.format(self.data['primeiroUso']))
         
-        self.readConfigFile(configFile)
+        self.readConfigFile(configFile)        
         self.readRegionsFile(regionsFile)
         self.readConfigLogin(configLogin)
         
@@ -1313,15 +1320,67 @@ class StatusConfig:
             else:
                 print('initFirebaseAdmin:: Firebase inicializado com sucesso')
     
-    def readConfigLogin(self, fileName = 'config/lconfig.json'):
+    def updateConfigLoginNuvem(self, userId, fileName = 'config/lconfig.json'):
+    
+        log.info('updateConfigLoginNuvem:: ') 
+        user = userId
+        userId = user.replace('.','_')
+        userId = userId.replace('@','_')
+        
+        print('updateConfigLoginNuvem:: userId: {}'.format(userId))
+        
+        configLogin = self.readConfigLoginByUser(userId)
+
+        config = self.readConfigByUser(userId)
+        
+        #print('updateConfigLoginNuvem:: configLogin: {}'.format(configLogin))
+        print('updateConfigLoginNuvem:: config: {}'.format(config))
+    
+        self.dataLogin = configLogin
+        self.data = config
+        
+        self.saveConfigLogin()
+        self.saveConfigFile()
+        
+
+
+    def readConfigByUser(self, userId, fileName = 'config/config.json'):
+        
+        config = None
+        print('readConfigLoginByUser:: userId: {}'.format(userId))
+        
+        user = userId
+        userId = user.replace('.','_')
+        userId = userId.replace('@','_')
+        
+        if userId != '':
+        
+            self.initFirebaseAdmin()
+            
+            try:
+                ref = db.reference('/users/' + userId + '/config')
+            except Exception as e:
+                log.error('readConfigByUser:: erro getting config: {}'.format(e))
+            else:            
+                config = ref.get()
+                #print('readConfigLoginByUser dataLogin firebase: {}'.format(ref.get()))
+        
+        return config 
+
+
+
+    
+    def readConfigLoginByUser(self, userId, fileName = 'config/lconfig.json'):
         #log.info('readConfigLogin:: Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
         
-        self.dataLogin = json.load(open(fileName,'r'))
+        #self.dataLogin = json.load(open(fileName,'r'))
         #print('dataLogin local: {}'.format(self.dataLogin))
         #print(' ')
         #print(' ')
+        loginConfig = None
+        #print('readConfigLoginByUser:: userId: {}'.format(userId))
         
-        user = self.getUserLogin()
+        user = userId
         userId = user.replace('.','_')
         userId = userId.replace('@','_')
         
@@ -1332,19 +1391,49 @@ class StatusConfig:
             try:
                 ref = db.reference('/users/' + userId + '/configLogin')
             except Exception as e:
-                log.error('readConfigLogin:: erro getting configLogin: {}'.format(e))
+                log.error('readConfigLoginByUser:: erro getting configLogin: {}'.format(e))
             else:            
-                self.dataLogin = ref.get()
-                #print('dataLogin firebase: {}'.format(ref.get()))
+                loginConfig = ref.get()
+                #print('readConfigLoginByUser dataLogin firebase: {}'.format(ref.get()))
         
+        return loginConfig
+    
+    
+    def readConfigLogin(self, fileName = 'config/lconfig.json'):
+        #log.info('readConfigLogin:: Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
+        
+        userId = ''
+        try: 
+            self.dataLogin = json.load(open(fileName,'r'))
+        except Exception as e:
+            log.error('readConfigLogin:: Error carregando lconfig.json')
+        else:
+            user = self.getUserLogin()
+        
+        if user is not None: 
+            userId = user.replace('.','_')
+            userId = userId.replace('@','_')
+            
+            if userId != '':
+            
+                self.initFirebaseAdmin()
+                
+                try:
+                    ref = db.reference('/users/' + userId + '/configLogin')
+                except Exception as e:
+                    log.error('readConfigLogin:: erro getting configLogin: {}'.format(e))
+                else:            
+                    self.dataLogin = ref.get()
+                    #print('dataLogin firebase: {}'.format(ref.get()))
+          
+            
 
 
     def readConfigFile(self, fileName = 'config/config.json'):
         #log.info('Lendo arquivo de configuração: ' + os.getcwd() + '/' + fileName)
         
-        
         log.info('readConfigFile::')
-        #print('readConfigFile::')
+        userId = ''
         
         try:
             self.data = json.load(open(fileName,'r'))        
@@ -1360,49 +1449,62 @@ class StatusConfig:
                 self.data = self.dataBkp                
             log.info('readConfigFile:: lendo config.json ok')
         
+        try: 
+            self.dataLogin = json.load(open('config/lconfig.json','r'))
+        except Exception as e:
+            log.error('readConfigFile:: erro carregando lconfig.json')
+        else:
+            user = self.getUserLogin()
         
-        self.dataLogin = json.load(open('config/lconfig.json','r'))
-        
-        user = self.getUserLogin()
-        userId = user.replace('.','_')
-        userId = userId.replace('@','_')
-        
-        log.info('readConfigFile:: userId: {}'.format(userId))
-        #print('readConfigFile:: userId: {}'.format(userId))
-        
-        if checkInternetAccess():
-        
-            if userId != '':
+        if user is not None: 
+            userId = user.replace('.','_')
+            userId = userId.replace('@','_')
             
-                self.initFirebaseAdmin()
+            if checkInternetAccess():
+            
+                if userId != '':
                 
-                try:
-                    ref = db.reference('/users/' + userId + '/config')                    
-                except Exception as e:                
-                    log.error('readConfigFile:: error getting config from Firebase: {}'.format(e))
-                    log.error('readConfigFile:: salvando arquivo local sem sincronizar')
-                    #print('readConfigFile:: salvando arquivo local sem sincronizar')   
-                else:
+                    self.initFirebaseAdmin()
                     
                     try:
-                        #print('readConfigFile:: ref.get(): {}'.format(ref.get()))
-                        if ref.get() != None:
-                            self.data = ref.get()
-                    except Exception as e:
-                        log.error('readConfigFile:: erro sync com Firebase config-  ref.get() error: {}'.format(e))
+                        ref = db.reference('/users/' + userId + '/config')                    
+                    except Exception as e:                
+                        log.error('readConfigFile:: error getting config from Firebase: {}'.format(e))
                         log.error('readConfigFile:: salvando arquivo local sem sincronizar')
-                    else:                                                
-                        log.info('readConfigFile:: Config sincronizado com Firebase ok')
-                        #print('dataLogin firebase: {}'.format(ref.get()))                
-                
+                        #print('readConfigFile:: salvando arquivo local sem sincronizar')   
+                    else:
+                        
+                        try:
+                            #print('readConfigFile:: ref.get(): {}'.format(ref.get()))
+                            if ref.get() != None:
+                                self.data = ref.get()
+                        except Exception as e:
+                            log.error('readConfigFile:: erro sync com Firebase config-  ref.get() error: {}'.format(e))
+                            log.error('readConfigFile:: salvando arquivo local sem sincronizar')
+                        else:                                                
+                            log.info('readConfigFile:: Config sincronizado com Firebase ok')
+                            #print('dataLogin firebase: {}'.format(ref.get()))                
+                    
+            else:
+                log.error('readConfigFile:: Sem internet! impossivel sincronizar dados de config com Firebase ')
+                #print('readConfigFile:: Sem conexao com a internet - impossivel sincronizar dados de Config com o Firebase')
+            
+            
+            
         else:
-            log.error('readConfigFile:: Sem internet! impossivel sincronizar dados de config com Firebase ')
-            #print('readConfigFile:: Sem conexao com a internet - impossivel sincronizar dados de Config com o Firebase')
+            print('readConfigFile:: user None')        
+            log.error('readConfigFile:: user None')        
+            
+            #print('readConfigFile:: userId: {}'.format(userId))
+            
+            
         
         self.saveConfigFile()
 
     def readRegionsFile(self, fileName = 'config/regions.json'):
         #log.info('readRegionsFile:: Lendo arquivo de regiões: ' + os.getcwd() + '/' + fileName)
+        userId = ''
+
         try:
             self.regions = json.load(open(fileName,'r'))
         except OSError as ex:
@@ -1411,29 +1513,37 @@ class StatusConfig:
         else:
             log.info('readRegionsFile:: Arquivo de regiões lido com sucesso')
             
-        self.dataLogin = json.load(open('config/lconfig.json','r'))
+        try: 
+            self.dataLogin = json.load(open('config/lconfig.json','r'))
+        except Exception as e:
+            log.error('readRegionsFile:: Erro lendo lconfig.json: {}'.format(e))
+        else:
+            user = self.getUserLogin()
         
-        user = self.getUserLogin()
-        userId = user.replace('.','_')
-        userId = userId.replace('@','_')
-        
-        if userId != '':
-        
-            self.initFirebaseAdmin()
+        if user is not None:        
+            userId = user.replace('.','_')
+            userId = userId.replace('@','_')
             
-            try:
-                ref = db.reference('/users/' + userId + '/regions')
-            except Exception as e:
-                log.error('readRegionsFile:: erro getting config: {}'.format(e))
-            else:            
-                if not ref.get():
-                    #print('region vazia firebase')
-                    self.regions = list()
-                else:
-                    self.regions = ref.get()
-                    self.saveRegionFile()
+            if userId != '':
+            
+                self.initFirebaseAdmin()
                 
-                #print('regions firebase: {}'.format(ref.get()))
+                try:
+                    ref = db.reference('/users/' + userId + '/regions')
+                except Exception as e:
+                    log.error('readRegionsFile:: erro getting config: {}'.format(e))
+                else:            
+                    if not ref.get():
+                        #print('region vazia firebase')
+                        self.regions = list()
+                    else:
+                        self.regions = ref.get()
+                        self.saveRegionFile()
+
+        else:
+            log.error('readRegionsFile:: user is None')
+        
+            
 
 
     def deleteAlarm(self, regionName, alarmName):
@@ -1630,7 +1740,7 @@ class StatusConfig:
         
         i = 1
         while not statusFirebase:
-            log.info('updateConfigFileNuvem:: Savando config status no Firebase tentativa [{}]'.format(i))
+            log.info('updateConfigFileNuvem:: Salvando config status no Firebase tentativa [{}]'.format(i))
             #print('updateConfigFileNuvem:: Savando config status no Firebase tentativa [{}]'.format(i))
             try:
                 ref.set(self.data)
