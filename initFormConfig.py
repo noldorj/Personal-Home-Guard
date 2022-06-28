@@ -306,7 +306,7 @@ class FormProc(QWidget):
                                                             
                 if not self.camRunTime.isNuvemRunning:
                     log.info('initFormConfig:: chamando watchDog')
-                    #utils.initWatchDog()                
+                    utils.initWatchDog()                
                 else:
                     log.info('initFormConfig:: rodando em Nuvem, sem chamar watchDog')
 
