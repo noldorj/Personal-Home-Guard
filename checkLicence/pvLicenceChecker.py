@@ -2,23 +2,28 @@
 import json
 import time
 from datetime import datetime
-import logging as log
+import logging
 import pymysql
 import sys
 from threading import Thread
 
 from utilsServer import sendMailForgotPasswd
 
-#log.root.setLevel(log.DEBUG)
-#log.basicConfig()
-
-#for handler in log.root.handlers[:]:
-#    log.root.removeHandler(handler)
-#
-#log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.DEBUG, handlers=[log.FileHandler('pv-server.log', 'a', 'utf-8')])
-
-
-#log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.DEBUG, stream=sys.stdout)
+log = logging.getLogger('pv-log')
+log.setLevel(logging.DEBUG)
+# create file handler which logs even debug messages
+fh = logging.FileHandler('pv.log', 'w', 'utf-8')
+fh.setLevel(logging.DEBUG)
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+# create formatter and add it to the handlers
+formatter = logging.Formatter("[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
+ch.setFormatter(formatter)
+fh.setFormatter(formatter)
+# add the handlers to logger
+log.addHandler(ch)
+log.addHandler(fh)
 
 #tempo de expiracao da sessao em minutos
 TIME_SESSION = 5
@@ -82,7 +87,7 @@ def changePasswd(userName, userPassword, userToken):
 
     return status
 
-def newUser(userName, userPassword, userEmail, numCameras, diasLicenca):
+def newUser(userName, userPassword, userEmail, numCameras, diasLicenca, temNuvem, nuvemPaga):
 
     log.info(' ')
     log.info("newUser:: Criando novo usuario")    
@@ -133,6 +138,8 @@ def newUser(userName, userPassword, userEmail, numCameras, diasLicenca):
                 'sessionStatus':'off',
                 'numCameras':numCameras,
                 'diasLicenca':diasLicenca,
+                'temNuvem':temNuvem,
+                'nuvemPaga':nuvemPaga,
                 'inicioLicenca':currentDate.__str__()
             }
             file = 'sessions/' + str(userName) + '.json'
@@ -413,6 +420,53 @@ def forgotPassword(email):
 
     return status
 
+
+    
+
+def checkNuvem(userName):
+
+    status = False
+    session = None
+    retorno = ''
+    
+    log.info('checkNuvem:: ')
+    
+    #checar se existe arquivo de sesson 'userName.json'
+    file = 'sessions/'+ userName + '.json'
+    
+    status = checkFileSession(file) 
+
+    if status: 
+        try:
+            session = json.load(open(file, 'r'))
+        
+        except OSError as ex:
+
+            log.critical('checkNuvem:: Arquivo de sessao: {} não encontrado'.format(file))
+            log.critical('checkNuvem Error: {}'.format(str(ex.errno)))
+            status = False
+        
+        else:
+            log.debug('checkNuvem:: Sessao: {} lida com sucesso'.format(session.get('userName')+'.json'))
+            
+            if session['temNuvem'] == 'True':                
+                if session['nuvemPaga'] == 'True':
+                    retorno = 'True'                    
+                else:
+                    retorno = 'False'
+                
+                log.info('checkNuvem:: nuvemPaga: {}'.format(retorno))
+            else:
+                retorno = 'semNuvem' #nao assina plano de nuvem
+                log.info('checkNuvem:: nao assina plano de nuvem')
+
+    #opcoes de retorno
+    # True: assina Nuvem e está pago
+    # False: assina Nuvem e não está pago
+    # 'semNuvem': não assina Nuvem
+    # '': houve algum erro para checar sessao
+    
+    return retorno
 
 
 def checkSession(userName, userToken):

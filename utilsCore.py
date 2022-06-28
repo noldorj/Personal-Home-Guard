@@ -17,6 +17,7 @@ import secrets
 import psutil
 from pbkdf2 import PBKDF2
 from PyQt5 import QtTest
+import socket
 
 import firebase_admin
 from firebase_admin import credentials
@@ -655,6 +656,16 @@ def getDate():
     #print('getDate data:' + str(data))
     
     return data
+
+def getIpLocal():
+    #definindo IP Local
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    IP_LOCAL = s.getsockname()[0]
+    IP_LOCAL = IP_LOCAL.split('.')
+    IP_LOCAL = IP_LOCAL[0] + '.' + IP_LOCAL[1] + '.' + IP_LOCAL[2]
+    s.close()
+    return IP_LOCAL
 
 
 def createDirectory(dirVideos):
@@ -1384,17 +1395,21 @@ class StatusConfig:
         userId = user.replace('.','_')
         userId = userId.replace('@','_')
         
-        if userId != '':
         
-            self.initFirebaseAdmin()
+        if checkInternetAccess():
+            if userId != '':
             
-            try:
-                ref = db.reference('/users/' + userId + '/configLogin')
-            except Exception as e:
-                log.error('readConfigLoginByUser:: erro getting configLogin: {}'.format(e))
-            else:            
-                loginConfig = ref.get()
-                #print('readConfigLoginByUser dataLogin firebase: {}'.format(ref.get()))
+                self.initFirebaseAdmin()
+                
+                try:
+                    ref = db.reference('/users/' + userId + '/configLogin')
+                except Exception as e:
+                    log.error('readConfigLoginByUser:: erro getting configLogin: {}'.format(e))
+                else:            
+                    loginConfig = ref.get()
+                    #print('readConfigLoginByUser dataLogin firebase: {}'.format(ref.get()))
+        else:
+            log.error('readConfigLoginByUser:: Sem internet! impossivel sincronizar dados de config com Firebase ')
         
         return loginConfig
     
@@ -1414,19 +1429,22 @@ class StatusConfig:
             userId = user.replace('.','_')
             userId = userId.replace('@','_')
             
-            if userId != '':
             
-                self.initFirebaseAdmin()
+            if checkInternetAccess():
+                if userId != '':
                 
-                try:
-                    ref = db.reference('/users/' + userId + '/configLogin')
-                except Exception as e:
-                    log.error('readConfigLogin:: erro getting configLogin: {}'.format(e))
-                else:            
-                    self.dataLogin = ref.get()
-                    #print('dataLogin firebase: {}'.format(ref.get()))
+                    self.initFirebaseAdmin()
+                    
+                    try:
+                        ref = db.reference('/users/' + userId + '/configLogin')
+                    except Exception as e:
+                        log.error('readConfigLogin:: erro getting configLogin: {}'.format(e))
+                    else:            
+                        self.dataLogin = ref.get()
+                        #print('dataLogin firebase: {}'.format(ref.get()))
           
-            
+            else:
+                log.error('readConfigLogin:: Sem internet! impossivel sincronizar dados de config com Firebase ')
 
 
     def readConfigFile(self, fileName = 'config/config.json'):
@@ -1524,21 +1542,25 @@ class StatusConfig:
             userId = user.replace('.','_')
             userId = userId.replace('@','_')
             
-            if userId != '':
+            if checkInternetAccess():
             
-                self.initFirebaseAdmin()
+                if userId != '':
                 
-                try:
-                    ref = db.reference('/users/' + userId + '/regions')
-                except Exception as e:
-                    log.error('readRegionsFile:: erro getting config: {}'.format(e))
-                else:            
-                    if not ref.get():
-                        #print('region vazia firebase')
-                        self.regions = list()
-                    else:
-                        self.regions = ref.get()
-                        self.saveRegionFile()
+                    self.initFirebaseAdmin()
+                    
+                    try:
+                        ref = db.reference('/users/' + userId + '/regions')
+                    except Exception as e:
+                        log.error('readRegionsFile:: erro getting config: {}'.format(e))
+                    else:            
+                        if not ref.get():
+                            #print('region vazia firebase')
+                            self.regions = list()
+                        else:
+                            self.regions = ref.get()
+                            self.saveRegionFile()
+            else:
+                log.error('readRegionsFile:: Sem internet! impossivel sincronizar dados de config com Firebase ')
 
         else:
             log.error('readRegionsFile:: user is None')
@@ -1778,14 +1800,7 @@ class StatusConfig:
 
         log.info('saveConfigLogin:: Salvando arquivo de configuração: {}/{}'.format(os.getcwd(), fileName))
         
-        #try:
-        #    fp = open("passwords.json","r")
-        #    obj = json.load(fp)
-        #except:
-        #    fp = open("passwords.json","r")
-        #    obj = json.load(fp)
-        #finally:
-        #    fp.close()
+        
         
         #salvando na Nuvem Firebase
         #Estrutura para salvar no Realtime DAtabase 
@@ -1800,23 +1815,23 @@ class StatusConfig:
     
         statusFirebase = False
         
-        i = 1
-        while statusFirebase is False:
-            log.info('saveConfigLogin:: Savando dataLogin no Firebase tentativa [{}]'.format(i))
-            try:
-                ref.set(self.dataLogin)
-            except Exception as e:
-                log.critical('saveConfigLogin:: Erro salvar Config status no Firebase DB')
-                i = i + 1
-                QtTest.QTest.qWait(5000)
-                #time.sleep(0.5)
-            else:
-                statusFirebase = True
-                i = 0
+        if checkInternetAccess():        
+            i = 1
+            while statusFirebase is False:
+                log.info('saveConfigLogin:: Savando dataLogin no Firebase tentativa [{}]'.format(i))
+                try:
+                    ref.set(self.dataLogin)
+                except Exception as e:
+                    log.critical('saveConfigLogin:: Erro salvar Config status no Firebase DB')
+                    i = i + 1
+                    QtTest.QTest.qWait(5000)
+                    #time.sleep(0.5)
+                else:
+                    statusFirebase = True
+                    i = 0
+        else:
+            log.error('saveConfigLogin:: Sem internet! impossivel sincronizar dados de config com Firebase ')
         
-        
-       
-        #json.dump(self.dataLogin, open(file,'w'), indent=4)
 
 
 def playSound():    

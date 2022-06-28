@@ -1,22 +1,40 @@
 import socketio
-import logging as log
 import sys
 import utilsCore as utils
+import logging
 
 #log.basicConfig(format="[ %(levelname)s ] %(message)s", level=log.DEBUG, stream=sys.stdout)
 
 #log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.CRITICAL, filename='pv.log')
 
+
+
+
+
+'''
 log.root.setLevel(log.DEBUG)
 log.basicConfig()
-
 for handler in log.root.handlers[:]:
     log.root.removeHandler(handler)
-
 log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.INFO, handlers=[log.FileHandler('config/pv.log', 'w', 'utf-8')])
 log.getLogger('socketio').setLevel(log.ERROR)
 log.getLogger('engineio').setLevel(log.ERROR)
-
+'''
+log = logging.getLogger('pv-log')
+log.setLevel(logging.DEBUG)
+# create file handler which logs even debug messages
+fh = logging.FileHandler('config/pv.log', 'w', 'utf-8')
+fh.setLevel(logging.DEBUG)
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+# create formatter and add it to the handlers
+formatter = logging.Formatter("[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
+ch.setFormatter(formatter)
+fh.setFormatter(formatter)
+# add the handlers to logger
+log.addHandler(ch)
+log.addHandler(fh)
 
 
 sio = socketio.Client()
@@ -32,6 +50,8 @@ sessionStatus = False
 error = ''
 changePasswdStatus = False
 statusForgotPasswd = False
+nuvemStatus = ''
+
 
 local_sid = None
 
@@ -48,6 +68,12 @@ def checkLogin(login):
     #log.info('Login de: ' + login['user']) 
     #print('checkLogin...')
     sio.emit('checkLogin', login)
+
+
+@sio.event
+def checkNuvem(email):
+    #print('Check session de: ' + session['user']) 
+    sio.emit('checkNuvem', email)
 
 
 @sio.event
@@ -152,6 +178,44 @@ def checkSessionPv(session):
     return sessionStatus, error
 
 
+#opcoes de retorno
+    # True: assina Nuvem e está pago
+    # False: assina Nuvem e não está pago
+    # 'semNuvem': não assina Nuvem
+    # '': houve algum erro para checar sessao
+    # 'conexao': erro de internet
+def checkNuvemPv(email):
+    global nuvemStatus, error
+    error = ''
+
+    #loginStatus = True
+
+    try: 
+        log.info("checkNuvemPv:: conectando...")
+        sio.connect(host)
+        #socketio.sleep(1) -- error module not found
+        #sio.sleep(1)        
+        #sio.wait()
+
+    #except socketio.exceptions.ConnectionError as  err:
+    except Exception as  err:
+
+        log.error('checkNuvemPv:: Erro na conexao: ' + str(err))
+        error = 'conexao' 
+        nuvemStatus = 'True'
+        sio.disconnect()
+
+    else:
+        log.info('checkNuvemPv:: Conexao efetuada')
+        checkNuvem(email)
+        sio.wait()
+        #log.info('checkLoginPv:: loginStatus: ' + str(loginStatus))
+        sio.disconnect()
+          
+    return nuvemStatus, error
+
+
+
 
 def checkLoginPv(login):
     global loginStatus, error
@@ -161,7 +225,8 @@ def checkLoginPv(login):
     try: 
         log.info("checkLoginPv:: conectando...")
         sio.connect(host)
-        socketio.sleep(1)
+        #sio.sleep(1)
+        #socketio.sleep(1)
         #sio.wait()
 
     #except socketio.exceptions.ConnectionError as  err:
@@ -169,7 +234,8 @@ def checkLoginPv(login):
 
         log.error('checkLoginPv:: Erro na conexao: ' + str(err))
         error = 'conexao' 
-        loginStatus = True               
+        loginStatus = True
+        sio.disconnect()
 
     else:
         log.info('checkLoginPv:: Conexao efetuada')
@@ -226,10 +292,24 @@ def replyNewUser(status):
     #log.info('Novo Usuario status: ' + str(status))
     sio.disconnect()
 
+
+#opcoes de retorno
+    # True: assina Nuvem e está pago
+    # False: assina Nuvem e não está pago
+    # 'semNuvem': não assina Nuvem
+    # '': houve algum erro para checar sessao
+    # 'conexao': erro de internet
+@sio.event 
+def replyCheckNuvem(status):
+    global nuvemStatus
+    print ('replyCheckNuvem:: nuvemStatus: ' + str(status))
+    nuvemStatus = status 
+    sio.disconnect()
+
 @sio.event 
 def replyCheckSession(status):
     global sessionStatus
-    #print ('replyCheckSession:: sessionStatus: ' + str(status))
+    print ('replyCheckSession:: sessionStatus: ' + str(status))
     sessionStatus = status 
     sio.disconnect()
 

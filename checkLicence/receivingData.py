@@ -1,25 +1,34 @@
 import eventlet
 import socketio
-import logging as log
+import logging 
 import sys
 import os
 
 from pvLicenceChecker import checkLogin as cl 
 from pvLicenceChecker import newUser as nu 
 from pvLicenceChecker import checkSession as cs 
+from pvLicenceChecker import checkNuvem as checkN
 from pvLicenceChecker import changePasswd as passwd 
 from pvLicenceChecker import forgotPassword as forgotPasswd 
 
 from pbkdf2 import PBKDF2
 from cryptography.fernet import Fernet
 
-log.root.setLevel(log.DEBUG)
-log.basicConfig()
-
-for handler in log.root.handlers[:]:
-    log.root.removeHandler(handler)
-
-log.basicConfig(format="[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=log.DEBUG, handlers=[log.FileHandler('pv.log', 'w', 'utf-8')])
+log = logging.getLogger('pv-log')
+log.setLevel(logging.DEBUG)
+# create file handler which logs even debug messages
+fh = logging.FileHandler('pv.log', 'w', 'utf-8')
+fh.setLevel(logging.DEBUG)
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+# create formatter and add it to the handlers
+formatter = logging.Formatter("[ %(asctime)s] [%(levelname)s ] %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
+ch.setFormatter(formatter)
+fh.setFormatter(formatter)
+# add the handlers to logger
+log.addHandler(ch)
+log.addHandler(fh)
 
 
 sio = socketio.Server()
@@ -64,7 +73,7 @@ def encrypt(password):
   
     return token
 
-log.basicConfig(format="[ %(levelname)s ] %(message)s", stream=sys.stdout)
+#log.basicConfig(format="[ %(levelname)s ] %(message)s", stream=sys.stdout)
 
 @sio.event
 def connect(sid, environ):
@@ -73,6 +82,7 @@ def connect(sid, environ):
 
 @sio.event
 def checkLogin(sid, login):
+    #log.info('checkLogin: login' + login)
     status = cl(decrypt(login['user']), decrypt(login['passwd']), decrypt(login['token'])) 
     sio.emit('replyLogin', status, room=sid)
 
@@ -96,7 +106,15 @@ def newUser(sid, login):
             
 
 @sio.event
+def checkNuvem(sid, email):
+    log.info('checkNuvem: {}'.format(email))
+    status = checkN(email)
+    #status = cs(decrypt(session['user']), decrypt(session['token']))
+    sio.emit('replyCheckNuvem', status, room=sid)
+
+@sio.event
 def checkSession(sid, session):
+    log.info('checkSession: {}'.format(session))
     status = cs(decrypt(session['user']), decrypt(session['token']))
     sio.emit('replyCheckSession', status, room=sid)
 

@@ -21,6 +21,7 @@ from Utils_tracking import sendMail
 from Utils_tracking import saveImageBox
 from checkStorage import CheckStorage
 from rtsp_discover.rtsp_discover import CamFinder
+from checkLicence.sendingData import checkNuvemPv
 
 import time
 import numpy as np
@@ -305,7 +306,7 @@ class FormProc(QWidget):
                                                             
                 if not self.camRunTime.isNuvemRunning:
                     log.info('initFormConfig:: chamando watchDog')
-                    utils.initWatchDog()                
+                    #utils.initWatchDog()                
                 else:
                     log.info('initFormConfig:: rodando em Nuvem, sem chamar watchDog')
 
@@ -624,205 +625,273 @@ class FormProc(QWidget):
         #print('btnRodarNuvem::')
         log.info('btnRodarNuvem::')
         
-        camRemota = self.statusConfig.getCamEmUsoConfig()
-        #testando IP Cam Remota
-        
         user = self.statusConfig.getUserLogin()
+        log.info('btnRodarNuvem:: user: {}'.format(user))
         
-        msg = QMessageBox()
+        nuvemStatus, error = checkNuvemPv(user)
         
-        if camRemota is not None:
-         
-            log.info('btnRodarNuvem:: source: {}'.format(camRemota['source']))
+        log.info('btnRodarNuvem:: nuvemStatus:      {}'.format(nuvemStatus))
+        log.info('btnRodarNuvem:: error:            {}'.format(error))
+        
+        #opcoes de retorno
+            # True: assina Nuvem e está pago
+            # False: assina Nuvem e não está pago
+            # 'semNuvem': não assina Nuvem
+            # '': houve algum erro para checar sessao
+            # 'conexao': erro de internet
+        
+        if nuvemStatus == 'True':
+        
+            #apenas para registrar que o servidor está fora
+            if error == 'conexao':
+                log.critical('btnRodarNuvem: erro com servidor - nuvem liberada')
             
-            ipCam, error = utils.camSource(camRemota['source'])            
+            camRemota = self.statusConfig.getCamEmUsoConfig()
+            #testando IP Cam Remota            
             
+            msg = QMessageBox()
             
-            if error == 'rtsp':
-                msg.setIcon(QMessageBox.Critical)
-                msg.setWindowTitle("Câmera remota com problema!")
-                msg.setStandardButtons(QMessageBox.Ok)
-                text = "Cheque se a porta" + camRemota["port"] + 'do seu roteador está liberada!'
-                msg.setText(text)
-                msg.exec()
-                text = 'RTSP: ' + camRemota.source
-                self.uiConfig.lblStatusCamRemota.setText(text)
+            if camRemota is not None:
+             
+                log.info('btnRodarNuvem:: source: {}'.format(camRemota['source']))
+                #comparando se IP remoto nao é o mesmo da rede local                
+                ipLocal = utils.getIpLocal().split('.')
+                ipLocal.pop()
+
+                novoIp = ''
+                for item in ipLocal:
+                    if novoIp == '':
+                        novoIp = item
+                    else: 
+                        novoIp = novoIp + '.' + item                
                 
-            else:
-            
-                #checando autologin
+                if novoIp in camRemota['ip']:
                 
-                if self.statusConfig.getLoginAutomatico() == 'True':
-                
+                    log.info('btnRodarNuvem:: camRemota continua com IP interno')
+                    log.info('btnRodarNuvem:: camRemota IP  : {}'.format(camRemota['ip']))
+                    log.info('btnRodarNuvem:: ip local      : {}'.format(novoIp))
+                    
                     msg.setIcon(QMessageBox.Critical)
-                    msg.setWindowTitle("PV indo para a Nuvem - Aguarde por favor!")
-                    text = "PV indo para a Nuvem - Aguarde alguns uns 5 minutos por favor!"
-                    msg.setStandardButtons(QMessageBox.Ok)
-                    msg.setText(text)
+                    msg.setWindowTitle("Câmera remota com o mesmo IP local!")
+                    msg.setStandardButtons(QMessageBox.Ok)        
+                    msg.setText("Por favor, configure a câmera remota com um IP Externo!")
                     msg.exec()
                     
-                    #ativar Docker na Nuvem AWS
-                    #print('btnRodarNuvem:: Run task AWS...')
-
-                    #print('btnRodarNuvem:: Checando se container já está rodando...')
-                    log.info('btnRodarNuvem:: Checando se container já está rodando...')
-
-                    responstListTasks = client.list_tasks(cluster='pv-cluster')
-                    statusContainer = ''
-                    #print('responstListTasks: {}'.format(responstListTasks))
-
-                    for task in responstListTasks['taskArns']:
-                        taskId = task.split('/')[-1]
-                        #print('taskId: {}'.format(taskId))
-                        #print(' ')
-                        taskDescription = client.describe_tasks(cluster='pv-cluster', tasks=[taskId], include=[
-                            'TAGS',
-                        ])
-                        
-                        tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
-                        lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
-                                                
-                        if tagContainer == user and lastStatus != 'STOPPED':
-                            statusContainer = 'started'
-
-
-                    if statusContainer == 'started':
-                        log.info('btnRodarNuvem:: Container já em execução...')
-                        #print('btnRodarNuvem:: Status: {}'.format(statusContainer))
-                        
-                        self.statusConfig.setNuvemConfig('True')
-                        msg.setWindowTitle("PV indo para a Nuvem - Aguarde por favor!")
-                        text = "PV já iniciou instancia na Nuvem - aguarde por favor!"
+                else:
+                    #camRemota está com endereço ok
+                
+                    ipCam, error = utils.camSource(camRemota['source'])                
+                    
+                    if error == 'rtsp':
+                        msg.setIcon(QMessageBox.Critical)
+                        msg.setWindowTitle("Câmera remota com problema!")
                         msg.setStandardButtons(QMessageBox.Ok)
+                        text = "Cheque se a porta" + camRemota["port"] + 'do seu roteador está liberada!'
                         msg.setText(text)
                         msg.exec()
+                        text = 'RTSP: ' + camRemota.source
+                        self.uiConfig.lblStatusCamRemota.setText(text)
                         
                     else:
-
-                        log.info('btnRodarNuvem:: Iniciando a task...')
-                        self.statusConfig.setNuvemConfig('True')
-                        
-                        response = client.run_task(cluster='pv-cluster', taskDefinition='pvTask:38', networkConfiguration={
-                                'awsvpcConfiguration': {
-                                    'subnets': [
-                                        'subnet-0b94503ff80f53735',
-                                        'subnet-0f1d7a5b3dc89da66',
-                                        'subnet-07a09921b3d12c738'
-                                    ],
-                                    'securityGroups': [
-                                        'sg-0a35823fd51e8d0a2',
-                                    ],
-                                    'assignPublicIp': 'ENABLED'
-                                }
-                                },         
-                                launchType='FARGATE',
-                                overrides={
-                                'containerOverrides': [
-                                    {
-                                        'name': 'pv-docker',
-                                        'command': [
-                                            '/pv/deploy-linux/start.sh',
-                                        ],
-                                        'environment': [
-                                            {
-                                                'name': 'user',
-                                                'value': user
-                                            },
-                                        ],               
-                                    },
-                                    ]
-                                },
-                                tags=[
-                                {
-                                    'key': 'user',
-                                    'value': user
-                                },
-                                ],
-                                enableECSManagedTags=True,
-                                enableExecuteCommand=True,
-                                )
-                                    
-                        
-
-                        taskId = response['tasks'][0]['taskArn']                        
-
-                        status = False
-                        log.info('btnRodarNuvem:: Checando status do Container...')
-                        self.uiConfig.lblInitStatus.setText(' PV indo para a Nuvem... por favor aguarde +- 5 minutos! ')
-                        while not status:
-                            responseStatus = client.describe_tasks(cluster='pv-cluster', tasks=[taskId])    
-                            
-                            #print('responseStatus: {}'.format(responseStatus))
-                            #print(' ')
-                            statusContainer = responseStatus['tasks'][0]['containers'][0]['lastStatus']
-                            #print('statusContainer: {}'.format(statusContainer))
-                            
-                            if statusContainer == 'RUNNING':
-                                log.info('Container rodando!')
-                                msg.setIcon(QMessageBox.Information)
-                                msg.setWindowTitle("PV já na Nuvem")
-                                msg.setStandardButtons(QMessageBox.Ok)        
-                                msg.setText("PV já está rodando na Nuvem!")
-                                msg.exec()
-                                self.uiConfig.lblInitStatus.setText('Portão Virtual já está rodando na Nuvem')
-                                status = True
-                                break
-                            elif statusContainer == 'PROVISIONING':
-                                #log.info('btnRodarNuvem:: Task em provisionamento... aguardando 10 segundos')
-                                QtTest.QTest.qWait(10000)
-                                #time.sleep(10)
-                            elif statusContainer == 'PENDING':
-                                #log.info('btnRodarNuvem:: Task pending... aguardando 10 segundos')
-                                QtTest.QTest.qWait(10000)
-                                self.statusConfig.setNuvemConfig("True")
-                                #time.sleep(10)
-                            elif statusContainer == 'ACTIVATING':
-                                #log.info('btnRodarNuvem:: Task ACTIVATING... aguardando 10 segundos')
-                                QtTest.QTest.qWait(10000)
-                                #time.sleep(10)
-                            elif statusContainer == 'STOPPED':
-                                log.info('btnRodarNuvem:: Erro para criar instancia .. tente novamente')
-                                self.statusConfig.setNuvemConfig('False')
-                                msg.setIcon(QMessageBox.Information)
-                                msg.setWindowTitle("Erro no envio do PV para a Nuvem")
-                                msg.setStandardButtons(QMessageBox.Ok)        
-                                msg.setText("Houve um erro para enviar o PV à Nuvem - Tente novamente por favor!")
-                                msg.exec()       
-                                break
-                                #QtTest.QTest.qWait(10000)
-                                #time.sleep(10)
-                        
-                        if status:
-                            msg.setIcon(QMessageBox.Information)
-                            msg.setWindowTitle("Rodando na Nuvem")
-                            msg.setStandardButtons(QMessageBox.Ok)        
-                            msg.setText("Portão Virtual rodando na Nuvem! Pode fechar este programa normalmente e desligar seu PC!")
-                            msg.exec()       
-                            self.statusConfig.setNuvemConfig("True")
-                            #print('btnRodarNuvem:: setNuvemConfig True')
-                            self.refreshStatusConfig()
-                            self.camRunTime.init()                    
-                            self.uiConfig.lblCam1.clear()
-                            self.uiConfig.lblCam1.setText('Portão Virtual rodando na Nuvem... pode desligar o seu PC se necessário!')
-                            self.uiConfig.lblInitStatus.setText('Portão Virtual rodando na Nuvem')
-            
-                else:
-                    msg.setIcon(QMessageBox.Critical)
-                    msg.setWindowTitle("Configure para Login Automático!")
-                    msg.setStandardButtons(QMessageBox.Ok)        
-                    msg.setText("Por favor, configure o Login Automático!")
-                    msg.exec()  
+                        #camRemota está ok 
                     
+                        #checando autologin
+                        
+                        if self.statusConfig.getLoginAutomatico() == 'True':
+                        
+                            msg.setIcon(QMessageBox.Critical)
+                            msg.setWindowTitle("PV indo para a Nuvem - Aguarde por favor!")
+                            text = "PV indo para a Nuvem - Aguarde alguns uns 5 minutos por favor!"
+                            msg.setStandardButtons(QMessageBox.Ok)
+                            msg.setText(text)
+                            msg.exec()
+                            
+                            #ativar Docker na Nuvem AWS
+                            #print('btnRodarNuvem:: Run task AWS...')
+
+                            #print('btnRodarNuvem:: Checando se container já está rodando...')
+                            log.info('btnRodarNuvem:: Checando se container já está rodando...')
+
+                            responstListTasks = client.list_tasks(cluster='pv-cluster')
+                            statusContainer = ''
+                            #print('responstListTasks: {}'.format(responstListTasks))
+
+                            for task in responstListTasks['taskArns']:
+                                taskId = task.split('/')[-1]
+                                #print('taskId: {}'.format(taskId))
+                                #print(' ')
+                                taskDescription = client.describe_tasks(cluster='pv-cluster', tasks=[taskId], include=[
+                                    'TAGS',
+                                ])
+                                
+                                tagContainer = taskDescription['tasks'][0]['tags'][0]['value']
+                                lastStatus = taskDescription['tasks'][0]['containers'][0]['lastStatus']
+                                                        
+                                if tagContainer == user and lastStatus != 'STOPPED':
+                                    statusContainer = 'started'
+
+
+                            if statusContainer == 'started':
+                                log.info('btnRodarNuvem:: Container já em execução...')
+                                #print('btnRodarNuvem:: Status: {}'.format(statusContainer))
+                                
+                                self.statusConfig.setNuvemConfig('True')
+                                msg.setWindowTitle("PV indo para a Nuvem - Aguarde por favor!")
+                                text = "PV já iniciou instancia na Nuvem - aguarde por favor!"
+                                msg.setStandardButtons(QMessageBox.Ok)
+                                msg.setText(text)
+                                msg.exec()
+                                
+                            else:
+
+                                log.info('btnRodarNuvem:: Iniciando a task...')
+                                self.statusConfig.setNuvemConfig('True')
+                                
+                                response = client.run_task(cluster='pv-cluster', taskDefinition='pvTask:38', networkConfiguration={
+                                        'awsvpcConfiguration': {
+                                            'subnets': [
+                                                'subnet-0b94503ff80f53735',
+                                                'subnet-0f1d7a5b3dc89da66',
+                                                'subnet-07a09921b3d12c738'
+                                            ],
+                                            'securityGroups': [
+                                                'sg-0a35823fd51e8d0a2',
+                                            ],
+                                            'assignPublicIp': 'ENABLED'
+                                        }
+                                        },         
+                                        launchType='FARGATE',
+                                        overrides={
+                                        'containerOverrides': [
+                                            {
+                                                'name': 'pv-docker',
+                                                'command': [
+                                                    '/pv/deploy-linux/start.sh',
+                                                ],
+                                                'environment': [
+                                                    {
+                                                        'name': 'user',
+                                                        'value': user
+                                                    },
+                                                ],               
+                                            },
+                                            ]
+                                        },
+                                        tags=[
+                                        {
+                                            'key': 'user',
+                                            'value': user
+                                        },
+                                        ],
+                                        enableECSManagedTags=True,
+                                        enableExecuteCommand=True,
+                                        )
+                                            
+                                
+
+                                #out of range
+                                if len(response) > 0:
+                                    taskId = response['tasks'][0]['taskArn']                        
+
+                                status = False
+                                log.info('btnRodarNuvem:: Checando status do Container...')
+                                self.uiConfig.lblInitStatus.setText(' PV indo para a Nuvem... por favor aguarde +- 5 minutos! ')
+                                while not status:
+                                    responseStatus = client.describe_tasks(cluster='pv-cluster', tasks=[taskId])    
+                                    
+                                    #print('responseStatus: {}'.format(responseStatus))
+                                    #print(' ')
+                                    statusContainer = responseStatus['tasks'][0]['containers'][0]['lastStatus']
+                                    #print('statusContainer: {}'.format(statusContainer))
+                                    
+                                    if statusContainer == 'RUNNING':
+                                        log.info('Container rodando!')
+                                        msg.setIcon(QMessageBox.Information)
+                                        msg.setWindowTitle("PV já na Nuvem")
+                                        msg.setStandardButtons(QMessageBox.Ok)        
+                                        msg.setText("PV já está rodando na Nuvem!")
+                                        msg.exec()
+                                        self.uiConfig.lblInitStatus.setText('Portão Virtual já está rodando na Nuvem')
+                                        status = True
+                                        break
+                                    elif statusContainer == 'PROVISIONING':
+                                        #log.info('btnRodarNuvem:: Task em provisionamento... aguardando 10 segundos')
+                                        QtTest.QTest.qWait(10000)
+                                        #time.sleep(10)
+                                    elif statusContainer == 'PENDING':
+                                        #log.info('btnRodarNuvem:: Task pending... aguardando 10 segundos')
+                                        QtTest.QTest.qWait(10000)
+                                        self.statusConfig.setNuvemConfig("True")
+                                        #time.sleep(10)
+                                    elif statusContainer == 'ACTIVATING':
+                                        #log.info('btnRodarNuvem:: Task ACTIVATING... aguardando 10 segundos')
+                                        QtTest.QTest.qWait(10000)
+                                        #time.sleep(10)
+                                    elif statusContainer == 'STOPPED':
+                                        log.info('btnRodarNuvem:: Erro para criar instancia .. tente novamente')
+                                        self.statusConfig.setNuvemConfig('False')
+                                        msg.setIcon(QMessageBox.Information)
+                                        msg.setWindowTitle("Erro no envio do PV para a Nuvem")
+                                        msg.setStandardButtons(QMessageBox.Ok)        
+                                        msg.setText("Houve um erro para enviar o PV à Nuvem - Tente novamente por favor!")
+                                        msg.exec()       
+                                        break
+                                        #QtTest.QTest.qWait(10000)
+                                        #time.sleep(10)
+                                
+                                if status:
+                                    msg.setIcon(QMessageBox.Information)
+                                    msg.setWindowTitle("Rodando na Nuvem")
+                                    msg.setStandardButtons(QMessageBox.Ok)        
+                                    msg.setText("Portão Virtual rodando na Nuvem! Pode fechar este programa normalmente e desligar seu PC!")
+                                    msg.exec()       
+                                    self.statusConfig.setNuvemConfig("True")
+                                    #print('btnRodarNuvem:: setNuvemConfig True')
+                                    self.refreshStatusConfig()
+                                    self.camRunTime.init()                    
+                                    self.uiConfig.lblCam1.clear()
+                                    self.uiConfig.lblCam1.setText('Portão Virtual rodando na Nuvem... pode desligar o seu PC se necessário!')
+                                    self.uiConfig.lblInitStatus.setText('Portão Virtual rodando na Nuvem')
+                    
+                        else:
+                            msg.setIcon(QMessageBox.Critical)
+                            msg.setWindowTitle("Configure para Login Automático!")
+                            msg.setStandardButtons(QMessageBox.Ok)        
+                            msg.setText("Por favor, configure o Login Automático!")
+                            msg.exec()  
+                            
+                    
+                    #end else
+            else:
+                msg.setIcon(QMessageBox.Critical)
+                msg.setWindowTitle("Câmera ainda não definida!")
+                msg.setStandardButtons(QMessageBox.Ok)        
+                msg.setText("Por favor, configure uma câmera primeiro!")
+                msg.exec()       
+                
+        
+        elif nuvemStatus == 'semNuvem':
             
-            #end else
-        else:
+            msg = QMessageBox()
             msg.setIcon(QMessageBox.Critical)
-            msg.setWindowTitle("Câmera ainda não definida!")
-            msg.setStandardButtons(QMessageBox.Ok)        
-            msg.setText("Por favor, configure uma câmera primeiro!")
-            msg.exec()       
+            msg.setWindowTitle("Assine nosso plano PV Cloud!")
+            msg.setStandardButtons(QMessageBox.Ok)
+            #text = "Cheque se a porta" + camRemota["port"] + 'do seu roteador está liberada!'
+            msg.setText('Para rodar na Nuvem, entre em www.portaovirtual.com.br para assinar nosso plano em Nuvem')
+            msg.exec()
             
-    
+        elif nuvemStatus == 'False':
+            
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setWindowTitle("Entre em contato com nossa equipe")
+            msg.setStandardButtons(QMessageBox.Ok)
+            #text = "Cheque se a porta" + camRemota["port"] + 'do seu roteador está liberada!'
+            msg.setText('Houve algum erro para rodar na Nuvem. Entre em contato com nossa equipe através do email contato@portaovirtual.com.br !')
+            msg.exec()
+        
+        
+        
     def btnNovaCamRemota(self):
     
         log.info('btnNovaCamRemota::')
